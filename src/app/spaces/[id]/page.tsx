@@ -115,7 +115,7 @@ export default function SpaceDetailPage() {
   }
 
   return (
-    <div className="container-page py-5 sm:py-8">
+    <div className="container-page py-5 pb-28 sm:py-8 md:pb-8">
       <button
         type="button"
         onClick={() => router.back()}
@@ -222,7 +222,7 @@ export default function SpaceDetailPage() {
           )}
         </div>
 
-        <aside className="lg:sticky lg:top-24 lg:self-start">
+        <aside id="booking" className="scroll-mt-20 lg:sticky lg:top-24 lg:self-start">
           {done ? (
             <div className="card animate-pop-in p-5">
               <div className="flex flex-col items-center text-center">
@@ -492,6 +492,32 @@ export default function SpaceDetailPage() {
           </div>
         </aside>
       </div>
+
+      {!done && (
+        <div className="fixed inset-x-0 bottom-16 z-30 border-t border-ink-line bg-white/95 px-4 py-2.5 pb-[calc(0.625rem+env(safe-area-inset-bottom))] backdrop-blur md:hidden">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="flex items-baseline gap-1">
+                {space.discountRate > 0 && (
+                  <span className="text-[11px] font-extrabold text-brand">{space.discountRate}%</span>
+                )}
+                <span className="text-lg font-black text-ink">{won(total)}</span>
+                <span className="text-[10px] text-ink-mute">/ {hours}시간</span>
+              </p>
+              <p className="truncate text-[10px] text-ink-mute">
+                {formatDate(date)} {formatTime(startTime)} ~ {end}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => document.getElementById("booking")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+              className="btn-primary shrink-0 px-5 py-2.5"
+            >
+              예약하기
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
