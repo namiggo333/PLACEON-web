@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "플레이스온 총괄 관리자",
+  title: "이곳저곳 총괄 관리자",
   robots: { index: false, follow: false, nocache: true },
 };
 

@@ -154,7 +154,7 @@ function mapSpace(row: SpaceRow): Space {
   return {
     id: row.id,
     hostId: row.host_id,
-    hostName: row.host_name ?? "플레이스온 호스트",
+    hostName: row.host_name ?? "이곳저곳 호스트",
     name: row.name,
     category: row.category as Space["category"],
     region: row.region,

@@ -53,7 +53,7 @@ export default function PayPage() {
             사장님이 링크를 새로 만들었거나 공간이 삭제되었을 수 있어요. 사장님께 다시 링크를 요청해 주세요.
           </p>
           <Link href="/" className="btn-primary mt-5 w-full">
-            플레이스온 홈으로
+            이곳저곳 홈으로
           </Link>
         </div>
       </div>
@@ -102,7 +102,7 @@ export default function PayPage() {
             <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand text-white">
               <SparkleIcon size={16} />
             </span>
-            <span className="text-sm font-extrabold text-ink">플레이스온</span>
+            <span className="text-sm font-extrabold text-ink">이곳저곳</span>
           </Link>
           <span className="badge bg-brand-light text-brand">간편 예약 · 로그인 없이</span>
         </div>
@@ -165,7 +165,7 @@ export default function PayPage() {
                 </Link>
               )}
               <Link href="/" className={cn("w-full", user ? "btn-ghost" : "btn-primary")}>
-                플레이스온 둘러보기
+                이곳저곳 둘러보기
               </Link>
             </div>
           </div>

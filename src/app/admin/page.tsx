@@ -349,7 +349,7 @@ export default function AdminPage() {
             관리자로 로그인
           </Link>
           <Link href="/" className="mt-2 block text-xs font-semibold text-ink-mute hover:text-brand">
-            플레이스온 홈으로
+            이곳저곳 홈으로
           </Link>
         </div>
       </div>
@@ -373,7 +373,7 @@ export default function AdminPage() {
             다른 계정으로 로그인
           </Link>
           <Link href="/" className="mt-2 block text-xs font-semibold text-ink-mute hover:text-brand">
-            플레이스온 홈으로
+            이곳저곳 홈으로
           </Link>
         </div>
       </div>
@@ -386,9 +386,9 @@ export default function AdminPage() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-bold tracking-wide">
-              <ShieldIcon size={12} /> PLACEON ADMIN
+              <ShieldIcon size={12} /> 이곳저곳 ADMIN
             </p>
-            <h1 className="mt-2.5 text-2xl font-black tracking-tight sm:text-3xl">플레이스온 총괄 관리자</h1>
+            <h1 className="mt-2.5 text-2xl font-black tracking-tight sm:text-3xl">이곳저곳 총괄 관리자</h1>
             <p className="mt-1 text-xs text-white/75">
               {user.name} 님 · 전체 공간 {stats.spaces}개 · 예약 {stats.bookings}건 · 회원 {stats.profiles}명을 관리합니다.
             </p>

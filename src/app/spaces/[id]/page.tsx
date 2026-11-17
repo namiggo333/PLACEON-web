@@ -237,7 +237,7 @@ export default function SpaceDetailPage() {
                 </span>
                 <div>
                   <p className="text-sm font-bold text-ink">{space.hostName}</p>
-                  <p className="text-[11px] text-ink-mute">플레이스온 호스트</p>
+                  <p className="text-[11px] text-ink-mute">이곳저곳 호스트</p>
                 </div>
               </div>
               <span className="badge bg-brand-light text-brand">

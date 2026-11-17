@@ -72,7 +72,7 @@ function AuthContent() {
               <span className="grid h-9 w-9 place-items-center rounded-xl bg-white/20">
                 <SparkleIcon size={18} />
               </span>
-              <span className="text-base font-extrabold">플레이스온</span>
+              <span className="text-base font-extrabold">이곳저곳</span>
             </div>
             <h1 className="mt-8 text-2xl font-black leading-snug">
               공간이 필요한 순간,
@@ -94,7 +94,7 @@ function AuthContent() {
               ))}
             </ul>
           </div>
-          <p className="text-[10px] text-white/60">© 2026 PlaceOn · 공간대여 예약·결제·광고 통합 플랫폼</p>
+          <p className="text-[10px] text-white/60">© 2026 이곳저곳 · 공간대여 예약·결제·광고 통합 플랫폼</p>
         </div>
 
         <div className="p-6 sm:p-8">
@@ -146,7 +146,7 @@ function AuthContent() {
               </div>
 
               <h2 className="mt-5 text-xl font-black tracking-tight text-ink">
-                {tab === "login" ? "다시 오셨네요!" : "플레이스온 시작하기"}
+                {tab === "login" ? "다시 오셨네요!" : "이곳저곳 시작하기"}
               </h2>
               <p className="mt-1 text-xs text-ink-mute">
                 {tab === "login"
@@ -267,7 +267,7 @@ function AuthContent() {
               <p className="mt-3 text-[10px] leading-relaxed text-ink-mute">
                 {mode === "demo"
                   ? "미리보기 모드예요. 입력한 계정·공간·예약이 이 브라우저에만 저장돼요."
-                  : "가입한 계정과 예약 정보는 플레이스온 서버에 저장되고, 다른 기기에서도 그대로 이어져요."}
+                  : "가입한 계정과 예약 정보는 이곳저곳 서버에 저장되고, 다른 기기에서도 그대로 이어져요."}
               </p>
             </>
           )}

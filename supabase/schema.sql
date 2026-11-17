@@ -1,5 +1,5 @@
 -- ============================================================
--- 플레이스온(PlaceOn) Supabase 스키마
+-- 이곳저곳 Supabase 스키마
 -- Supabase 대시보드 → SQL Editor 에 그대로 붙여넣고 실행하세요.
 -- 실행 순서: 1) 테이블  2) RLS 정책  3) 트리거  4) 샘플 데이터
 -- ============================================================
@@ -312,13 +312,13 @@ create table if not exists public.admins (
 );
 
 comment on table public.admins is
-  '플레이스온 총괄 관리자 이메일 명단. is_admin() 함수로만 참조하며 anon/authenticated 직접 조회는 막혀 있습니다.';
+  '이곳저곳 총괄 관리자 이메일 명단. is_admin() 함수로만 참조하며 anon/authenticated 직접 조회는 막혀 있습니다.';
 
 alter table public.admins enable row level security;
 revoke all on table public.admins from anon, authenticated;
 
 insert into public.admins (email, label) values
-  ('namiggo333@gmail.com', '플레이스온 총괄 관리자')
+  ('namiggo333@gmail.com', '이곳저곳 총괄 관리자')
 on conflict (email) do nothing;
 
 -- 현재 로그인한 사용자가 총괄 관리자인지 판별 (JWT 의 email 기준)

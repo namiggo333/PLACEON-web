@@ -37,13 +37,13 @@ function SiteHeader() {
     <header className="sticky top-0 z-40 border-b border-ink-line/80 bg-white/90 backdrop-blur">
       <div className="container-page flex h-14 items-center justify-between gap-4 sm:h-16">
         <div className="flex items-center gap-7">
-          <Link href="/" className="flex items-center gap-2" aria-label="플레이스온 홈">
+          <Link href="/" className="flex items-center gap-2" aria-label="이곳저곳 홈">
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand text-white shadow-sm">
               <SparkleIcon size={19} />
             </span>
             <span className="flex flex-col leading-none">
-              <span className="text-[17px] font-extrabold tracking-tight text-ink">플레이스온</span>
-              <span className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.18em] text-brand">PlaceOn</span>
+              <span className="text-[17px] font-extrabold tracking-tight text-ink">이곳저곳</span>
+              <span className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.18em] text-brand">SPACE PLATFORM</span>
             </span>
           </Link>
           <nav className="hidden items-center gap-1 md:flex">
@@ -150,8 +150,8 @@ function SiteFooter() {
             <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand text-white">
               <SparkleIcon size={17} />
             </span>
-            <span className="text-base font-extrabold text-ink">플레이스온</span>
-            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand">PlaceOn</span>
+            <span className="text-base font-extrabold text-ink">이곳저곳</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand">SPACE PLATFORM</span>
           </div>
           <p className="mt-3 max-w-sm text-xs leading-relaxed text-ink-mute">
             시간 단위로 빌리는 모든 공간. 예약부터 결제·광고까지 한 곳에서. 사장님의 자체 손님은 전용 예약 링크로
@@ -174,7 +174,7 @@ function SiteFooter() {
       </div>
       <div className="border-t border-ink-line/70">
         <div className="container-page flex flex-col gap-1 py-4 text-[11px] text-ink-mute sm:flex-row sm:items-center sm:justify-between">
-          <span>© 2026 PlaceOn. 공간대여 예약·결제·광고 통합 플랫폼.</span>
+          <span>© 2026 이곳저곳. 공간대여 예약·결제·광고 통합 플랫폼.</span>
         </div>
       </div>
     </footer>

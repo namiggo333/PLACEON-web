@@ -232,7 +232,7 @@ export default function HomePage() {
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-bold">
-                <StoreIcon size={13} /> 사장님을 위한 플레이스온
+                <StoreIcon size={13} /> 사장님을 위한 이곳저곳
               </span>
               <h2 className="mt-3 text-xl font-black leading-snug sm:text-2xl">
                 인스타·블로그로 데려온 손님은

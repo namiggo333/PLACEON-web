@@ -2,7 +2,7 @@
   "name": "placeon-web",
   "version": "1.0.0",
   "private": true,
-  "description": "플레이스온(PlaceOn) — 공간대여 예약·결제·광고 통합 플랫폼 (무료 배포용 웹앱)",
+  "description": "이곳저곳 — 공간대여 예약·결제·광고 통합 플랫폼 (무료 배포용 웹앱)",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
