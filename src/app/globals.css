@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand: #e31c79;
+  --brand-dark: #da1884;
+  --brand-light: #fdf2f8;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  word-break: keep-all;
+}
+
+@layer base {
+  ::selection {
+    background: #fce7f3;
+    color: #b01361;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    font: inherit;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    opacity: 0.55;
+  }
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition
+      focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply btn bg-brand text-white shadow-sm hover:bg-brand-dark active:scale-[0.99];
+  }
+
+  .btn-ghost {
+    @apply btn border border-ink-line bg-white text-ink hover:border-brand/40 hover:text-brand;
+  }
+
+  .btn-soft {
+    @apply btn bg-brand-light text-brand hover:bg-brand-soft;
+  }
+
+  .btn-sm {
+    @apply rounded-lg px-3 py-1.5 text-xs;
+  }
+
+  .input {
+    @apply w-full rounded-xl border border-ink-line bg-white px-3.5 py-2.5 text-sm text-ink
+      placeholder:text-ink-mute focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/15;
+  }
+
+  .label {
+    @apply mb-1.5 block text-xs font-semibold text-ink-soft;
+  }
+
+  .card {
+    @apply rounded-xl2 border border-ink-line bg-white shadow-card;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold leading-4;
+  }
+
+  .chip {
+    @apply inline-flex shrink-0 items-center gap-1.5 rounded-full border border-ink-line bg-white px-3.5 py-2 text-sm
+      font-medium text-ink-soft transition hover:border-brand/40 hover:text-brand;
+  }
+
+  .chip-active {
+    @apply border-brand bg-brand text-white hover:border-brand hover:text-white;
+  }
+
+  .section-title {
+    @apply text-lg font-extrabold tracking-tight text-ink sm:text-xl;
+  }
+
+  .muted {
+    @apply text-sm text-ink-mute;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .skeleton {
+    @apply animate-pulse rounded-xl bg-ink-line/70;
+  }
+}

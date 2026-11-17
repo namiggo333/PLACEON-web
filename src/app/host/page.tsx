@@ -1,0 +1,1062 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { useApp } from "@/components/AppProvider";
+import { DemoAccountButtons } from "@/components/Bits";
+import { SpaceMedia } from "@/components/SpaceCard";
+import {
+  BoltIcon,
+  CalendarIcon,
+  CheckIcon,
+  CloseIcon,
+  CopyIcon,
+  LinkIcon,
+  PlusIcon,
+  SparkleIcon,
+  StoreIcon,
+  UsersIcon,
+} from "@/components/Icons";
+import { CATEGORIES, CATEGORY_MAP, REGIONS, STATUS_LABEL, STATUS_STYLE } from "@/lib/constants";
+import { cn, endTime, formatDate, formatRelativeDate, formatTime, shortId, won, wonShort } from "@/lib/format";
+import type { Category, Role, Space, SpaceInput } from "@/lib/types";
+
+type TabKey = "dashboard" | "spaces" | "bookings" | "links";
+
+const TABS: { key: TabKey; label: string; icon: typeof StoreIcon }[] = [
+  { key: "dashboard", label: "대시보드", icon: BoltIcon },
+  { key: "spaces", label: "내 공간", icon: StoreIcon },
+  { key: "bookings", label: "예약 관리", icon: CalendarIcon },
+  { key: "links", label: "결제 링크", icon: LinkIcon },
+];
+
+interface FormState {
+  name: string;
+  category: Category;
+  region: string;
+  district: string;
+  address: string;
+  price: string;
+  capacity: string;
+  discount: string;
+  description: string;
+  amenities: string;
+  featured: boolean;
+  timeDeal: boolean;
+}
+
+const EMPTY_FORM: FormState = {
+  name: "",
+  category: "party",
+  region: "서울",
+  district: "",
+  address: "",
+  price: "",
+  capacity: "10",
+  discount: "0",
+  description: "",
+  amenities: "와이파이, 냉장고, 주차",
+  featured: false,
+  timeDeal: false,
+};
+
+function Switch({
+  checked,
+  onChange,
+  label,
+  hint,
+}: {
+  checked: boolean;
+  onChange: (value: boolean) => void;
+  label: string;
+  hint?: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className="flex w-full items-center justify-between gap-3 rounded-xl border border-ink-line px-3 py-2.5 text-left transition hover:border-brand/40"
+    >
+      <span>
+        <span className="block text-xs font-bold text-ink">{label}</span>
+        {hint && <span className="mt-0.5 block text-[10px] text-ink-mute">{hint}</span>}
+      </span>
+      <span
+        className={cn(
+          "relative h-6 w-11 shrink-0 rounded-full transition",
+          checked ? "bg-brand" : "bg-ink-line"
+        )}
+      >
+        <span
+          className={cn(
+            "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all",
+            checked ? "left-[22px]" : "left-0.5"
+          )}
+        />
+      </span>
+    </button>
+  );
+}
+
+export default function HostPage() {
+  const {
+    ready,
+    mode,
+    user,
+    spaces,
+    bookings,
+    createSpace,
+    updateSpace,
+    deleteSpace,
+    setBookingStatus,
+    demoSignIn,
+    reset,
+  } = useApp();
+
+  const [tab, setTab] = useState<TabKey>("dashboard");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<Space | null>(null);
+  const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [formError, setFormError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [busyBooking, setBusyBooking] = useState<string | null>(null);
+  const [toast, setToast] = useState("");
+  const [origin, setOrigin] = useState("https://placeon-web.vercel.app");
+  const [linkSpaceId, setLinkSpaceId] = useState("");
+  const [demoBusy, setDemoBusy] = useState<Role | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") setOrigin(window.location.origin);
+  }, []);
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = window.setTimeout(() => setToast(""), 2200);
+    return () => window.clearTimeout(timer);
+  }, [toast]);
+
+  const mySpaces = useMemo(() => spaces.filter((space) => space.hostId === user?.id), [spaces, user?.id]);
+  const mySpaceIds = useMemo(() => new Set(mySpaces.map((space) => space.id)), [mySpaces]);
+  const myBookings = useMemo(
+    () =>
+      bookings
+        .filter((booking) => booking.hostId === user?.id || mySpaceIds.has(booking.spaceId))
+        .sort((a, b) => {
+          if (a.status === "pending" && b.status !== "pending") return -1;
+          if (a.status !== "pending" && b.status === "pending") return 1;
+          return b.createdAt.localeCompare(a.createdAt);
+        }),
+    [bookings, user?.id, mySpaceIds]
+  );
+
+  const thisMonth = new Date().toISOString().slice(0, 7);
+  const stats = useMemo(() => {
+    const monthBookings = myBookings.filter(
+      (booking) => booking.date.startsWith(thisMonth) && booking.status !== "cancelled"
+    );
+    const confirmed = monthBookings.filter((booking) => booking.status === "confirmed");
+    return {
+      revenue: confirmed.reduce((sum, booking) => sum + booking.totalAmount, 0),
+      pending: myBookings.filter((booking) => booking.status === "pending").length,
+      confirmedCount: confirmed.length,
+      exposed: mySpaces.filter((space) => space.featured).length,
+      deals: mySpaces.filter((space) => space.timeDeal).length,
+    };
+  }, [myBookings, mySpaces, thisMonth]);
+
+  const selectedLinkSpace = useMemo(
+    () => mySpaces.find((space) => space.id === linkSpaceId) ?? mySpaces[0],
+    [mySpaces, linkSpaceId]
+  );
+
+  async function copy(text: string, message = "복사했어요!") {
+    if (!text) return;
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const area = document.createElement("textarea");
+        area.value = text;
+        area.style.position = "fixed";
+        area.style.opacity = "0";
+        document.body.appendChild(area);
+        area.select();
+        document.execCommand("copy");
+        document.body.removeChild(area);
+      }
+      setToast(message);
+    } catch {
+      setToast("복사가 차단됐어요. 링크를 길게 눌러 복사해 주세요.");
+    }
+  }
+
+  function openCreate() {
+    setEditing(null);
+    setForm(EMPTY_FORM);
+    setFormError("");
+    setModalOpen(true);
+  }
+
+  function openEdit(space: Space) {
+    setEditing(space);
+    setForm({
+      name: space.name,
+      category: space.category,
+      region: space.region,
+      district: space.district,
+      address: space.address,
+      price: String(space.pricePerHour),
+      capacity: String(space.capacity),
+      discount: String(space.discountRate),
+      description: space.description,
+      amenities: space.amenities.join(", "),
+      featured: space.featured,
+      timeDeal: space.timeDeal,
+    });
+    setFormError("");
+    setModalOpen(true);
+  }
+
+  async function submitForm(event: React.FormEvent) {
+    event.preventDefault();
+    setFormError("");
+    const price = Number(form.price.replace(/[^\d]/g, ""));
+    const capacity = Number(form.capacity.replace(/[^\d]/g, ""));
+    const discount = Math.min(90, Math.max(0, Number(form.discount.replace(/[^\d]/g, "")) || 0));
+    if (!form.name.trim()) return setFormError("공간 이름을 입력해 주세요.");
+    if (!price) return setFormError("시간당 가격을 숫자로 입력해 주세요.");
+    if (!capacity) return setFormError("최대 인원을 입력해 주세요.");
+
+    const payload: SpaceInput = {
+      name: form.name.trim(),
+      category: form.category,
+      region: form.region,
+      district: form.district.trim(),
+      address: form.address.trim(),
+      pricePerHour: price,
+      capacity,
+      discountRate: discount,
+      description: form.description.trim(),
+      amenities: form.amenities
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean),
+      featured: form.featured,
+      timeDeal: form.timeDeal,
+    };
+
+    setSaving(true);
+    try {
+      if (editing) {
+        await updateSpace(editing.id, payload);
+        setToast("공간 정보를 수정했어요.");
+      } else {
+        await createSpace(payload);
+        setToast("공간을 등록했어요!");
+      }
+      setModalOpen(false);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "저장에 실패했어요.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function toggleField(space: Space, field: "featured" | "timeDeal", value: boolean) {
+    try {
+      await updateSpace(space.id, { [field]: value });
+      setToast(
+        field === "featured"
+          ? value
+            ? "상단 노출 광고를 켰어요."
+            : "상단 노출 광고를 껐어요."
+          : value
+            ? "타임특가를 켰어요."
+            : "타임특가를 껐어요."
+      );
+    } catch (err) {
+      setToast(err instanceof Error ? err.message : "변경에 실패했어요.");
+    }
+  }
+
+  async function handleBooking(id: string, status: "confirmed" | "cancelled") {
+    setBusyBooking(id);
+    try {
+      await setBookingStatus(id, status);
+      setToast(status === "confirmed" ? "예약을 승인했어요." : "예약을 거절했어요.");
+    } catch (err) {
+      setToast(err instanceof Error ? err.message : "변경에 실패했어요.");
+    } finally {
+      setBusyBooking(null);
+    }
+  }
+
+  if (!ready) {
+    return (
+      <div className="container-page py-10">
+        <div className="skeleton h-10 w-64" />
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="skeleton h-24" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!user || user.role !== "host") {
+    return (
+      <div className="container-page py-12 sm:py-16">
+        <div className="mx-auto max-w-md text-center">
+          <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-brand-light text-2xl">
+            🧑‍💼
+          </span>
+          <h1 className="mt-4 text-xl font-black text-ink">사장님 센터</h1>
+          <p className="mt-1.5 text-sm leading-relaxed text-ink-mute">
+            공간을 등록하고 예약·광고·결제 링크를 관리하려면 사장님 계정으로 로그인해 주세요.
+          </p>
+          <div className="mt-5">
+            <DemoAccountButtons
+              onPick={async (role) => {
+                setDemoBusy(role);
+                try {
+                  await demoSignIn(role);
+                } finally {
+                  setDemoBusy(null);
+                }
+              }}
+              busy={demoBusy}
+              compact
+            />
+          </div>
+          <Link href="/auth?next=/host&role=host" className="btn-primary mt-3 w-full py-3">
+            사장님으로 로그인
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const payLink = selectedLinkSpace ? `${origin}/pay/${selectedLinkSpace.paySlug}` : "";
+  const dmText = selectedLinkSpace
+    ? `안녕하세요! ${selectedLinkSpace.name} 예약 링크 보내드려요 🩷\n${payLink}\n\n날짜와 시간을 고르시면 바로 예약하실 수 있어요.`
+    : "";
+
+  return (
+    <div className="container-page py-6 sm:py-10">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-bold text-brand">HOST CENTER</p>
+          <h1 className="mt-0.5 text-2xl font-black tracking-tight text-ink sm:text-3xl">
+            {user.name} 님의 사장님 센터
+          </h1>
+          <p className="mt-1 text-xs text-ink-mute">
+            내 공간 {mySpaces.length}개 · 접수된 예약 {stats.pending}건
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <button type="button" onClick={openCreate} className="btn-primary btn-sm px-3.5 py-2.5">
+            <PlusIcon size={15} />
+            공간 등록
+          </button>
+          <Link href="/" className="btn-ghost btn-sm px-3.5 py-2.5">
+            게스트 화면
+          </Link>
+        </div>
+      </div>
+
+      <div className="no-scrollbar mt-5 flex gap-1 overflow-x-auto rounded-xl bg-ink-line/40 p-1">
+        {TABS.map((item) => {
+          const Icon = item.icon;
+          const active = tab === item.key;
+          return (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => setTab(item.key)}
+              className={cn(
+                "flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-bold transition sm:text-sm",
+                active ? "bg-white text-ink shadow-sm" : "text-ink-mute hover:text-ink"
+              )}
+            >
+              <Icon size={15} />
+              {item.label}
+              {item.key === "bookings" && stats.pending > 0 && (
+                <span className="rounded-full bg-brand px-1.5 py-0.5 text-[10px] font-bold text-white">
+                  {stats.pending}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {tab === "dashboard" && (
+        <div className="mt-5 space-y-5">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <div className="rounded-xl2 border border-brand/20 bg-brand-light p-4">
+              <p className="text-[11px] font-semibold text-brand/80">이번 달 예상 매출</p>
+              <p className="mt-1 text-2xl font-black text-brand">{wonShort(stats.revenue)}</p>
+              <p className="mt-0.5 text-[10px] text-brand/70">확정 예약 {stats.confirmedCount}건 기준</p>
+            </div>
+            <div className="card p-4">
+              <p className="text-[11px] font-semibold text-ink-mute">접수된 예약</p>
+              <p className="mt-1 text-2xl font-black text-ink">{stats.pending}건</p>
+              <p className="mt-0.5 text-[10px] text-ink-mute">승인 대기 중</p>
+            </div>
+            <div className="card p-4">
+              <p className="text-[11px] font-semibold text-ink-mute">노출 중인 공간</p>
+              <p className="mt-1 text-2xl font-black text-ink">{mySpaces.length}개</p>
+              <p className="mt-0.5 text-[10px] text-ink-mute">상단 광고 {stats.exposed} · 타임특가 {stats.deals}</p>
+            </div>
+            <div className="card p-4">
+              <p className="text-[11px] font-semibold text-ink-mute">결제 링크로 들어온 예약</p>
+              <p className="mt-1 text-2xl font-black text-ink">
+                {myBookings.filter((booking) => booking.source === "link").length}건
+              </p>
+              <p className="mt-0.5 text-[10px] text-ink-mute">자체 유입 손님</p>
+            </div>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+            <section className="card p-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-extrabold text-ink">최근 예약</h2>
+                <button
+                  type="button"
+                  onClick={() => setTab("bookings")}
+                  className="text-[11px] font-semibold text-ink-mute hover:text-brand"
+                >
+                  전체 보기
+                </button>
+              </div>
+              <div className="mt-2 divide-y divide-ink-line">
+                {myBookings.slice(0, 4).map((booking) => (
+                  <div key={booking.id} className="flex items-center gap-3 py-2.5">
+                    <span className={cn("badge shrink-0", STATUS_STYLE[booking.status])}>
+                      {STATUS_LABEL[booking.status]}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-bold text-ink">
+                        {booking.guestName} · {booking.spaceName}
+                      </p>
+                      <p className="text-[10px] text-ink-mute">
+                        {formatDate(booking.date)} {formatTime(booking.startTime)} · {booking.guests}명
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-xs font-extrabold text-ink">{wonShort(booking.totalAmount)}</span>
+                  </div>
+                ))}
+                {myBookings.length === 0 && (
+                  <p className="py-8 text-center text-xs text-ink-mute">아직 들어온 예약이 없어요.</p>
+                )}
+              </div>
+            </section>
+
+            <section className="card p-4">
+              <h2 className="text-sm font-extrabold text-ink">오늘의 운영 팁</h2>
+              <ul className="mt-2 space-y-2 text-[11px] leading-relaxed text-ink-soft">
+                <li className="flex gap-2">
+                  <span className="text-brand">•</span>
+                  {stats.pending > 0
+                    ? `승인 대기 예약이 ${stats.pending}건 있어요. 10분 안에 답하면 확정률이 크게 올라요.`
+                    : "대기 중인 예약이 없어요. 상단 노출을 켜 두면 오늘 저녁 검색 손님을 만날 수 있어요."}
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-brand">•</span>
+                  금요일 20시대 검색량이 가장 많아요. 타임특가를 켜 두면 클릭률이 올라갑니다.
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-brand">•</span>
+                  인스타·블로그 손님에게 결제 링크를 보내면 수수료 부담 없이 예약을 받을 수 있어요.
+                </li>
+              </ul>
+              <button
+                type="button"
+                onClick={() => setTab("links")}
+                className="btn-soft btn-sm mt-3 w-full"
+              >
+                <LinkIcon size={14} />
+                결제 링크 만들기
+              </button>
+            </section>
+          </div>
+
+          <section className="rounded-xl2 bg-gradient-to-br from-[#2A0A1C] to-[#8E0F4A] p-5 text-white">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold">
+                  <SparkleIcon size={12} /> 무료 운영 단계
+                </p>
+                <h2 className="mt-2 text-lg font-black">지금은 수수료 0%로 운영 중이에요</h2>
+                <p className="mt-1 text-[11px] text-white/70">
+                  플랫폼 예약·전용 결제 링크 모두 수수료 없이 정산됩니다. 정식 오픈 시점과 요율은 사전에 안내드려요.
+                </p>
+              </div>
+              <span className="rounded-xl bg-white/10 px-4 py-3 text-center">
+                <span className="block text-2xl font-black">0%</span>
+                <span className="block text-[10px] text-white/70">현재 수수료</span>
+              </span>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {tab === "spaces" && (
+        <div className="mt-5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-extrabold text-ink">내 공간 <span className="text-brand">{mySpaces.length}</span></h2>
+            <button type="button" onClick={openCreate} className="btn-primary btn-sm">
+              <PlusIcon size={14} />
+              공간 등록
+            </button>
+          </div>
+
+          {mySpaces.length === 0 ? (
+            <div className="card mt-3 flex flex-col items-center gap-2 px-6 py-14 text-center">
+              <StoreIcon size={30} className="text-brand/60" />
+              <p className="text-sm font-bold text-ink">아직 등록한 공간이 없어요</p>
+              <p className="text-xs text-ink-mute">3분이면 공간을 등록하고 예약을 받을 수 있어요.</p>
+              <button type="button" onClick={openCreate} className="btn-primary btn-sm mt-2">
+                첫 공간 등록하기
+              </button>
+            </div>
+          ) : (
+            <div className="mt-3 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {mySpaces.map((space) => (
+                <article key={space.id} className="card overflow-hidden">
+                  <div className="relative h-32">
+                    <SpaceMedia space={space} />
+                    <div className="absolute left-2 top-2 flex gap-1">
+                      {space.featured && <span className="badge bg-ink text-white">AD 노출중</span>}
+                      {space.timeDeal && <span className="badge bg-brand text-white">타임특가</span>}
+                    </div>
+                  </div>
+                  <div className="p-3.5">
+                    <p className="text-[10px] text-ink-mute">
+                      {CATEGORY_MAP[space.category]?.label} · {space.region} {space.district}
+                    </p>
+                    <h3 className="mt-0.5 truncate text-sm font-bold text-ink">{space.name}</h3>
+                    <p className="mt-1 text-xs text-ink-soft">
+                      시간당 <b className="text-ink">{won(space.pricePerHour)}</b>
+                      {space.discountRate > 0 && <span className="ml-1 text-brand">−{space.discountRate}%</span>}
+                      <span className="ml-1 text-ink-mute">· {space.capacity}명</span>
+                    </p>
+
+                    <div className="mt-2.5 space-y-1.5">
+                      <Switch
+                        checked={space.featured}
+                        onChange={(value) => void toggleField(space, "featured", value)}
+                        label="공실 광고 · 지역 상단 노출"
+                        hint={space.featured ? "검색 상단에 노출 중" : "켜면 내 공간이 가장 먼저 보여요"}
+                      />
+                      <Switch
+                        checked={space.timeDeal}
+                        onChange={(value) => void toggleField(space, "timeDeal", value)}
+                        label="타임특가 노출"
+                        hint={
+                          space.discountRate > 0
+                            ? `${space.discountRate}% 할인으로 홈 특가 섹션에 노출`
+                            : "할인율을 먼저 설정해 주세요"
+                        }
+                      />
+                    </div>
+
+                    <div className="mt-2.5 flex items-center gap-1.5 rounded-lg bg-ink-line/30 px-2.5 py-2">
+                      <LinkIcon size={12} className="shrink-0 text-brand" />
+                      <span className="min-w-0 flex-1 truncate text-[10px] text-ink-soft">/pay/{space.paySlug}</span>
+                      <button
+                        type="button"
+                        onClick={() => void copy(`${origin}/pay/${space.paySlug}`, "결제 링크를 복사했어요!")}
+                        className="shrink-0 rounded-md bg-white px-2 py-1 text-[10px] font-bold text-brand"
+                      >
+                        복사
+                      </button>
+                    </div>
+
+                    <div className="mt-2.5 flex gap-2">
+                      <button type="button" onClick={() => openEdit(space)} className="btn-ghost btn-sm flex-1">
+                        수정
+                      </button>
+                      <Link href={`/spaces/${space.id}`} className="btn-soft btn-sm flex-1">
+                        미리보기
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDelete(space.id)}
+                        className="btn-sm rounded-lg border border-ink-line px-2.5 text-xs font-semibold text-ink-mute hover:border-red-200 hover:text-red-500"
+                      >
+                        삭제
+                      </button>
+                    </div>
+                    {confirmDelete === space.id && (
+                      <div className="mt-2 rounded-lg bg-red-50 p-2.5">
+                        <p className="text-[10px] font-semibold text-red-700">이 공간을 삭제할까요? 예약 내역도 함께 숨겨져요.</p>
+                        <div className="mt-1.5 flex gap-1.5">
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              await deleteSpace(space.id);
+                              setConfirmDelete(null);
+                              setToast("공간을 삭제했어요.");
+                            }}
+                            className="rounded-md bg-red-500 px-2.5 py-1 text-[10px] font-bold text-white"
+                          >
+                            삭제
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDelete(null)}
+                            className="rounded-md bg-white px-2.5 py-1 text-[10px] font-bold text-ink-soft"
+                          >
+                            취소
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === "bookings" && (
+        <div className="mt-5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-base font-extrabold text-ink">
+              예약 관리 <span className="text-brand">{myBookings.length}</span>
+            </h2>
+            <p className="text-[11px] text-ink-mute">승인 대기 {stats.pending}건 · 확정 {stats.confirmedCount}건</p>
+          </div>
+
+          <div className="mt-3 space-y-3">
+            {myBookings.length === 0 ? (
+              <div className="card flex flex-col items-center gap-2 px-6 py-14 text-center">
+                <CalendarIcon size={30} className="text-brand/60" />
+                <p className="text-sm font-bold text-ink">아직 접수된 예약이 없어요</p>
+                <p className="text-xs text-ink-mute">결제 링크를 손님에게 보내면 예약이 바로 들어와요.</p>
+              </div>
+            ) : (
+              myBookings.map((booking) => (
+                <article key={booking.id} className="card p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className={cn("badge", STATUS_STYLE[booking.status])}>
+                          {STATUS_LABEL[booking.status]}
+                        </span>
+                        {booking.source === "link" && (
+                          <span className="badge bg-brand-light text-brand">
+                            <LinkIcon size={11} />
+                            결제 링크
+                          </span>
+                        )}
+                        <span className="text-[10px] text-ink-mute">No. {shortId(booking.id)}</span>
+                        <span className="text-[10px] text-ink-mute">· {formatRelativeDate(booking.createdAt)}</span>
+                      </div>
+                      <h3 className="mt-1.5 text-sm font-bold text-ink">{booking.spaceName}</h3>
+                      <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-ink-soft">
+                        <span className="inline-flex items-center gap-1">
+                          <CalendarIcon size={12} className="text-ink-mute" />
+                          {formatDate(booking.date)} {formatTime(booking.startTime)} ~ {endTime(booking.startTime, booking.hours)}
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                          <UsersIcon size={12} className="text-ink-mute" />
+                          {booking.guests}명 · {booking.hours}시간
+                        </span>
+                      </div>
+                      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-ink-line/30 px-2.5 py-2 text-[11px]">
+                        <span className="font-semibold text-ink">{booking.guestName}</span>
+                        <a href={`tel:${booking.guestPhone}`} className="text-ink-soft hover:text-brand">
+                          {booking.guestPhone}
+                        </a>
+                        {booking.memo && <span className="text-ink-mute">요청: {booking.memo}</span>}
+                      </div>
+                    </div>
+
+                    <div className="flex shrink-0 items-center justify-between gap-3 sm:flex-col sm:items-end">
+                      <p className="text-base font-extrabold text-ink">{won(booking.totalAmount)}</p>
+                      <div className="flex gap-1.5">
+                        {booking.status === "pending" && (
+                          <>
+                            <button
+                              type="button"
+                              disabled={busyBooking === booking.id}
+                              onClick={() => void handleBooking(booking.id, "confirmed")}
+                              className="rounded-lg bg-brand px-3 py-1.5 text-[11px] font-bold text-white hover:bg-brand-dark disabled:opacity-60"
+                            >
+                              승인
+                            </button>
+                            <button
+                              type="button"
+                              disabled={busyBooking === booking.id}
+                              onClick={() => void handleBooking(booking.id, "cancelled")}
+                              className="rounded-lg border border-ink-line px-3 py-1.5 text-[11px] font-bold text-ink-soft hover:border-red-200 hover:text-red-500 disabled:opacity-60"
+                            >
+                              거절
+                            </button>
+                          </>
+                        )}
+                        {booking.status === "confirmed" && (
+                          <button
+                            type="button"
+                            disabled={busyBooking === booking.id}
+                            onClick={() => void handleBooking(booking.id, "cancelled")}
+                            className="rounded-lg border border-ink-line px-3 py-1.5 text-[11px] font-bold text-ink-soft hover:border-red-200 hover:text-red-500 disabled:opacity-60"
+                          >
+                            예약 취소
+                          </button>
+                        )}
+                        {booking.status === "cancelled" && (
+                          <span className="text-[11px] text-ink-mute">종료된 예약</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {tab === "links" && (
+        <div className="mt-5 grid gap-4 lg:grid-cols-[1.2fr_1fr]">
+          <section className="card p-5">
+            <div className="flex items-center gap-2">
+              <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand-light text-brand">
+                <BoltIcon size={18} />
+              </span>
+              <div>
+                <h2 className="text-sm font-extrabold text-ink">간편 결제 링크 1초 생성기</h2>
+                <p className="text-[10px] text-ink-mute">인스타 DM·카톡으로 보내면 손님이 바로 예약·결제해요.</p>
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="label" htmlFor="link-space">
+                  공간 선택
+                </label>
+                <select
+                  id="link-space"
+                  value={selectedLinkSpace?.id ?? ""}
+                  onChange={(event) => setLinkSpaceId(event.target.value)}
+                  className="input"
+                  disabled={mySpaces.length === 0}
+                >
+                  {mySpaces.map((space) => (
+                    <option key={space.id} value={space.id}>
+                      {space.name}
+                    </option>
+                  ))}
+                  {mySpaces.length === 0 && <option value="">먼저 공간을 등록해 주세요</option>}
+                </select>
+              </div>
+
+              <div>
+                <label className="label" htmlFor="link-url">
+                  전용 결제·예약 링크
+                </label>
+                <div className="flex gap-2">
+                  <input id="link-url" readOnly value={payLink} className="input bg-ink-line/20 text-[11px]" />
+                  <button
+                    type="button"
+                    disabled={!payLink}
+                    onClick={() => void copy(payLink, "결제 링크를 복사했어요!")}
+                    className="btn-primary shrink-0 px-3"
+                  >
+                    <CopyIcon size={15} />
+                    복사
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {selectedLinkSpace && (
+                  <Link href={`/pay/${selectedLinkSpace.paySlug}`} target="_blank" className="btn-ghost btn-sm">
+                    <LinkIcon size={13} />
+                    링크 열어보기
+                  </Link>
+                )}
+                <button
+                  type="button"
+                  disabled={!dmText}
+                  onClick={() => void copy(dmText, "인스타 DM 문구를 복사했어요!")}
+                  className="btn-soft btn-sm"
+                >
+                  DM 문구 복사
+                </button>
+              </div>
+
+              {mode === "demo" && (
+                <p className="rounded-lg bg-amber-50 px-3 py-2 text-[10px] leading-relaxed text-amber-700">
+                  지금은 데모 모드라 링크가 이 브라우저에서만 열려요. Supabase를 연결하면 손님 기기에서도 그대로
+                  열립니다.
+                </p>
+              )}
+
+              {selectedLinkSpace && (
+                <div className="rounded-xl bg-ink-line/30 p-3 text-[11px] leading-relaxed text-ink-soft">
+                  <p className="font-bold text-ink">{selectedLinkSpace.name}</p>
+                  <p className="mt-0.5">
+                    시간당 {won(selectedLinkSpace.pricePerHour)}
+                    {selectedLinkSpace.discountRate > 0 && (
+                      <span className="text-brand"> → {won(
+                        Math.round((selectedLinkSpace.pricePerHour * (100 - selectedLinkSpace.discountRate)) / 100)
+                      )} ({selectedLinkSpace.discountRate}% 할인)</span>
+                    )}
+                  </p>
+                  <p className="mt-1 text-ink-mute">
+                    손님은 이름·연락처만 입력하면 예약 신청이 끝나고, 사장님 센터에 바로 접수돼요.
+                  </p>
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section className="rounded-xl2 bg-gradient-to-br from-brand to-brand-dark p-5 text-white">
+            <span className="badge bg-white/15 text-white">
+              <SparkleIcon size={12} />
+              자체 유입 손님 수수료 0%
+            </span>
+            <h2 className="mt-3 text-lg font-black leading-snug">
+              내가 데려온 손님은
+              <br />
+              전용 링크로 받으세요
+            </h2>
+            <p className="mt-2 text-[11px] leading-relaxed text-white/80">
+              전용 링크로 들어온 예약은 사장님 센터에 바로 접수되고, 확정·입금 안내까지 한 번에 관리할 수 있어요.
+              공간별로 링크가 자동 발급되어 인스타 프로필·블로그에 그대로 붙여 넣으면 됩니다.
+            </p>
+            <div className="mt-4 space-y-2 text-[11px]">
+              {[
+                "공간별 전용 링크 자동 발급",
+                "손님은 로그인 없이 3초 만에 예약",
+                "예약 접수 → 승인 → 정산까지 한 곳에서",
+              ].map((item) => (
+                <p key={item} className="flex items-center gap-1.5">
+                  <CheckIcon size={13} />
+                  {item}
+                </p>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => void copy(dmText, "DM 문구를 복사했어요!")}
+              disabled={!dmText}
+              className="btn mt-4 w-full bg-white text-brand hover:bg-brand-light"
+            >
+              <CopyIcon size={15} />
+              인스타 DM 문구 복사
+            </button>
+          </section>
+        </div>
+      )}
+
+      {modalOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/50 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+          <div className="max-h-[92dvh] w-full max-w-lg animate-pop-in overflow-y-auto rounded-t-2xl bg-white p-5 shadow-float sm:rounded-2xl">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-extrabold text-ink">{editing ? "공간 수정" : "내 공간 등록"}</h2>
+              <button
+                type="button"
+                onClick={() => setModalOpen(false)}
+                className="grid h-8 w-8 place-items-center rounded-lg text-ink-mute hover:bg-ink-line/60"
+                aria-label="닫기"
+              >
+                <CloseIcon size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={submitForm} className="mt-4 space-y-3">
+              <div>
+                <label className="label" htmlFor="space-name">공간 이름 *</label>
+                <input
+                  id="space-name"
+                  value={form.name}
+                  onChange={(event) => setForm({ ...form, name: event.target.value })}
+                  placeholder="예: 성수 루프탑 라운지"
+                  className="input"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="label" htmlFor="space-category">카테고리</label>
+                  <select
+                    id="space-category"
+                    value={form.category}
+                    onChange={(event) => setForm({ ...form, category: event.target.value as Category })}
+                    className="input"
+                  >
+                    {CATEGORIES.map((category) => (
+                      <option key={category.key} value={category.key}>
+                        {category.emoji} {category.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="label" htmlFor="space-region">지역</label>
+                  <select
+                    id="space-region"
+                    value={form.region}
+                    onChange={(event) => setForm({ ...form, region: event.target.value })}
+                    className="input"
+                  >
+                    {REGIONS.map((region) => (
+                      <option key={region} value={region}>
+                        {region}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="label" htmlFor="space-district">시/군/구</label>
+                  <input
+                    id="space-district"
+                    value={form.district}
+                    onChange={(event) => setForm({ ...form, district: event.target.value })}
+                    placeholder="성동구"
+                    className="input"
+                  />
+                </div>
+                <div>
+                  <label className="label" htmlFor="space-address">주소</label>
+                  <input
+                    id="space-address"
+                    value={form.address}
+                    onChange={(event) => setForm({ ...form, address: event.target.value })}
+                    placeholder="서울 성동구 성수이로 118"
+                    className="input"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="label" htmlFor="space-price">시간당 가격 *</label>
+                  <input
+                    id="space-price"
+                    value={form.price}
+                    onChange={(event) => setForm({ ...form, price: event.target.value })}
+                    placeholder="38000"
+                    inputMode="numeric"
+                    className="input"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="label" htmlFor="space-capacity">최대 인원</label>
+                  <input
+                    id="space-capacity"
+                    value={form.capacity}
+                    onChange={(event) => setForm({ ...form, capacity: event.target.value })}
+                    placeholder="10"
+                    inputMode="numeric"
+                    className="input"
+                  />
+                </div>
+                <div>
+                  <label className="label" htmlFor="space-discount">할인율 %</label>
+                  <input
+                    id="space-discount"
+                    value={form.discount}
+                    onChange={(event) => setForm({ ...form, discount: event.target.value })}
+                    placeholder="0"
+                    inputMode="numeric"
+                    className="input"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="label" htmlFor="space-amenities">제공 시설 (쉼표로 구분)</label>
+                <input
+                  id="space-amenities"
+                  value={form.amenities}
+                  onChange={(event) => setForm({ ...form, amenities: event.target.value })}
+                  placeholder="와이파이, 주차, 빔프로젝터"
+                  className="input"
+                />
+              </div>
+
+              <div>
+                <label className="label" htmlFor="space-description">공간 설명</label>
+                <textarea
+                  id="space-description"
+                  value={form.description}
+                  onChange={(event) => setForm({ ...form, description: event.target.value })}
+                  rows={3}
+                  placeholder="공간의 분위기, 잘 어울리는 모임, 이용 안내를 적어주세요."
+                  className="input resize-none"
+                />
+              </div>
+
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Switch
+                  checked={form.featured}
+                  onChange={(value) => setForm({ ...form, featured: value })}
+                  label="상단 노출 광고"
+                  hint="지역 검색 상단에 노출해요"
+                />
+                <Switch
+                  checked={form.timeDeal}
+                  onChange={(value) => setForm({ ...form, timeDeal: value })}
+                  label="타임특가 노출"
+                  hint="홈 특가 섹션에 노출해요"
+                />
+              </div>
+
+              {formError && (
+                <p className="rounded-lg bg-red-50 px-3 py-2 text-[11px] font-medium text-red-600">{formError}</p>
+              )}
+
+              <div className="flex gap-2 pt-1">
+                <button type="button" onClick={() => setModalOpen(false)} className="btn-ghost flex-1">
+                  취소
+                </button>
+                <button type="submit" disabled={saving} className="btn-primary flex-1">
+                  {saving ? "저장 중…" : editing ? "수정 완료" : "공간 등록"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {toast && (
+        <div className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 animate-fade-up rounded-full bg-ink px-4 py-2.5 text-xs font-bold text-white shadow-float md:bottom-8">
+          {toast}
+        </div>
+      )}
+
+      {tab === "spaces" && mySpaces.length > 0 && (
+        <div className="mt-6 flex justify-end">
+          <button
+            type="button"
+            onClick={() => {
+              if (window.confirm("데모 데이터를 처음 상태로 되돌릴까요? 이 브라우저에 저장된 계정·공간·예약이 초기화됩니다.")) {
+                reset();
+                setToast("데모 데이터를 초기화했어요.");
+              }
+            }}
+            className="text-[10px] font-semibold text-ink-mute underline-offset-2 hover:text-brand hover:underline"
+          >
+            데모 데이터 초기화
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
