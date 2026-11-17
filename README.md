@@ -7,6 +7,7 @@
 - **메인 컬러**: 팬톤 핫핑크 `#E31C79` / 호버 `#DA1884` / 배경 포인트 `#FDF2F8`
 - **UI 레퍼런스**: 야놀자 스타일의 카드형 검색·카테고리·타임특가·즉시예약 UI
 - **기술 스택**: Next.js 15 (App Router, TypeScript) · Tailwind CSS · Supabase(선택)
+- **저장소**: https://github.com/namiggo333/PLACEON-web (public)
 
 ![PC 홈](docs/preview/home-desktop.png)
 
@@ -91,7 +92,7 @@ npm start
 ### ② Vercel 배포 (2분)
 
 1. [vercel.com](https://vercel.com) → **Add New → Project**
-2. 이 GitHub 저장소(`placeon-web`)를 **Import** — Framework는 Next.js로 자동 인식됩니다.
+2. 이 GitHub 저장소(`namiggo333/PLACEON-web`)를 **Import** — Framework는 Next.js로 자동 인식됩니다.
 3. **Environment Variables** 에 위 두 값을 추가 → **Deploy**
 
 ### ③ 배포 후
@@ -151,7 +152,7 @@ placeon-web/
 
 - `npm install` 완료 (Next.js 15.5.29, React 19, Tailwind 3.4)
 - `npm run build` **성공** — TypeScript 타입 검사 및 프로덕션 빌드 통과
-- 8개 라우트 생성 확인 (`/`, `/search`, `/spaces/[id]`, `/bookings`, `/auth`, `/host`, `/pay/[slug]`, `/_not-found`)
+- 9개 라우트 생성 확인 (`/`, `/search`, `/spaces/[id]`, `/bookings`, `/auth`, `/host`, `/pay/[slug]`, `/icon.svg`, `/_not-found`)
 - 실제 브라우저(Chromium 390px 모바일 / 1440px 데스크톱) 자동 테스트로 아래 흐름 검증
   - 게스트 체험 로그인 → 예약 신청 → 예약 내역 표시
   - 사장님 체험 로그인 → 공간 등록 → 예약 승인 → 상태 변경
