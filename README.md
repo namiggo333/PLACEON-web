@@ -44,6 +44,7 @@
 | `/auth` | 로그인 / 회원가입 | 이메일·비밀번호, 게스트/사장님 역할 선택 |
 | `/host` | 사장님 센터 | 대시보드(이번 달 예상 매출·접수 예약·노출 공간·링크 유입), 내 공간 **등록/수정/삭제**, **공간 사진 실제 파일 업로드(최대 6장, 대표 사진 지정)**, **공개/비공개 전환**, 예약 **승인/거절/취소**, 공실 광고 ON/OFF, 타임특가 ON/OFF, **전용 예약 링크 생성·복사·DM 문구 복사** |
 | `/pay/[slug]` | 전용 간편 예약 | 로그인 없이 이름·연락처만 입력 → 예약 신청 접수, 금액 자동 계산, 예약 확정 안내. 인스타 DM·블로그·카톡에 붙여 쓰는 손님용 링크 |
+| `/admin` | 총괄 관리자 | 관리자 전용. 전체 공간 요약(공개/비공개)·예약 건수·예약 금액·회원 수, **입점 공간 관리**(검색·카테고리 필터, 공개/비공개·상단 광고·타임특가 스위치, 삭제), **예약 현황**(전체 예약·상태 변경), **입점 사장님·회원 목록** |
 
 ### 동작하는 상태 관리
 
@@ -54,6 +55,14 @@
 - **공간 사진 업로드 → Supabase Storage(`space-images`)에 저장 → 카드·상세 갤러리에 즉시 반영**
 - **공개/비공개 전환 → 비공개 공간은 손님 홈·검색에서 빠지고 사장님 센터에만 남음**
 - 결제 링크 생성 → `/pay/[slug]`에서 실제 예약 접수 (비로그인 손님 포함)
+- **총괄 관리자 → 전체 공간·예약·회원 조회 및 공개/광고/삭제·예약 상태 변경 (관리자 계정만)**
+
+### 총괄 관리자(`/admin`) 권한
+
+- 관리자 이메일: `namiggo333@gmail.com` (`src/lib/admin.ts`). 이 계정으로 로그인했을 때만 헤더에 `관리자` 링크가 보이고 `/admin` 화면이 열립니다.
+- 비로그인·일반 회원이 `/admin`에 들어가면 접근 제한 화면이 나옵니다.
+- 화면 제한과 별개로 **Supabase RLS**가 서버에서 다시 막습니다: `public.admins` 명단 + `public.is_admin()` 함수, 그리고 `profiles_select_admin` / `spaces_update_admin` / `spaces_delete_admin` / `bookings_select_admin` / `bookings_update_admin` 정책.
+- `public.admins` 테이블은 조회 정책을 두지 않고 anon/authenticated 권한을 회수해, 관리자 이메일 명단이 외부에 노출되지 않습니다.
 
 ---
 
@@ -140,9 +149,10 @@ placeon-web/
 │  │  ├─ bookings/page.tsx     # 예약 내역
 │  │  ├─ auth/page.tsx         # 로그인·회원가입
 │  │  ├─ host/page.tsx         # 사장님 센터
+│  │  ├─ admin/page.tsx        # 총괄 관리자(/admin)
 │  │  └─ pay/[slug]/page.tsx   # 전용 간편 결제 링크
 │  ├─ components/              # AppProvider, 헤더/하단탭, 카드, 필터 등
-│  └─ lib/                     # 타입, Supabase/로컬 저장소, 시드, 포맷
+│  └─ lib/                     # 타입, Supabase/로컬 저장소, 시드, 포맷, 관리자 권한(admin.ts)
 ├─ supabase/schema.sql         # 테이블·RLS·트리거·샘플 데이터
 ├─ docs/preview/               # 화면 캡처
 └─ .env.example

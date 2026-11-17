@@ -526,6 +526,47 @@ export async function insertBooking(input: BookingInput, user: Profile | null): 
   return booking;
 }
 
+/* ------------------------------------------------------------------ */
+/* admin (총괄 관리자)                                                  */
+/* ------------------------------------------------------------------ */
+
+export interface AdminData {
+  spaces: Space[];
+  bookings: Booking[];
+  profiles: Profile[];
+}
+
+/**
+ * 관리자 화면용 전체 데이터.
+ * Supabase 모드에서는 RLS 정책(`is_admin()`)이 관리자에게만 전체 행을 내려주고,
+ * 일반 사용자·비로그인 상태에서는 요청해도 본인 권한 범위 밖의 행이 오지 않는다.
+ */
+export async function fetchAdminData(): Promise<AdminData> {
+  if (supabase) {
+    const [spaceRes, bookingRes, profileRes] = await Promise.all([
+      supabase.from("spaces").select("*").order("created_at", { ascending: false }),
+      supabase.from("bookings").select("*").order("created_at", { ascending: false }),
+      supabase.from("profiles").select("*").order("created_at", { ascending: false }),
+    ]);
+    const error = spaceRes.error ?? bookingRes.error ?? profileRes.error;
+    if (error) throw new Error(`관리자 데이터를 불러오지 못했어요. (${error.message})`);
+    return {
+      spaces: ((spaceRes.data ?? []) as SpaceRow[]).map(mapSpace),
+      bookings: ((bookingRes.data ?? []) as BookingRow[]).map(mapBooking),
+      profiles: ((profileRes.data ?? []) as ProfileRow[]).map(mapProfile),
+    };
+  }
+
+  const db = readDB();
+  return {
+    spaces: db.spaces.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    bookings: db.bookings
+      .slice()
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    profiles: db.profiles.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+  };
+}
+
 export async function updateBookingStatus(id: string, status: BookingStatus): Promise<Booking | null> {
   if (supabase) {
     const { data, error } = await supabase

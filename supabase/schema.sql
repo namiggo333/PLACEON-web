@@ -297,3 +297,79 @@ insert into public.spaces (
     4.7, 64, false, false, 'meeting-gangnam'
   )
 on conflict (id) do nothing;
+
+-- ------------------------------------------------------------
+-- 6. 총괄 관리자 (/admin)
+--    - 관리자 이메일 명단은 public.admins 에 두고, RLS 정책을 만들지 않아
+--      anon/authenticated 키로는 직접 읽을 수 없습니다. (service_role 만 접근)
+--    - 화면 접근 제한은 프론트엔드(src/lib/admin.ts)에서 한 번 더 확인합니다.
+-- ------------------------------------------------------------
+
+create table if not exists public.admins (
+  email text primary key,
+  label text not null default '',
+  created_at timestamptz not null default now()
+);
+
+comment on table public.admins is
+  '플레이스온 총괄 관리자 이메일 명단. is_admin() 함수로만 참조하며 anon/authenticated 직접 조회는 막혀 있습니다.';
+
+alter table public.admins enable row level security;
+revoke all on table public.admins from anon, authenticated;
+
+insert into public.admins (email, label) values
+  ('namiggo333@gmail.com', '플레이스온 총괄 관리자')
+on conflict (email) do nothing;
+
+-- 현재 로그인한 사용자가 총괄 관리자인지 판별 (JWT 의 email 기준)
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.admins a
+    where lower(a.email) = lower(coalesce(auth.jwt() ->> 'email', ''))
+  );
+$$;
+
+revoke all on function public.is_admin() from public;
+grant execute on function public.is_admin() to authenticated;
+
+-- 프로필: 관리자는 전체 회원 조회
+drop policy if exists "profiles_select_admin" on public.profiles;
+create policy "profiles_select_admin"
+  on public.profiles for select
+  to authenticated
+  using (public.is_admin());
+
+-- 공간: 관리자는 사장님 소유와 관계없이 모든 공간 수정·삭제
+drop policy if exists "spaces_update_admin" on public.spaces;
+create policy "spaces_update_admin"
+  on public.spaces for update
+  to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
+
+drop policy if exists "spaces_delete_admin" on public.spaces;
+create policy "spaces_delete_admin"
+  on public.spaces for delete
+  to authenticated
+  using (public.is_admin());
+
+-- 예약: 관리자는 전체 예약 조회·상태 변경
+drop policy if exists "bookings_select_admin" on public.bookings;
+create policy "bookings_select_admin"
+  on public.bookings for select
+  to authenticated
+  using (public.is_admin());
+
+drop policy if exists "bookings_update_admin" on public.bookings;
+create policy "bookings_update_admin"
+  on public.bookings for update
+  to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());

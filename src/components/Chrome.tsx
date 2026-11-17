@@ -10,9 +10,11 @@ import {
   HomeIcon,
   LogoutIcon,
   SearchIcon,
+  ShieldIcon,
   SparkleIcon,
   StoreIcon,
 } from "./Icons";
+import { isAdminEmail } from "@/lib/admin";
 
 const NAV = [
   { href: "/", label: "홈", icon: HomeIcon },
@@ -64,6 +66,20 @@ function SiteHeader() {
         </div>
 
         <div className="flex items-center gap-2">
+          {ready && user && isAdminEmail(user.email) && (
+            <Link
+              href="/admin"
+              className={cn(
+                "inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition",
+                pathname.startsWith("/admin")
+                  ? "bg-brand text-white"
+                  : "bg-brand-light text-brand hover:bg-brand-soft"
+              )}
+            >
+              <ShieldIcon size={14} />
+              <span>관리자</span>
+            </Link>
+          )}
           {ready && user ? (
             <>
               <div className="hidden items-center gap-2 sm:flex">
