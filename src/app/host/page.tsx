@@ -543,7 +543,7 @@ export default function HostPage() {
                 <li className="flex gap-2">
                   <span className="text-brand">•</span>
                   {stats.pending > 0
-                    ? `승인 대기 예약이 ${stats.pending}건 있어요. 10분 안에 답하면 확정률이 크게 올라요.`
+                    ? `승인 대기 예약이 ${stats.pending}건 있어요. 빠르게 답할수록 확정률이 올라갑니다.`
                     : "대기 중인 예약이 없어요. 상단 노출을 켜 두면 오늘 저녁 검색 손님을 만날 수 있어요."}
                 </li>
                 <li className="flex gap-2">
@@ -925,7 +925,7 @@ export default function HostPage() {
               전용 링크로 받으세요
             </h2>
             <p className="mt-2 text-[11px] leading-relaxed text-white/80">
-              전용 링크로 들어온 예약은 사장님 센터에 바로 접수되고, 확정·입금 안내까지 한 번에 관리할 수 있어요.
+              전용 링크로 들어온 예약은 사장님 센터에 바로 접수되고, 확정·결제 안내까지 한 번에 관리할 수 있어요.
               공간별로 링크가 자동 발급되어 인스타 프로필·블로그에 그대로 붙여 넣으면 됩니다.
             </p>
             <div className="mt-4 space-y-2 text-[11px]">

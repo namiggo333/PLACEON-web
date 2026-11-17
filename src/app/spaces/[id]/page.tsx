@@ -221,8 +221,8 @@ export default function SpaceDetailPage() {
           <section className="mt-7 border-t border-ink-line pt-6">
             <h2 className="text-base font-extrabold text-ink">이용 안내</h2>
             <ul className="mt-2 space-y-1.5 text-sm leading-relaxed text-ink-soft">
-              <li>· 예약 신청 후 사장님 확인까지 보통 10분 안에 확정돼요.</li>
-              <li>· 이용 시작 20분 전까지 도착해 주시면 세팅 시간을 드려요.</li>
+              <li>· 예약 신청 후 사장님이 확인하면 연락처로 확정 안내를 드려요.</li>
+              <li>· 이용 시작 20분 전까지 도착해 주시면 세팅 시간을 드릴 수 있어요.</li>
               <li>· 실내 음주는 공간 규칙에 따라 가능하며, 반려동물은 사전 문의해 주세요.</li>
               <li>· 이용 3일 전까지 무료 취소, 이후에는 사장님과 협의가 필요해요.</li>
             </ul>
@@ -237,12 +237,12 @@ export default function SpaceDetailPage() {
                 </span>
                 <div>
                   <p className="text-sm font-bold text-ink">{space.hostName}</p>
-                  <p className="text-[11px] text-ink-mute">플레이스온 인증 호스트 · 평균 응답 10분</p>
+                  <p className="text-[11px] text-ink-mute">플레이스온 호스트</p>
                 </div>
               </div>
               <span className="badge bg-brand-light text-brand">
                 <SparkleIcon size={12} />
-                수수료 0% 링크 운영
+                전용 예약 링크 운영
               </span>
             </div>
           </section>
@@ -520,7 +520,7 @@ export default function SpaceDetailPage() {
             </span>
             <span className="inline-flex items-center gap-1">
               <ClockIcon size={12} />
-              평균 확정 10분
+              빠른 확인
             </span>
             <span className={cn("inline-flex items-center gap-1")}>
               <CheckIcon size={12} />
