@@ -44,9 +44,15 @@ create table if not exists public.spaces (
   featured boolean not null default false,
   time_deal boolean not null default false,
   pay_slug text unique not null,
-  image_url text,
+  image_url text,                                   -- 대표 사진 URL (image_urls[0])
+  image_urls text[] not null default '{}',          -- 공간 사진 여러 장
+  is_hidden boolean not null default false,         -- true 면 손님 화면(홈·검색)에서 숨김
   created_at timestamptz not null default now()
 );
+
+-- 이미 운영 중인 프로젝트라면 아래 두 줄만 따로 실행하면 됩니다.
+-- alter table public.spaces add column if not exists image_urls text[] not null default '{}';
+-- alter table public.spaces add column if not exists is_hidden boolean not null default false;
 
 create index if not exists spaces_host_id_idx on public.spaces (host_id);
 create index if not exists spaces_category_idx on public.spaces (category);
@@ -153,7 +159,50 @@ create policy "bookings_update_guest"
 -- 변경을 막으려면 Supabase Edge Function(RPC)에서 서버 검증을 추가하세요.
 
 -- ------------------------------------------------------------
--- 3. 회원가입 시 프로필 자동 생성 트리거
+-- 3. 공간 사진 저장소 (Supabase Storage)
+--    - 공개 버킷(space-images): 누구나 사진 읽기 가능
+--    - 로그인한 사장님만 업로드, 올린 본인만 수정·삭제
+-- ------------------------------------------------------------
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'space-images',
+  'space-images',
+  true,
+  5242880,
+  array['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+)
+on conflict (id) do update
+  set public = true,
+      file_size_limit = excluded.file_size_limit,
+      allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "space_images_public_read" on storage.objects;
+create policy "space_images_public_read"
+  on storage.objects for select
+  using (bucket_id = 'space-images');
+
+drop policy if exists "space_images_auth_insert" on storage.objects;
+create policy "space_images_auth_insert"
+  on storage.objects for insert
+  to authenticated
+  with check (bucket_id = 'space-images');
+
+drop policy if exists "space_images_auth_update" on storage.objects;
+create policy "space_images_auth_update"
+  on storage.objects for update
+  to authenticated
+  using (bucket_id = 'space-images' and owner = auth.uid())
+  with check (bucket_id = 'space-images');
+
+drop policy if exists "space_images_auth_delete" on storage.objects;
+create policy "space_images_auth_delete"
+  on storage.objects for delete
+  to authenticated
+  using (bucket_id = 'space-images' and owner = auth.uid());
+
+-- ------------------------------------------------------------
+-- 4. 회원가입 시 프로필 자동 생성 트리거
 -- ------------------------------------------------------------
 
 create or replace function public.handle_new_user()
@@ -182,7 +231,7 @@ create trigger on_auth_user_created
   for each row execute function public.handle_new_user();
 
 -- ------------------------------------------------------------
--- 4. 샘플 데이터 (선택)
+-- 5. 샘플 데이터 (선택)
 --    - 앱은 샘플 데이터 없이도 바로 동작합니다.
 --    - 로그인 계정으로 등록한 공간은 사장님 센터에 자동으로 나타납니다.
 -- ------------------------------------------------------------

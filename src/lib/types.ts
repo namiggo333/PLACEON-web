@@ -39,7 +39,11 @@ export interface Space {
   featured: boolean;
   timeDeal: boolean;
   paySlug: string;
+  /* 대표 사진(imageUrls[0]) — 예전 데이터 호환용으로 남겨 둔다 */
   imageUrl: string | null;
+  imageUrls: string[];
+  /* true 이면 손님 화면(홈·검색·상세)에서 숨김 */
+  hidden: boolean;
   createdAt: string;
 }
 
@@ -54,9 +58,10 @@ export interface SpaceInput {
   discountRate: number;
   description: string;
   amenities: string[];
-  imageUrl?: string | null;
+  imageUrls?: string[];
   featured?: boolean;
   timeDeal?: boolean;
+  hidden?: boolean;
 }
 
 export interface Booking {

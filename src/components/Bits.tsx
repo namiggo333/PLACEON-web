@@ -75,7 +75,7 @@ export function DemoAccountButtons({
                 {busy === role ? "로그인 중…" : `${account.name} ${role === "guest" ? "게스트" : "사장님"}`}
               </span>
               <span className="block truncate text-[10px] text-ink-mute">
-                {account.email} · 1초 체험
+                {account.email} · 바로 로그인
               </span>
             </span>
           </button>

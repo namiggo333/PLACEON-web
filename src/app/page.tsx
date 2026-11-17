@@ -22,18 +22,18 @@ const SORTS: { key: SortKey; label: string }[] = [
 
 export default function HomePage() {
   const router = useRouter();
-  const { spaces, ready, bookings } = useApp();
+  const { visibleSpaces, ready, bookings } = useApp();
   const [region, setRegion] = useState("all");
   const [price, setPrice] = useState("all");
   const [sort, setSort] = useState<SortKey>("recommend");
 
   const filtered = useMemo(
-    () => filterSpaces(spaces, { region, price, sort }),
-    [spaces, region, price, sort]
+    () => filterSpaces(visibleSpaces, { region, price, sort }),
+    [visibleSpaces, region, price, sort]
   );
 
   const todayBookings = bookings.filter((booking) => booking.status !== "cancelled").length;
-  const showcase = spaces.find((space) => space.featured && space.timeDeal) ?? spaces[0];
+  const showcase = visibleSpaces.find((space) => space.featured && space.timeDeal) ?? visibleSpaces[0];
 
   function selectCategory(category: Category | "all") {
     router.push(category === "all" ? "/search" : `/search?category=${category}`);
@@ -76,7 +76,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          {showcase && (
+          {showcase ? (
             <div className="absolute right-4 top-16 hidden w-[288px] xl:block" aria-hidden>
               <div className="rotate-2 rounded-2xl bg-white/95 p-3 shadow-float ring-1 ring-brand/10">
                 <div className="relative aspect-[16/10] overflow-hidden rounded-xl">
@@ -101,6 +101,17 @@ export default function HomePage() {
                 사장님 자체 손님은 수수료 0%
               </div>
             </div>
+          ) : ready ? null : (
+            <div className="absolute right-4 top-16 hidden w-[288px] xl:block" aria-hidden>
+              <div className="rotate-2 rounded-2xl bg-white/95 p-3 shadow-float ring-1 ring-brand/10">
+                <div className="skeleton aspect-[16/10] rounded-xl" />
+                <div className="space-y-2 px-1 pb-0.5 pt-2.5">
+                  <div className="skeleton h-3 w-3/4" />
+                  <div className="skeleton h-2.5 w-1/2" />
+                  <div className="skeleton h-4 w-1/3" />
+                </div>
+              </div>
+            </div>
           )}
 
           <div className="mt-7 max-w-3xl">
@@ -109,16 +120,28 @@ export default function HomePage() {
 
           <div className="mt-6 grid grid-cols-3 gap-3 sm:max-w-lg">
             <div>
-              <p className="text-xl font-extrabold text-ink sm:text-2xl">{spaces.length}</p>
-              <p className="text-[11px] text-ink-mute">등록 공간</p>
+              {ready ? (
+                <p className="text-xl font-extrabold text-ink sm:text-2xl">{visibleSpaces.length}</p>
+              ) : (
+                <div className="skeleton h-7 w-12 sm:h-8" />
+              )}
+              <p className="mt-0.5 text-[11px] text-ink-mute">등록 공간</p>
             </div>
             <div>
-              <p className="text-xl font-extrabold text-ink sm:text-2xl">{averageRating(spaces)}</p>
-              <p className="text-[11px] text-ink-mute">평균 평점</p>
+              {ready ? (
+                <p className="text-xl font-extrabold text-ink sm:text-2xl">{averageRating(visibleSpaces)}</p>
+              ) : (
+                <div className="skeleton h-7 w-12 sm:h-8" />
+              )}
+              <p className="mt-0.5 text-[11px] text-ink-mute">평균 평점</p>
             </div>
             <div>
-              <p className="text-xl font-extrabold text-ink sm:text-2xl">{todayBookings}</p>
-              <p className="text-[11px] text-ink-mute">내 예약 현황</p>
+              {ready ? (
+                <p className="text-xl font-extrabold text-ink sm:text-2xl">{todayBookings}</p>
+              ) : (
+                <div className="skeleton h-7 w-10 sm:h-8" />
+              )}
+              <p className="mt-0.5 text-[11px] text-ink-mute">내 예약 현황</p>
             </div>
           </div>
         </div>
@@ -136,14 +159,14 @@ export default function HomePage() {
           <CategoryChips active="all" onSelect={selectCategory} />
         </section>
 
-        {ready && <TimeDealSection spaces={spaces} />}
+        {ready && <TimeDealSection spaces={visibleSpaces} />}
 
         <section>
           <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 className="section-title">지금 예약 가능한 공간</h2>
               <p className="mt-1 text-xs text-ink-mute">
-                {region === "all" ? "전국" : region} · {filtered.length}개의 공간
+                {region === "all" ? "전국" : region} · {ready ? `${filtered.length}개의 공간` : "공간을 불러오는 중"}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">

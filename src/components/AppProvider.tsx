@@ -24,6 +24,8 @@ interface AppContextValue {
   mode: "demo" | "supabase";
   user: Profile | null;
   spaces: Space[];
+  /** 손님에게 보여지는 공간 목록 (비공개 처리한 공간은 사장님 본인에게만 남는다) */
+  visibleSpaces: Space[];
   bookings: Booking[];
   signIn: (email: string, password: string) => Promise<Profile>;
   signUp: (input: { email: string; password: string; name: string; role: Role; phone?: string }) => Promise<Profile>;
@@ -67,6 +69,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     void bootstrap();
   }, [bootstrap]);
+
+  const visibleSpaces = useMemo(
+    () => spaces.filter((space) => !space.hidden || space.hostId === user?.id),
+    [spaces, user?.id]
+  );
 
   const signIn = useCallback(async (email: string, password: string) => {
     const profile = await signInWithEmail(email, password);
@@ -176,6 +183,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       mode: dataMode,
       user,
       spaces,
+      visibleSpaces,
       bookings,
       signIn,
       signUp,
@@ -194,6 +202,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       ready,
       user,
       spaces,
+      visibleSpaces,
       bookings,
       signIn,
       signUp,

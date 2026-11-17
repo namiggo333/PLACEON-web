@@ -47,7 +47,10 @@ export function createSeedProfiles(): Profile[] {
   ];
 }
 
-type SeedSpace = Omit<Space, "createdAt" | "paySlug" | "rating" | "reviewCount" | "imageUrl"> & {
+type SeedSpace = Omit<
+  Space,
+  "createdAt" | "paySlug" | "rating" | "reviewCount" | "imageUrl" | "imageUrls" | "hidden"
+> & {
   rating: number;
   reviewCount: number;
   paySlug: string;
@@ -312,6 +315,8 @@ export function createSeedSpaces(): Space[] {
   return SPACES.map((space, index) => ({
     ...space,
     imageUrl: null,
+    imageUrls: [],
+    hidden: false,
     createdAt: iso(300 + index * 12),
   }));
 }

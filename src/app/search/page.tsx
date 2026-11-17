@@ -19,7 +19,7 @@ const SORTS: { key: SortKey; label: string }[] = [
 
 function SearchContent() {
   const params = useSearchParams();
-  const { spaces, ready } = useApp();
+  const { visibleSpaces, ready } = useApp();
 
   const initialCategory = (params.get("category") ?? "all") as Category | "all";
   const [query, setQuery] = useState(params.get("q") ?? "");
@@ -30,8 +30,8 @@ function SearchContent() {
   const [sort, setSort] = useState<SortKey>((params.get("sort") as SortKey) ?? "recommend");
 
   const results = useMemo(
-    () => filterSpaces(spaces, { query, category, region, price, guests, sort }),
-    [spaces, query, category, region, price, guests, sort]
+    () => filterSpaces(visibleSpaces, { query, category, region, price, guests, sort }),
+    [visibleSpaces, query, category, region, price, guests, sort]
   );
 
   function reset() {
@@ -135,7 +135,8 @@ function SearchContent() {
 
       <div className="mt-6 flex items-center justify-between">
         <p className="text-sm font-semibold text-ink">
-          {query ? `‘${query}’ ` : ""}검색 결과 <span className="text-brand">{results.length}</span>개
+          {query ? `‘${query}’ ` : ""}검색 결과{" "}
+          {ready ? <span className="text-brand">{results.length}</span> : <span className="skeleton ml-1 inline-block h-4 w-6 align-middle" />}개
         </p>
         <p className="text-[11px] text-ink-mute">시간당 요금 · 실시간 예약</p>
       </div>

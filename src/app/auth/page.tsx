@@ -57,7 +57,7 @@ function AuthContent() {
       await demoSignIn(targetRole);
       router.replace(destination(targetRole, next));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "체험 계정으로 로그인하지 못했어요.");
+      setError(err instanceof Error ? err.message : "미리보기 계정으로 로그인하지 못했어요.");
     } finally {
       setDemoBusy(null);
     }
@@ -252,21 +252,22 @@ function AuthContent() {
                 </button>
               </form>
 
-              <div className="my-4 flex items-center gap-3">
-                <span className="h-px flex-1 bg-ink-line" />
-                <span className="text-[10px] font-semibold text-ink-mute">1초 테스트 체험</span>
-                <span className="h-px flex-1 bg-ink-line" />
-              </div>
+              {mode === "demo" && (
+                <>
+                  <div className="my-4 flex items-center gap-3">
+                    <span className="h-px flex-1 bg-ink-line" />
+                    <span className="text-[10px] font-semibold text-ink-mute">미리보기 계정으로 바로 보기</span>
+                    <span className="h-px flex-1 bg-ink-line" />
+                  </div>
 
-              <DemoAccountButtons
-                onPick={handleDemo}
-                busy={demoBusy}
-              />
+                  <DemoAccountButtons onPick={handleDemo} busy={demoBusy} />
+                </>
+              )}
 
               <p className="mt-3 text-[10px] leading-relaxed text-ink-mute">
                 {mode === "demo"
-                  ? "지금은 데모 모드예요. 입력한 계정·공간·예약이 이 브라우저에 저장되어 바로 확인할 수 있어요."
-                  : "Supabase에 실제 계정으로 저장돼요. 체험 계정은 처음 누를 때 자동으로 만들어집니다."}
+                  ? "미리보기 모드예요. 입력한 계정·공간·예약이 이 브라우저에만 저장돼요."
+                  : "가입한 계정과 예약 정보는 플레이스온 서버에 저장되고, 다른 기기에서도 그대로 이어져요."}
               </p>
             </>
           )}

@@ -18,7 +18,7 @@ const TABS: { key: BookingStatus | "all"; label: string }[] = [
 ];
 
 export default function BookingsPage() {
-  const { ready, user, bookings, spaces, setBookingStatus, demoSignIn } = useApp();
+  const { ready, user, bookings, spaces, setBookingStatus, demoSignIn, mode } = useApp();
   const [tab, setTab] = useState<BookingStatus | "all">("all");
   const [cancelling, setCancelling] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -75,20 +75,22 @@ export default function BookingsPage() {
           <p className="mt-1.5 text-sm text-ink-mute">
             예약 상태 확인과 취소를 한 곳에서 관리해 보세요.
           </p>
-          <div className="mt-5">
-            <DemoAccountButtons
-              onPick={async (role) => {
-                setDemoBusy(role);
-                try {
-                  await demoSignIn(role);
-                } finally {
-                  setDemoBusy(null);
-                }
-              }}
-              busy={demoBusy}
-            />
-          </div>
-          <Link href="/auth?next=/bookings" className="btn-primary mt-3 w-full py-3">
+          {mode === "demo" && (
+            <div className="mt-5">
+              <DemoAccountButtons
+                onPick={async (role) => {
+                  setDemoBusy(role);
+                  try {
+                    await demoSignIn(role);
+                  } finally {
+                    setDemoBusy(null);
+                  }
+                }}
+                busy={demoBusy}
+              />
+            </div>
+          )}
+          <Link href="/auth?next=/bookings" className="btn-primary mt-5 w-full py-3">
             이메일로 로그인
           </Link>
         </div>
@@ -215,7 +217,7 @@ export default function BookingsPage() {
                     {booking.status === "pending" && (
                       <p className="mt-2 flex items-start gap-1 text-[11px] leading-relaxed text-amber-700">
                         <ClockIcon size={13} className="mt-0.5 shrink-0" />
-                        사장님 확인 중이에요. 확정되면 입금 계좌를 문자로 안내드려요.
+                        사장님 확인 중이에요. 확정되면 연락처로 안내드려요.
                       </p>
                     )}
                     {booking.status === "confirmed" && (
@@ -282,10 +284,10 @@ export default function BookingsPage() {
       </div>
 
       <div className="mt-6 rounded-xl2 border border-ink-line bg-brand-light/50 p-4">
-        <p className="text-xs font-bold text-ink">무료 운영 단계 안내</p>
+        <p className="text-xs font-bold text-ink">예약 진행 안내</p>
         <p className="mt-1 text-[11px] leading-relaxed text-ink-soft">
-          지금은 카드 결제 수수료 없이 운영되는 단계예요. 예약 신청 후 사장님이 확인하면 계좌이체 계좌를 문자로
-          안내드리고, 입금이 확인되면 예약이 확정됩니다. 카드 결제를 원하시면 공간의 결제 링크를 이용해 주세요.
+          예약 신청 후 사장님이 내용을 확인하고 연락처로 확정 여부를 알려드려요. 결제는 확정 안내와 함께 사장님이
+          알려드리는 방법으로 진행되고, 이용 3일 전까지는 무료로 취소할 수 있어요.
         </p>
       </div>
     </div>

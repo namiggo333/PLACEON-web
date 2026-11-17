@@ -50,6 +50,8 @@ interface SpaceRow {
   time_deal: boolean | null;
   pay_slug: string;
   image_url: string | null;
+  image_urls: string[] | null;
+  is_hidden: boolean | null;
   created_at: string | null;
 }
 
@@ -108,7 +110,13 @@ function readDB(): LocalDB {
 
 function writeDB(db: LocalDB): void {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(DB_KEY, JSON.stringify(db));
+  try {
+    window.localStorage.setItem(DB_KEY, JSON.stringify(db));
+  } catch {
+    throw new Error(
+      "브라우저 저장 공간이 부족해 저장하지 못했어요. 사진 수를 줄이거나 사진을 삭제한 뒤 다시 시도해 주세요."
+    );
+  }
 }
 
 export function resetDemoData(): void {
@@ -141,6 +149,8 @@ function mapProfile(row: ProfileRow): Profile {
 }
 
 function mapSpace(row: SpaceRow): Space {
+  const extraImages = Array.isArray(row.image_urls) ? row.image_urls.filter(Boolean) : [];
+  const imageUrls = extraImages.length > 0 ? extraImages : row.image_url ? [row.image_url] : [];
   return {
     id: row.id,
     hostId: row.host_id,
@@ -160,7 +170,9 @@ function mapSpace(row: SpaceRow): Space {
     featured: Boolean(row.featured),
     timeDeal: Boolean(row.time_deal),
     paySlug: row.pay_slug,
-    imageUrl: row.image_url,
+    imageUrl: imageUrls[0] ?? null,
+    imageUrls,
+    hidden: Boolean(row.is_hidden),
     createdAt: row.created_at ?? new Date().toISOString(),
   };
 }
@@ -346,7 +358,9 @@ function spaceRowPayload(input: SpaceInput, host: Profile) {
     amenities: input.amenities,
     featured: input.featured ?? false,
     time_deal: input.timeDeal ?? input.discountRate > 0,
-    image_url: input.imageUrl ?? null,
+    image_url: input.imageUrls?.[0] ?? null,
+    image_urls: input.imageUrls ?? [],
+    is_hidden: input.hidden ?? false,
   };
 }
 
@@ -380,7 +394,9 @@ export async function insertSpace(input: SpaceInput, host: Profile): Promise<Spa
     featured: input.featured ?? false,
     timeDeal: input.timeDeal ?? input.discountRate > 0,
     paySlug: makeSlug(),
-    imageUrl: input.imageUrl ?? null,
+    imageUrl: input.imageUrls?.[0] ?? null,
+    imageUrls: input.imageUrls ?? [],
+    hidden: input.hidden ?? false,
     createdAt: new Date().toISOString(),
   };
   db.spaces.unshift(space);
@@ -406,6 +422,11 @@ export async function patchSpace(
     if (patch.amenities !== undefined) row.amenities = patch.amenities;
     if (patch.featured !== undefined) row.featured = patch.featured;
     if (patch.timeDeal !== undefined) row.time_deal = patch.timeDeal;
+    if (patch.imageUrls !== undefined) {
+      row.image_urls = patch.imageUrls;
+      row.image_url = patch.imageUrls[0] ?? null;
+    }
+    if (patch.hidden !== undefined) row.is_hidden = patch.hidden;
     const { data, error } = await supabase.from("spaces").update(row).eq("id", id).select("*").single();
     if (error) throw new Error(`공간 정보를 수정하지 못했어요. (${error.message})`);
     return mapSpace(data as SpaceRow);

@@ -26,7 +26,6 @@ export default function SpaceDetailPage() {
   const router = useRouter();
   const { spaces, ready, user, createBooking } = useApp();
   const space = spaces.find((item) => item.id === params.id);
-
   const [date, setDate] = useState(todayISO());
   const [startTime, setStartTime] = useState("18:00");
   const [hours, setHours] = useState(2);
@@ -38,6 +37,7 @@ export default function SpaceDetailPage() {
   const [error, setError] = useState("");
   const [done, setDone] = useState<Booking | null>(null);
   const [showPayGuide, setShowPayGuide] = useState(false);
+  const [photoIndex, setPhotoIndex] = useState(0);
 
   useEffect(() => {
     if (user) {
@@ -81,6 +81,8 @@ export default function SpaceDetailPage() {
   const total = calcTotal(space.pricePerHour, hours, space.discountRate);
   const discount = subtotal - total;
   const end = endTime(startTime, hours);
+  const photos = space.imageUrls ?? [];
+  const safePhotoIndex = photos.length > 0 ? Math.min(photoIndex, photos.length - 1) : 0;
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -129,9 +131,44 @@ export default function SpaceDetailPage() {
         <div className="min-w-0">
           <div className="overflow-hidden rounded-xl2 border border-ink-line">
             <div className="aspect-[16/10] w-full sm:aspect-[16/9]">
-              <SpaceMedia space={space} emojiSize="text-7xl" />
+              <SpaceMedia
+                space={
+                  photos.length > 0
+                    ? { ...space, imageUrls: [photos[safePhotoIndex]], imageUrl: photos[safePhotoIndex] }
+                    : space
+                }
+                emojiSize="text-7xl"
+              />
             </div>
+            {photos.length > 1 && (
+              <div className="no-scrollbar flex gap-2 overflow-x-auto border-t border-ink-line bg-white p-2">
+                {photos.map((url, index) => (
+                  <button
+                    key={url}
+                    type="button"
+                    onClick={() => setPhotoIndex(index)}
+                    className={cn(
+                      "relative h-16 w-24 shrink-0 overflow-hidden rounded-lg border-2 transition",
+                      index === safePhotoIndex
+                        ? "border-brand"
+                        : "border-transparent opacity-75 hover:opacity-100"
+                    )}
+                    aria-label={`사진 ${index + 1} 보기`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt="" className="h-full w-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
+
+          {space.hidden && (
+            <p className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-[11px] font-medium leading-relaxed text-amber-800">
+              <span className="shrink-0">🔒</span>
+              지금은 비공개로 설정된 공간이에요. 사장님에게만 보이고, 손님 화면(홈·검색)에는 노출되지 않아요.
+            </p>
+          )}
 
           <div className="mt-5">
             <div className="flex flex-wrap items-center gap-2">
@@ -253,17 +290,17 @@ export default function SpaceDetailPage() {
                   <dd className="text-right font-semibold text-ink">{done.guests}명 · {done.hours}시간</dd>
                 </div>
                 <div className="flex justify-between gap-3 border-t border-ink-line pt-2">
-                  <dt className="font-semibold text-ink">결제 예정 금액</dt>
+                  <dt className="font-semibold text-ink">이용 요금</dt>
                   <dd className="text-right text-sm font-extrabold text-brand">{won(done.totalAmount)}</dd>
                 </div>
               </dl>
 
-              <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3.5">
-                <p className="text-[11px] font-extrabold text-amber-700">무료 운영 단계 · 입금 안내</p>
-                <ol className="mt-1.5 list-decimal space-y-1 pl-4 text-[11px] leading-relaxed text-amber-800">
-                  <li>사장님 확인 후 입금 계좌를 문자로 보내드려요.</li>
-                  <li>입금 확인이 되면 예약이 <b>확정</b>으로 바뀝니다.</li>
-                  <li>카드 결제를 원하시면 사장님의 전용 결제 링크로 진행할 수 있어요.</li>
+              <div className="mt-3 rounded-xl border border-brand/20 bg-brand-light p-3.5">
+                <p className="text-[11px] font-extrabold text-brand">예약 확정 안내</p>
+                <ol className="mt-1.5 list-decimal space-y-1 pl-4 text-[11px] leading-relaxed text-ink-soft">
+                  <li>사장님이 예약 내용을 확인하고, 연락처로 확정 여부를 알려드려요.</li>
+                  <li>결제는 확정 안내와 함께 사장님이 알려드리는 방법으로 진행돼요.</li>
+                  <li>이용 3일 전까지는 무료로 취소할 수 있어요.</li>
                 </ol>
               </div>
 
@@ -470,7 +507,7 @@ export default function SpaceDetailPage() {
                   {submitting ? "예약 신청 중…" : user ? "예약 신청하기" : "로그인하고 예약하기"}
                 </button>
                 <p className="text-center text-[10px] leading-relaxed text-ink-mute">
-                  지금은 무료 운영 단계로 카드 결제 없이 예약 신청 → 입금 순서로 진행돼요.
+                  예약 신청 후 사장님 확인 → 결제 안내 순서로 진행돼요.
                 </p>
               </div>
             </form>

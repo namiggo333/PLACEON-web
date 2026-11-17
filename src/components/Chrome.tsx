@@ -138,8 +138,8 @@ function SiteFooter() {
             <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand">PlaceOn</span>
           </div>
           <p className="mt-3 max-w-sm text-xs leading-relaxed text-ink-mute">
-            시간 단위로 빌리는 모든 공간. 예약부터 결제·광고까지 한 곳에서. 사장님의 자체 손님은 수수료 부담 없이
-            전용 결제 링크로 모실 수 있어요.
+            시간 단위로 빌리는 모든 공간. 예약부터 결제·광고까지 한 곳에서. 사장님의 자체 손님은 전용 예약 링크로
+            바로 모실 수 있어요.
           </p>
         </div>
         <div className="flex gap-10 text-xs text-ink-soft">
@@ -159,7 +159,6 @@ function SiteFooter() {
       <div className="border-t border-ink-line/70">
         <div className="container-page flex flex-col gap-1 py-4 text-[11px] text-ink-mute sm:flex-row sm:items-center sm:justify-between">
           <span>© 2026 PlaceOn. 공간대여 예약·결제·광고 통합 플랫폼.</span>
-          <span>본 사이트는 플레이스온 서비스 소개 및 데모용으로 제작되었습니다.</span>
         </div>
       </div>
     </footer>

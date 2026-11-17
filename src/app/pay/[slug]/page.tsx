@@ -117,7 +117,7 @@ export default function PayPage() {
               </span>
               <h1 className="mt-3 text-xl font-black text-ink">예약 신청이 접수됐어요</h1>
               <p className="mt-1 text-xs text-ink-mute">
-                예약번호 <b className="text-ink">{shortId(done.id)}</b> · 사장님이 확인하면 문자로 안내드려요.
+                예약번호 <b className="text-ink">{shortId(done.id)}</b> · 사장님이 확인하면 연락처로 확정 안내를 드려요.
               </p>
             </div>
 
@@ -145,17 +145,16 @@ export default function PayPage() {
                 </dd>
               </div>
               <div className="flex justify-between gap-3 border-t border-ink-line pt-2">
-                <dt className="font-bold text-ink">결제 예정 금액</dt>
+                <dt className="font-bold text-ink">이용 요금</dt>
                 <dd className="text-right text-base font-black text-brand">{won(done.totalAmount)}</dd>
               </div>
             </dl>
 
-            <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
-              <p className="text-[11px] font-extrabold text-amber-700">입금 안내</p>
-              <p className="mt-1 text-[11px] leading-relaxed text-amber-800">
-                사장님 확인 후 입금 계좌를 문자로 보내드려요. 입금이 확인되면 예약이 확정됩니다.
-                <br />
-                현재 플레이스온은 무료 운영 단계로, 카드 결제 수수료 없이 운영되고 있어요.
+            <div className="mt-4 rounded-xl border border-brand/20 bg-brand-light p-4">
+              <p className="text-[11px] font-extrabold text-brand">예약 확정 안내</p>
+              <p className="mt-1 text-[11px] leading-relaxed text-ink-soft">
+                사장님이 예약 내용을 확인하고 연락처로 확정 여부를 알려드려요. 결제는 확정 안내와 함께 사장님이
+                알려드리는 방법으로 진행됩니다.
               </p>
             </div>
 
@@ -353,12 +352,10 @@ export default function PayPage() {
                 )}
 
                 <button type="submit" disabled={submitting} className="btn-primary w-full py-3">
-                  {submitting ? "접수 중…" : "예약 신청하고 입금 안내 받기"}
+                  {submitting ? "접수 중…" : "예약 신청하기"}
                 </button>
                 <p className="text-center text-[10px] leading-relaxed text-ink-mute">
-                  지금은 무료 운영 단계로 카드 결제 없이 예약 신청 → 입금 순서로 진행돼요.
-                  <br />
-                  사장님이 확인하면 예약이 확정됩니다.
+                  예약 신청 후 사장님이 확인하면 연락처로 확정 안내와 결제 방법을 알려드려요.
                 </p>
               </div>
             </form>

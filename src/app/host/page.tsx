@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "@/components/AppProvider";
 import { DemoAccountButtons } from "@/components/Bits";
 import { SpaceMedia } from "@/components/SpaceCard";
@@ -11,7 +11,9 @@ import {
   CheckIcon,
   CloseIcon,
   CopyIcon,
+  EyeOffIcon,
   LinkIcon,
+  PhotoIcon,
   PlusIcon,
   SparkleIcon,
   StoreIcon,
@@ -19,6 +21,12 @@ import {
 } from "@/components/Icons";
 import { CATEGORIES, CATEGORY_MAP, REGIONS, STATUS_LABEL, STATUS_STYLE } from "@/lib/constants";
 import { cn, endTime, formatDate, formatRelativeDate, formatTime, shortId, won, wonShort } from "@/lib/format";
+import {
+  MAX_PHOTOS,
+  deleteSpacePhotos,
+  uploadSpacePhotos,
+  validatePhoto,
+} from "@/lib/storage";
 import type { Category, Role, Space, SpaceInput } from "@/lib/types";
 
 type TabKey = "dashboard" | "spaces" | "bookings" | "links";
@@ -43,6 +51,8 @@ interface FormState {
   amenities: string;
   featured: boolean;
   timeDeal: boolean;
+  hidden: boolean;
+  photos: string[];
 }
 
 const EMPTY_FORM: FormState = {
@@ -58,6 +68,8 @@ const EMPTY_FORM: FormState = {
   amenities: "와이파이, 냉장고, 주차",
   featured: false,
   timeDeal: false,
+  hidden: false,
+  photos: [],
 };
 
 function Switch({
@@ -121,6 +133,9 @@ export default function HostPage() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [photoError, setPhotoError] = useState("");
+  const photoInputRef = useRef<HTMLInputElement | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [busyBooking, setBusyBooking] = useState<string | null>(null);
   const [toast, setToast] = useState("");
@@ -197,6 +212,7 @@ export default function HostPage() {
     setEditing(null);
     setForm(EMPTY_FORM);
     setFormError("");
+    setPhotoError("");
     setModalOpen(true);
   }
 
@@ -215,9 +231,57 @@ export default function HostPage() {
       amenities: space.amenities.join(", "),
       featured: space.featured,
       timeDeal: space.timeDeal,
+      hidden: space.hidden,
+      photos: space.imageUrls,
     });
     setFormError("");
+    setPhotoError("");
     setModalOpen(true);
+  }
+
+  async function addPhotos(fileList: FileList | null) {
+    if (!fileList || fileList.length === 0 || !user) return;
+    setPhotoError("");
+    const remaining = MAX_PHOTOS - form.photos.length;
+    if (remaining <= 0) {
+      setPhotoError(`사진은 최대 ${MAX_PHOTOS}장까지 올릴 수 있어요.`);
+      return;
+    }
+    const picked = Array.from(fileList).slice(0, remaining);
+    for (const file of picked) {
+      const message = validatePhoto(file);
+      if (message) {
+        setPhotoError(message);
+        return;
+      }
+    }
+    setUploading(true);
+    try {
+      const urls = await uploadSpacePhotos(picked, user.id);
+      setForm((prev) => ({
+        ...prev,
+        photos: [...prev.photos, ...urls].slice(0, MAX_PHOTOS),
+      }));
+      if (fileList.length + form.photos.length > MAX_PHOTOS) {
+        setPhotoError(`사진은 최대 ${MAX_PHOTOS}장까지라 앞에서부터 ${remaining}장만 올렸어요.`);
+      }
+    } catch (err) {
+      setPhotoError(err instanceof Error ? err.message : "사진을 올리지 못했어요.");
+    } finally {
+      setUploading(false);
+      if (photoInputRef.current) photoInputRef.current.value = "";
+    }
+  }
+
+  function removePhoto(url: string) {
+    setForm((prev) => ({ ...prev, photos: prev.photos.filter((item) => item !== url) }));
+  }
+
+  function makeCoverPhoto(url: string) {
+    setForm((prev) => ({
+      ...prev,
+      photos: [url, ...prev.photos.filter((item) => item !== url)],
+    }));
   }
 
   async function submitForm(event: React.FormEvent) {
@@ -246,12 +310,16 @@ export default function HostPage() {
         .filter(Boolean),
       featured: form.featured,
       timeDeal: form.timeDeal,
+      hidden: form.hidden,
+      imageUrls: form.photos,
     };
 
     setSaving(true);
     try {
       if (editing) {
         await updateSpace(editing.id, payload);
+        const removed = editing.imageUrls.filter((url) => !form.photos.includes(url));
+        if (removed.length > 0) void deleteSpacePhotos(removed);
         setToast("공간 정보를 수정했어요.");
       } else {
         await createSpace(payload);
@@ -276,6 +344,17 @@ export default function HostPage() {
           : value
             ? "타임특가를 켰어요."
             : "타임특가를 껐어요."
+      );
+    } catch (err) {
+      setToast(err instanceof Error ? err.message : "변경에 실패했어요.");
+    }
+  }
+
+  async function toggleHidden(space: Space, value: boolean) {
+    try {
+      await updateSpace(space.id, { hidden: value });
+      setToast(
+        value ? "공간을 비공개로 숨겼어요. 손님 화면에 보이지 않아요." : "공간을 다시 공개했어요."
       );
     } catch (err) {
       setToast(err instanceof Error ? err.message : "변경에 실패했어요.");
@@ -318,21 +397,23 @@ export default function HostPage() {
           <p className="mt-1.5 text-sm leading-relaxed text-ink-mute">
             공간을 등록하고 예약·광고·결제 링크를 관리하려면 사장님 계정으로 로그인해 주세요.
           </p>
-          <div className="mt-5">
-            <DemoAccountButtons
-              onPick={async (role) => {
-                setDemoBusy(role);
-                try {
-                  await demoSignIn(role);
-                } finally {
-                  setDemoBusy(null);
-                }
-              }}
-              busy={demoBusy}
-              compact
-            />
-          </div>
-          <Link href="/auth?next=/host&role=host" className="btn-primary mt-3 w-full py-3">
+          {mode === "demo" && (
+            <div className="mt-5">
+              <DemoAccountButtons
+                onPick={async (role) => {
+                  setDemoBusy(role);
+                  try {
+                    await demoSignIn(role);
+                  } finally {
+                    setDemoBusy(null);
+                  }
+                }}
+                busy={demoBusy}
+                compact
+              />
+            </div>
+          )}
+          <Link href="/auth?next=/host&role=host" className="btn-primary mt-5 w-full py-3">
             사장님으로 로그인
           </Link>
         </div>
@@ -467,11 +548,11 @@ export default function HostPage() {
                 </li>
                 <li className="flex gap-2">
                   <span className="text-brand">•</span>
-                  금요일 20시대 검색량이 가장 많아요. 타임특가를 켜 두면 클릭률이 올라갑니다.
+                  타임특가를 켜 두면 비어 있는 시간대를 채우기 쉬워요.
                 </li>
                 <li className="flex gap-2">
                   <span className="text-brand">•</span>
-                  인스타·블로그 손님에게 결제 링크를 보내면 수수료 부담 없이 예약을 받을 수 있어요.
+                  인스타·블로그 손님에게 예약 링크를 보내면 자체 유입 예약을 바로 받을 수 있어요.
                 </li>
               </ul>
               <button
@@ -531,6 +612,12 @@ export default function HostPage() {
                   <div className="relative h-32">
                     <SpaceMedia space={space} />
                     <div className="absolute left-2 top-2 flex gap-1">
+                      {space.hidden && (
+                        <span className="badge bg-slate-700 text-white">
+                          <EyeOffIcon size={11} />
+                          비공개
+                        </span>
+                      )}
                       {space.featured && <span className="badge bg-ink text-white">AD 노출중</span>}
                       {space.timeDeal && <span className="badge bg-brand text-white">타임특가</span>}
                     </div>
@@ -562,6 +649,12 @@ export default function HostPage() {
                             ? `${space.discountRate}% 할인으로 홈 특가 섹션에 노출`
                             : "할인율을 먼저 설정해 주세요"
                         }
+                      />
+                      <Switch
+                        checked={!space.hidden}
+                        onChange={(value) => void toggleHidden(space, !value)}
+                        label="손님에게 공개"
+                        hint={space.hidden ? "지금은 손님 화면에서 숨겨져 있어요" : "홈·검색에 노출 중"}
                       />
                     </div>
 
@@ -600,6 +693,7 @@ export default function HostPage() {
                             type="button"
                             onClick={async () => {
                               await deleteSpace(space.id);
+                              void deleteSpacePhotos(space.imageUrls);
                               setConfirmDelete(null);
                               setToast("공간을 삭제했어요.");
                             }}
@@ -796,7 +890,7 @@ export default function HostPage() {
 
               {mode === "demo" && (
                 <p className="rounded-lg bg-amber-50 px-3 py-2 text-[10px] leading-relaxed text-amber-700">
-                  지금은 데모 모드라 링크가 이 브라우저에서만 열려요. Supabase를 연결하면 손님 기기에서도 그대로
+                  미리보기 모드에서는 링크가 이 브라우저에서만 열려요. Supabase를 연결하면 손님 기기에서도 그대로
                   열립니다.
                 </p>
               )}
@@ -875,6 +969,88 @@ export default function HostPage() {
             </div>
 
             <form onSubmit={submitForm} className="mt-4 space-y-3">
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="label mb-0">공간 사진</span>
+                  <span className="text-[10px] font-semibold text-ink-mute">
+                    {form.photos.length}/{MAX_PHOTOS}장
+                  </span>
+                </div>
+                <input
+                  id="space-photos"
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(event) => void addPhotos(event.target.files)}
+                />
+                <div className="mt-1.5 grid grid-cols-3 gap-2">
+                  {form.photos.map((url, index) => (
+                    <div
+                      key={url}
+                      className="group relative aspect-square overflow-hidden rounded-lg border border-ink-line bg-ink-line/30"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={url}
+                        alt={`공간 사진 ${index + 1}`}
+                        className="h-full w-full object-cover"
+                      />
+                      {index === 0 ? (
+                        <span className="absolute left-1 top-1 rounded bg-ink/80 px-1.5 py-0.5 text-[9px] font-bold text-white">
+                          대표
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => makeCoverPhoto(url)}
+                          className="absolute inset-x-1 bottom-1 rounded bg-white/90 px-1 py-0.5 text-[9px] font-bold text-ink-soft transition sm:opacity-0 sm:group-hover:opacity-100"
+                        >
+                          대표로
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removePhoto(url)}
+                        className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-ink/70 text-white transition hover:bg-brand"
+                        aria-label="사진 삭제"
+                      >
+                        <CloseIcon size={11} />
+                      </button>
+                    </div>
+                  ))}
+                  {form.photos.length < MAX_PHOTOS && (
+                    <button
+                      type="button"
+                      onClick={() => photoInputRef.current?.click()}
+                      disabled={uploading}
+                      className="flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-brand/40 bg-brand-light/40 text-[10px] font-bold text-brand transition hover:border-brand disabled:opacity-60"
+                    >
+                      {uploading ? (
+                        <>
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-brand/30 border-t-brand" />
+                          올리는 중…
+                        </>
+                      ) : (
+                        <>
+                          <PhotoIcon size={18} />
+                          사진 추가
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+                <p className="mt-1.5 text-[10px] leading-relaxed text-ink-mute">
+                  첫 번째 사진이 대표 사진으로 보여요. JPG·PNG·WebP · 최대 {MAX_PHOTOS}장
+                </p>
+                {photoError && (
+                  <p className="mt-1 rounded-lg bg-red-50 px-2.5 py-1.5 text-[10px] font-medium text-red-500">
+                    {photoError}
+                  </p>
+                )}
+              </div>
+
               <div>
                 <label className="label" htmlFor="space-name">공간 이름 *</label>
                 <input
@@ -1016,6 +1192,12 @@ export default function HostPage() {
                   label="타임특가 노출"
                   hint="홈 특가 섹션에 노출해요"
                 />
+                <Switch
+                  checked={!form.hidden}
+                  onChange={(value) => setForm({ ...form, hidden: !value })}
+                  label="공개 상태"
+                  hint="끄면 손님 화면에서 숨겨요"
+                />
               </div>
 
               {formError && (
@@ -1026,8 +1208,8 @@ export default function HostPage() {
                 <button type="button" onClick={() => setModalOpen(false)} className="btn-ghost flex-1">
                   취소
                 </button>
-                <button type="submit" disabled={saving} className="btn-primary flex-1">
-                  {saving ? "저장 중…" : editing ? "수정 완료" : "공간 등록"}
+                <button type="submit" disabled={saving || uploading} className="btn-primary flex-1">
+                  {uploading ? "사진 올리는 중…" : saving ? "저장 중…" : editing ? "수정 완료" : "공간 등록"}
                 </button>
               </div>
             </form>
@@ -1041,19 +1223,19 @@ export default function HostPage() {
         </div>
       )}
 
-      {tab === "spaces" && mySpaces.length > 0 && (
+      {tab === "spaces" && mySpaces.length > 0 && mode === "demo" && (
         <div className="mt-6 flex justify-end">
           <button
             type="button"
             onClick={() => {
-              if (window.confirm("데모 데이터를 처음 상태로 되돌릴까요? 이 브라우저에 저장된 계정·공간·예약이 초기화됩니다.")) {
+              if (window.confirm("미리보기 데이터를 처음 상태로 되돌릴까요? 이 브라우저에 저장된 계정·공간·예약이 초기화됩니다.")) {
                 reset();
-                setToast("데모 데이터를 초기화했어요.");
+                setToast("미리보기 데이터를 초기화했어요.");
               }
             }}
             className="text-[10px] font-semibold text-ink-mute underline-offset-2 hover:text-brand hover:underline"
           >
-            데모 데이터 초기화
+            미리보기 데이터 초기화
           </button>
         </div>
       )}

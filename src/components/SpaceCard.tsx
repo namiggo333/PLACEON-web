@@ -16,11 +16,12 @@ export function SpaceMedia({
   emojiSize?: string;
 }) {
   const category = CATEGORY_MAP[space.category] ?? CATEGORY_MAP.party;
-  if (space.imageUrl) {
+  const cover = space.imageUrls?.[0] ?? space.imageUrl;
+  if (cover) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={space.imageUrl}
+        src={cover}
         alt={space.name}
         className={cn("h-full w-full object-cover", className)}
         loading="lazy"

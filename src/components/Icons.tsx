@@ -35,6 +35,27 @@ export function SearchIcon(props: IconProps) {
   );
 }
 
+export function PhotoIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <rect x="3" y="4.5" width="18" height="15" rx="2.5" />
+      <circle cx="8.5" cy="9.5" r="1.6" />
+      <path d="m5 17 4.6-4.2a1.5 1.5 0 0 1 2 0L20 19" />
+    </svg>
+  );
+}
+
+export function EyeOffIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M3 3l18 18" />
+      <path d="M10.6 6.2A9.6 9.6 0 0 1 12 6c5 0 8.5 4.2 9.6 5.6a1.2 1.2 0 0 1 0 1.5 15 15 0 0 1-2.4 2.7" />
+      <path d="M6.5 8.1A15.5 15.5 0 0 0 2.4 13a1.2 1.2 0 0 0 0 1.5C3.5 15.9 7 20 12 20a9.4 9.4 0 0 0 3.3-.6" />
+      <path d="M9.9 10.1a3 3 0 0 0 4.1 4.2" />
+    </svg>
+  );
+}
+
 export function CalendarIcon(props: IconProps) {
   return (
     <svg {...base(props)}>
