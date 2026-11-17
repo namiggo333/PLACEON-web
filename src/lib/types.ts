@@ -1,5 +1,6 @@
 export type Category =
   | "party"
+  | "kidsroom"
   | "practice"
   | "studio"
   | "meeting"

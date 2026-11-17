@@ -6,13 +6,13 @@ import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 
 const SITE_TITLE = "플레이스온 PlaceOn · 공간 예약부터 결제까지";
 const SITE_DESCRIPTION =
-  "시간 단위로 빌리는 모든 공간. 파티룸·연습실·촬영스튜디오·회의실·공유주방·루프탑·스터디룸을 한 번에 찾고, 1초 만에 예약하고 결제하세요.";
+  "시간 단위로 빌리는 모든 공간. 파티룸·키즈룸·연습실·촬영스튜디오·회의실·공유주방·루프탑·스터디룸을 한 번에 찾고, 1초 만에 예약하고 결제하세요.";
 
 export const metadata: Metadata = {
   title: SITE_TITLE,
   description: SITE_DESCRIPTION,
   applicationName: "플레이스온",
-  keywords: ["공간대여", "파티룸", "연습실", "촬영스튜디오", "회의실", "공유주방", "루프탑", "스터디룸", "플레이스온"],
+  keywords: ["공간대여", "파티룸", "키즈룸", "연습실", "촬영스튜디오", "회의실", "공유주방", "루프탑", "스터디룸", "플레이스온"],
   openGraph: {
     title: "플레이스온 PlaceOn",
     description: "시간 단위로 빌리는 모든 공간, 예약부터 결제까지 1초 만에.",

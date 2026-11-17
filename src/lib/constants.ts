@@ -2,6 +2,7 @@ import type { BookingStatus, Category, Role } from "./types";
 
 export const CATEGORIES: { key: Category; label: string; emoji: string; gradient: string }[] = [
   { key: "party", label: "파티룸", emoji: "🎉", gradient: "from-rose-400 via-pink-500 to-fuchsia-600" },
+  { key: "kidsroom", label: "키즈룸", emoji: "🧸", gradient: "from-yellow-300 via-amber-400 to-orange-500" },
   { key: "practice", label: "연습실", emoji: "🎧", gradient: "from-violet-400 via-purple-500 to-indigo-600" },
   { key: "studio", label: "촬영스튜디오", emoji: "📸", gradient: "from-amber-300 via-orange-400 to-rose-500" },
   { key: "meeting", label: "회의실", emoji: "💼", gradient: "from-sky-400 via-blue-500 to-indigo-500" },

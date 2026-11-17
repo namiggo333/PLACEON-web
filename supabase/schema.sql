@@ -29,7 +29,7 @@ create table if not exists public.spaces (
   host_name text not null default '',
   name text not null,
   category text not null check (
-    category in ('party', 'practice', 'studio', 'meeting', 'kitchen', 'rooftop', 'study')
+    category in ('party', 'kidsroom', 'practice', 'studio', 'meeting', 'kitchen', 'rooftop', 'study')
   ),
   region text not null,
   district text default '',
@@ -53,6 +53,12 @@ create table if not exists public.spaces (
 -- 이미 운영 중인 프로젝트라면 아래 두 줄만 따로 실행하면 됩니다.
 -- alter table public.spaces add column if not exists image_urls text[] not null default '{}';
 -- alter table public.spaces add column if not exists is_hidden boolean not null default false;
+
+-- 카테고리에 키즈룸(kidsroom)이 추가된 경우, 운영 중인 DB에는 아래 두 줄을 따로 실행하세요.
+-- alter table public.spaces drop constraint if exists spaces_category_check;
+-- alter table public.spaces add constraint spaces_category_check check (
+--   category in ('party', 'kidsroom', 'practice', 'studio', 'meeting', 'kitchen', 'rooftop', 'study')
+-- );
 
 create index if not exists spaces_host_id_idx on public.spaces (host_id);
 create index if not exists spaces_category_idx on public.spaces (category);

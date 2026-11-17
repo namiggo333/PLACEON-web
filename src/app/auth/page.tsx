@@ -83,7 +83,7 @@ function AuthContent() {
             </h1>
             <ul className="mt-6 space-y-2.5 text-xs text-white/85">
               {[
-                "파티룸부터 스터디룸까지 7개 카테고리",
+                "파티룸부터 스터디룸까지 8개 카테고리",
                 "시간당 요금으로 필요한 만큼만",
                 "사장님은 자체 손님 결제 링크로 수수료 0%",
               ].map((item) => (
