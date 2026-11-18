@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useApp } from "@/components/AppProvider";
 import { DemoAccountButtons } from "@/components/Bits";
+import { DepositGuide, isDepositExpired } from "@/components/DepositGuide";
 import { SpaceMedia } from "@/components/SpaceCard";
 import { CalendarIcon, CheckIcon, ClockIcon, LinkIcon, UsersIcon } from "@/components/Icons";
 import { MascotAvatar } from "@/components/Logo";
-import { STATUS_LABEL, STATUS_STYLE } from "@/lib/constants";
+import { bookingStatusMeta } from "@/lib/constants";
 import { cn, endTime, formatDate, formatRelativeDate, formatTime, shortId, won } from "@/lib/format";
 import type { BookingStatus, Role } from "@/lib/types";
 
@@ -155,7 +156,9 @@ export default function BookingsPage() {
         ) : (
           filtered.map((booking) => {
             const space = spaces.find((item) => item.id === booking.spaceId);
-            const canCancel = booking.status === "pending" || booking.status === "confirmed";
+            const statusMeta = bookingStatusMeta(booking);
+            const depositExpired = isDepositExpired(booking);
+            const canCancel = (booking.status === "pending" || booking.status === "confirmed") && !depositExpired;
             return (
               <article key={booking.id} className="card overflow-hidden">
                 <div className="flex flex-col gap-4 p-4 sm:flex-row">
@@ -171,9 +174,9 @@ export default function BookingsPage() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-1.5">
-                          <span className={cn("badge", STATUS_STYLE[booking.status])}>
+                          <span className={cn("badge", statusMeta.style)}>
                             {booking.status === "pending" && <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />}
-                            {STATUS_LABEL[booking.status]}
+                            {statusMeta.label}
                           </span>
                           {booking.source === "link" && (
                             <span className="badge bg-brand-light text-brand">
@@ -215,17 +218,22 @@ export default function BookingsPage() {
                       </p>
                     )}
 
-                    {booking.status === "pending" && (
-                      <p className="mt-2 flex items-start gap-1 text-[11px] leading-relaxed text-amber-700">
-                        <ClockIcon size={13} className="mt-0.5 shrink-0" />
-                        사장님 확인 중이에요. 확정되면 연락처로 안내드려요.
-                      </p>
-                    )}
+                    {booking.status === "pending" && <DepositGuide booking={booking} className="mt-2.5" compact />}
                     {booking.status === "confirmed" && (
-                      <p className="mt-2 flex items-start gap-1 text-[11px] leading-relaxed text-emerald-700">
-                        <CheckIcon size={13} className="mt-0.5 shrink-0" />
-                        예약이 확정됐어요. 이용 당일 20분 전까지 도착해 주세요.
-                      </p>
+                      <div className="mt-2.5 rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+                        <p className="flex items-start gap-1 text-[11px] font-semibold leading-relaxed text-emerald-700">
+                          <CheckIcon size={13} className="mt-0.5 shrink-0" />
+                          입금이 확인되어 예약이 확정됐어요. 이용 당일 20분 전까지 도착해 주세요.
+                        </p>
+                      </div>
+                    )}
+                    {booking.status === "cancelled" && booking.cancelReason === "expired" && (
+                      <div className="mt-2.5 rounded-xl border border-ink-line bg-ink-line/30 p-3">
+                        <p className="text-[11px] font-semibold leading-relaxed text-ink-soft">
+                          15분 안에 입금이 확인되지 않아 예약이 자동으로 풀렸어요. 같은 시간대를 다시 예약할 수
+                          있어요.
+                        </p>
+                      </div>
                     )}
 
                     <div className="mt-3 flex flex-wrap gap-2">
@@ -286,10 +294,11 @@ export default function BookingsPage() {
 
       <div className="mt-6 rounded-xl2 border border-ink-line bg-brand-light/50 p-4">
         <p className="text-xs font-bold text-ink">예약 진행 안내</p>
-        <p className="mt-1 text-[11px] leading-relaxed text-ink-soft">
-          예약 신청 후 사장님이 내용을 확인하고 연락처로 확정 여부를 알려드려요. 결제는 확정 안내와 함께 사장님이
-          알려드리는 방법으로 진행되고, 이용 3일 전까지는 무료로 취소할 수 있어요.
-        </p>
+        <ol className="mt-1 list-decimal space-y-0.5 pl-4 text-[11px] leading-relaxed text-ink-soft">
+          <li>예약 신청 후 15분 안에 안내된 계좌로 이용 요금을 입금해 주세요.</li>
+          <li>사장님이 입금을 확인하면 예약이 확정되고, 예약 내역에 [예약확정]으로 표시돼요.</li>
+          <li>15분 안에 입금이 확인되지 않으면 예약은 자동으로 취소되어 다른 손님이 예약할 수 있어요.</li>
+        </ol>
       </div>
     </div>
   );

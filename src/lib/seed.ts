@@ -331,7 +331,10 @@ export function createSeedBookings(): Booking[] {
   const S8 = byId("000000000008");
   const S9 = byId("000000000009");
 
-  return [
+  const base: Omit<
+    Booking,
+    "expiresAt" | "payBankName" | "payAccountNumber" | "payAccountHolder" | "cancelReason"
+  >[] = [
     {
       id: "22222222-2222-4222-8222-000000000001",
       spaceId: S3.id,
@@ -459,6 +462,17 @@ export function createSeedBookings(): Booking[] {
       createdAt: iso(12),
     },
   ];
+
+  // 입금 안내(15분 기한·계좌)를 미리보기에서도 그대로 보여 준다.
+  const deadline = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+  return base.map((booking) => ({
+    ...booking,
+    expiresAt: booking.status === "pending" ? deadline : null,
+    payBankName: "국민은행",
+    payAccountNumber: "123-45-678901",
+    payAccountHolder: "김사장",
+    cancelReason: booking.status === "cancelled" ? "guest" : null,
+  }));
 }
 
 export const SEED_HOST_CATEGORY: Category[] = ["rooftop", "kitchen", "party", "practice"];

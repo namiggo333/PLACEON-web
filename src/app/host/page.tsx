@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "@/components/AppProvider";
 import { LogoMark, MascotAvatar } from "@/components/Logo";
 import { DemoAccountButtons } from "@/components/Bits";
+import { DepositInfoRow } from "@/components/DepositInfoRow";
 import { SpaceMedia } from "@/components/SpaceCard";
 import {
   BoltIcon,
@@ -20,7 +21,7 @@ import {
   StoreIcon,
   UsersIcon,
 } from "@/components/Icons";
-import { CATEGORIES, CATEGORY_MAP, REGIONS, STATUS_LABEL, STATUS_STYLE } from "@/lib/constants";
+import { CATEGORIES, CATEGORY_MAP, REGIONS, bookingStatusMeta } from "@/lib/constants";
 import { cn, endTime, formatDate, formatRelativeDate, formatTime, shortId, won, wonShort } from "@/lib/format";
 import {
   MAX_PHOTOS,
@@ -54,6 +55,9 @@ interface FormState {
   timeDeal: boolean;
   hidden: boolean;
   photos: string[];
+  bankName: string;
+  accountNumber: string;
+  accountHolder: string;
 }
 
 const EMPTY_FORM: FormState = {
@@ -71,6 +75,9 @@ const EMPTY_FORM: FormState = {
   timeDeal: false,
   hidden: false,
   photos: [],
+  bankName: "",
+  accountNumber: "",
+  accountHolder: "",
 };
 
 function Switch({
@@ -119,6 +126,7 @@ export default function HostPage() {
     mode,
     user,
     spaces,
+    spaceAccounts,
     bookings,
     createSpace,
     updateSpace,
@@ -218,6 +226,7 @@ export default function HostPage() {
   }
 
   function openEdit(space: Space) {
+    const account = spaceAccounts[space.id];
     setEditing(space);
     setForm({
       name: space.name,
@@ -234,6 +243,9 @@ export default function HostPage() {
       timeDeal: space.timeDeal,
       hidden: space.hidden,
       photos: space.imageUrls,
+      bankName: account?.bankName ?? "",
+      accountNumber: account?.accountNumber ?? "",
+      accountHolder: account?.accountHolder ?? "",
     });
     setFormError("");
     setPhotoError("");
@@ -295,6 +307,14 @@ export default function HostPage() {
     if (!price) return setFormError("시간당 가격을 숫자로 입력해 주세요.");
     if (!capacity) return setFormError("최대 인원을 입력해 주세요.");
 
+    const bankName = form.bankName.trim();
+    const accountNumber = form.accountNumber.trim();
+    const accountHolder = form.accountHolder.trim();
+    const filled = [bankName, accountNumber, accountHolder].filter(Boolean).length;
+    if (filled > 0 && filled < 3) {
+      return setFormError("입금 계좌는 은행·계좌번호·예금주를 모두 입력해 주세요.");
+    }
+
     const payload: SpaceInput = {
       name: form.name.trim(),
       category: form.category,
@@ -313,6 +333,9 @@ export default function HostPage() {
       timeDeal: form.timeDeal,
       hidden: form.hidden,
       imageUrls: form.photos,
+      bankName,
+      accountNumber,
+      accountHolder,
     };
 
     setSaving(true);
@@ -365,8 +388,12 @@ export default function HostPage() {
   async function handleBooking(id: string, status: "confirmed" | "cancelled") {
     setBusyBooking(id);
     try {
-      await setBookingStatus(id, status);
-      setToast(status === "confirmed" ? "예약을 승인했어요." : "예약을 거절했어요.");
+      await setBookingStatus(id, status, status === "cancelled" ? "host" : null);
+      setToast(
+        status === "confirmed"
+          ? "입금을 확인해 예약을 확정했어요."
+          : "예약을 거절했어요. 그 시간대는 다시 예약받을 수 있어요."
+      );
     } catch (err) {
       setToast(err instanceof Error ? err.message : "변경에 실패했어요.");
     } finally {
@@ -514,22 +541,23 @@ export default function HostPage() {
                 </button>
               </div>
               <div className="mt-2 divide-y divide-ink-line">
-                {myBookings.slice(0, 4).map((booking) => (
-                  <div key={booking.id} className="flex items-center gap-3 py-2.5">
-                    <span className={cn("badge shrink-0", STATUS_STYLE[booking.status])}>
-                      {STATUS_LABEL[booking.status]}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-bold text-ink">
-                        {booking.guestName} · {booking.spaceName}
-                      </p>
-                      <p className="text-[10px] text-ink-mute">
-                        {formatDate(booking.date)} {formatTime(booking.startTime)} · {booking.guests}명
-                      </p>
+                {myBookings.slice(0, 4).map((booking) => {
+                  const meta = bookingStatusMeta(booking);
+                  return (
+                    <div key={booking.id} className="flex items-center gap-3 py-2.5">
+                      <span className={cn("badge shrink-0", meta.style)}>{meta.label}</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-bold text-ink">
+                          {booking.guestName} · {booking.spaceName}
+                        </p>
+                        <p className="text-[10px] text-ink-mute">
+                          {formatDate(booking.date)} {formatTime(booking.startTime)} · {booking.guests}명
+                        </p>
+                      </div>
+                      <span className="shrink-0 text-xs font-extrabold text-ink">{wonShort(booking.totalAmount)}</span>
                     </div>
-                    <span className="shrink-0 text-xs font-extrabold text-ink">{wonShort(booking.totalAmount)}</span>
-                  </div>
-                ))}
+                  );
+                })}
                 {myBookings.length === 0 && (
                   <p className="py-8 text-center text-xs text-ink-mute">아직 들어온 예약이 없어요.</p>
                 )}
@@ -672,6 +700,25 @@ export default function HostPage() {
                       </button>
                     </div>
 
+                    {spaceAccounts[space.id] ? (
+                      <div className="mt-1.5 flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-2 text-[10px] text-emerald-700">
+                        <CheckIcon size={11} className="shrink-0" />
+                        <span className="min-w-0 truncate font-semibold">
+                          입금 계좌 · {spaceAccounts[space.id].bankName} {spaceAccounts[space.id].accountNumber}
+                        </span>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => openEdit(space)}
+                        className="mt-1.5 flex w-full items-center gap-1.5 rounded-lg bg-amber-50 px-2.5 py-2 text-left text-[10px] font-semibold text-amber-700 transition hover:bg-amber-100"
+                      >
+                        <span className="shrink-0">⚠️</span>
+                        <span className="min-w-0 flex-1">입금 계좌 미등록 · 손님에게 입금 안내가 나가지 않아요</span>
+                        <span className="shrink-0 underline">등록</span>
+                      </button>
+                    )}
+
                     <div className="mt-2.5 flex gap-2">
                       <button type="button" onClick={() => openEdit(space)} className="btn-ghost btn-sm flex-1">
                         수정
@@ -738,14 +785,14 @@ export default function HostPage() {
                 <p className="text-xs text-ink-mute">결제 링크를 손님에게 보내면 예약이 바로 들어와요.</p>
               </div>
             ) : (
-              myBookings.map((booking) => (
+              myBookings.map((booking) => {
+                const meta = bookingStatusMeta(booking);
+                return (
                 <article key={booking.id} className="card p-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <span className={cn("badge", STATUS_STYLE[booking.status])}>
-                          {STATUS_LABEL[booking.status]}
-                        </span>
+                        <span className={cn("badge", meta.style)}>{meta.label}</span>
                         {booking.source === "link" && (
                           <span className="badge bg-brand-light text-brand">
                             <LinkIcon size={11} />
@@ -773,6 +820,8 @@ export default function HostPage() {
                         </a>
                         {booking.memo && <span className="text-ink-mute">요청: {booking.memo}</span>}
                       </div>
+
+                      <DepositInfoRow booking={booking} className="mt-2" />
                     </div>
 
                     <div className="flex shrink-0 items-center justify-between gap-3 sm:flex-col sm:items-end">
@@ -784,9 +833,9 @@ export default function HostPage() {
                               type="button"
                               disabled={busyBooking === booking.id}
                               onClick={() => void handleBooking(booking.id, "confirmed")}
-                              className="rounded-lg bg-brand px-3 py-1.5 text-[11px] font-bold text-white hover:bg-brand-dark disabled:opacity-60"
+                              className="rounded-lg bg-brand px-3 py-1.5 text-[11px] font-bold text-white shadow-sm hover:bg-brand-dark disabled:opacity-60"
                             >
-                              승인
+                              입금 확인(확정)
                             </button>
                             <button
                               type="button"
@@ -794,7 +843,7 @@ export default function HostPage() {
                               onClick={() => void handleBooking(booking.id, "cancelled")}
                               className="rounded-lg border border-ink-line px-3 py-1.5 text-[11px] font-bold text-ink-soft hover:border-red-200 hover:text-red-500 disabled:opacity-60"
                             >
-                              거절
+                              예약 거절
                             </button>
                           </>
                         )}
@@ -809,13 +858,16 @@ export default function HostPage() {
                           </button>
                         )}
                         {booking.status === "cancelled" && (
-                          <span className="text-[11px] text-ink-mute">종료된 예약</span>
+                          <span className="text-[11px] text-ink-mute">
+                            {booking.cancelReason === "expired" ? "입금 기한 만료로 자동 취소" : "종료된 예약"}
+                          </span>
                         )}
                       </div>
                     </div>
                   </div>
                 </article>
-              ))
+                );
+              })
             )}
           </div>
         </div>
@@ -1156,6 +1208,60 @@ export default function HostPage() {
                     className="input"
                   />
                 </div>
+              </div>
+
+              <div className="rounded-xl border border-brand/20 bg-brand-light/60 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[11px] font-extrabold text-ink">입금 받을 계좌</p>
+                  <span className="rounded-full bg-white px-2 py-0.5 text-[9px] font-bold text-brand">15분 입금 확인</span>
+                </div>
+                <p className="mt-0.5 text-[10px] leading-relaxed text-ink-mute">
+                  손님이 예약하면 이 계좌로 이용 요금을 입금합니다. 15분 안에 입금되지 않으면 예약은 자동으로 풀려요.
+                </p>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="label" htmlFor="space-bank">
+                      은행
+                    </label>
+                    <input
+                      id="space-bank"
+                      value={form.bankName}
+                      onChange={(event) => setForm({ ...form, bankName: event.target.value })}
+                      placeholder="국민은행"
+                      className="input"
+                    />
+                  </div>
+                  <div>
+                    <label className="label" htmlFor="space-holder">
+                      예금주
+                    </label>
+                    <input
+                      id="space-holder"
+                      value={form.accountHolder}
+                      onChange={(event) => setForm({ ...form, accountHolder: event.target.value })}
+                      placeholder="박기남"
+                      className="input"
+                    />
+                  </div>
+                </div>
+                <div className="mt-2">
+                  <label className="label" htmlFor="space-account">
+                    계좌번호
+                  </label>
+                  <input
+                    id="space-account"
+                    value={form.accountNumber}
+                    onChange={(event) => setForm({ ...form, accountNumber: event.target.value })}
+                    placeholder="123-45-678901"
+                    inputMode="numeric"
+                    className="input"
+                  />
+                </div>
+                {!form.bankName.trim() && !form.accountNumber.trim() && !form.accountHolder.trim() && (
+                  <p className="mt-1.5 text-[10px] font-medium text-amber-700">
+                    계좌를 비워 두면 손님 예약 화면에는 &ldquo;계좌 미등록&rdquo; 안내가 나가요.
+                  </p>
+                )}
               </div>
 
               <div>

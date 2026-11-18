@@ -134,6 +134,19 @@ export const STATUS_STYLE: Record<BookingStatus, string> = {
   cancelled: "bg-slate-100 text-slate-500",
 };
 
+/**
+ * 예약 상태 배지 — 15분 미입금으로 자동 취소된 건은 '취소'가 아니라 '기한만료'로 보여 준다.
+ */
+export function bookingStatusMeta(booking: {
+  status: BookingStatus;
+  cancelReason?: "expired" | "host" | "guest" | null;
+}): { label: string; style: string } {
+  if (booking.status === "cancelled" && booking.cancelReason === "expired") {
+    return { label: "기한만료", style: "bg-slate-100 text-slate-500" };
+  }
+  return { label: STATUS_LABEL[booking.status], style: STATUS_STYLE[booking.status] };
+}
+
 export const ROLE_LABEL: Record<Role, string> = {
   guest: "게스트",
   host: "사장님",

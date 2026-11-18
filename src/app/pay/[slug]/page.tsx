@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useApp } from "@/components/AppProvider";
 import { BookingConsent } from "@/components/ConsentCheckbox";
+import { DepositGuide } from "@/components/DepositGuide";
 import { LogoMark, MascotAvatar } from "@/components/Logo";
 import { SpaceMedia } from "@/components/SpaceCard";
 import { CheckIcon, ClockIcon, PinIcon, UsersIcon } from "@/components/Icons";
@@ -123,7 +124,7 @@ export default function PayPage() {
               </span>
               <h1 className="mt-3 text-xl font-black text-ink">예약 신청이 접수됐어요</h1>
               <p className="mt-1 text-xs text-ink-mute">
-                예약번호 <b className="text-ink">{shortId(done.id)}</b> · 사장님이 확인하면 연락처로 확정 안내를 드려요.
+                예약번호 <b className="text-ink">{shortId(done.id)}</b> · 15분 안에 입금하면 예약이 확정돼요.
               </p>
             </div>
 
@@ -156,13 +157,7 @@ export default function PayPage() {
               </div>
             </dl>
 
-            <div className="mt-4 rounded-xl border border-brand/20 bg-brand-light p-4">
-              <p className="text-[11px] font-extrabold text-brand">예약 확정 안내</p>
-              <p className="mt-1 text-[11px] leading-relaxed text-ink-soft">
-                사장님이 예약 내용을 확인하고 연락처로 확정 여부를 알려드려요. 결제는 확정 안내와 함께 사장님이
-                알려드리는 방법으로 진행됩니다.
-              </p>
-            </div>
+            <DepositGuide booking={done} className="mt-4" />
 
             <div className="mt-4 flex flex-col gap-2">
               {user && (
@@ -363,7 +358,7 @@ export default function PayPage() {
                   {submitting ? "접수 중…" : "예약 신청하기"}
                 </button>
                 <p className="text-center text-[10px] leading-relaxed text-ink-mute">
-                  예약 신청 후 사장님이 확인하면 연락처로 확정 안내와 결제 방법을 알려드려요.
+                  예약 신청 후 15분 안에 안내된 계좌로 입금하면 사장님 확인을 거쳐 확정돼요.
                 </p>
               </div>
             </form>

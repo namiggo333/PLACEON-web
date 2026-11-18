@@ -17,7 +17,8 @@ import {
   UsersIcon,
 } from "@/components/Icons";
 import { isAdminEmail } from "@/lib/admin";
-import { CATEGORY_MAP, STATUS_LABEL, STATUS_STYLE } from "@/lib/constants";
+import { CATEGORY_MAP, bookingStatusMeta } from "@/lib/constants";
+import { DepositInfoRow } from "@/components/DepositInfoRow";
 import { fetchAdminData, patchSpace, removeSpace, updateBookingStatus, type AdminData } from "@/lib/db";
 import { revalidateHomeCache } from "@/lib/revalidate";
 import {
@@ -306,7 +307,11 @@ export default function AdminPage() {
   async function changeBookingStatus(booking: Booking, status: BookingStatus) {
     setBusyId(booking.id);
     try {
-      const updated = await updateBookingStatus(booking.id, status);
+      const updated = await updateBookingStatus(
+        booking.id,
+        status,
+        status === "cancelled" ? "host" : null
+      );
       if (updated) {
         setData((prev) =>
           prev
@@ -315,7 +320,11 @@ export default function AdminPage() {
         );
       }
       setToast(
-        status === "confirmed" ? "예약을 확정했어요." : status === "cancelled" ? "예약을 취소했어요." : "예약을 대기 상태로 되돌렸어요."
+        status === "confirmed"
+          ? "입금을 확인해 예약을 확정했어요."
+          : status === "cancelled"
+            ? "예약을 취소했어요."
+            : "예약을 대기 상태로 되돌렸어요."
       );
     } catch (err) {
       setToast(err instanceof Error ? err.message : "예약 상태를 바꾸지 못했어요.");
@@ -722,9 +731,12 @@ export default function AdminPage() {
                         <td className="px-3 py-2.5 text-ink-soft">{booking.guests}명</td>
                         <td className="px-3 py-2.5 text-right font-extrabold text-ink">{won(booking.totalAmount)}</td>
                         <td className="px-3 py-2.5">
-                          <span className={cn("badge", STATUS_STYLE[booking.status])}>
-                            {STATUS_LABEL[booking.status]}
+                          <span className={cn("badge", bookingStatusMeta(booking).style)}>
+                            {bookingStatusMeta(booking).label}
                           </span>
+                          {booking.status === "pending" && (
+                            <DepositInfoRow booking={booking} className="mt-1.5 w-[210px]" />
+                          )}
                         </td>
                         <td className="px-3 py-2.5">
                           <div className="flex justify-end gap-1">
@@ -735,7 +747,8 @@ export default function AdminPage() {
                                 onClick={() => void changeBookingStatus(booking, "confirmed")}
                                 className="inline-flex items-center gap-0.5 rounded-md bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-600 hover:bg-emerald-100 disabled:opacity-50"
                               >
-                                <CheckIcon size={11} /> 확정
+                                <CheckIcon size={11} />
+                                {booking.status === "pending" ? "입금 확인" : "확정"}
                               </button>
                             )}
                             {booking.status !== "cancelled" ? (
@@ -745,7 +758,8 @@ export default function AdminPage() {
                                 onClick={() => void changeBookingStatus(booking, "cancelled")}
                                 className="inline-flex items-center gap-0.5 rounded-md bg-red-50 px-2 py-1 text-[10px] font-bold text-red-500 hover:bg-red-100 disabled:opacity-50"
                               >
-                                <CloseIcon size={11} /> 취소
+                                <CloseIcon size={11} />
+                                {booking.status === "pending" ? "거절" : "취소"}
                               </button>
                             ) : (
                               <button
@@ -769,8 +783,8 @@ export default function AdminPage() {
                 {filteredBookings.map((booking) => (
                   <article key={booking.id} className="card p-3.5">
                     <div className="flex items-center gap-1.5">
-                      <span className={cn("badge", STATUS_STYLE[booking.status])}>
-                        {STATUS_LABEL[booking.status]}
+                      <span className={cn("badge", bookingStatusMeta(booking).style)}>
+                        {bookingStatusMeta(booking).label}
                       </span>
                       <span className="font-mono text-[10px] text-ink-mute">No. {shortId(booking.id)}</span>
                       <span className="text-[10px] text-ink-mute">
@@ -785,6 +799,7 @@ export default function AdminPage() {
                       {formatDate(booking.date)} {formatTime(booking.startTime)} ~{" "}
                       {endTime(booking.startTime, booking.hours)} · {booking.hours}시간 · {booking.guests}명
                     </p>
+                    {booking.status === "pending" && <DepositInfoRow booking={booking} className="mt-1.5" />}
                     <div className="mt-2 flex items-center justify-between gap-2">
                       <span className="text-sm font-black text-ink">{won(booking.totalAmount)}</span>
                       <div className="flex gap-1.5">
@@ -795,7 +810,7 @@ export default function AdminPage() {
                             onClick={() => void changeBookingStatus(booking, "confirmed")}
                             className="rounded-lg bg-emerald-50 px-2.5 py-1.5 text-[11px] font-bold text-emerald-600 disabled:opacity-50"
                           >
-                            확정
+                            {booking.status === "pending" ? "입금 확인" : "확정"}
                           </button>
                         )}
                         {booking.status !== "cancelled" ? (
@@ -805,7 +820,7 @@ export default function AdminPage() {
                             onClick={() => void changeBookingStatus(booking, "cancelled")}
                             className="rounded-lg bg-red-50 px-2.5 py-1.5 text-[11px] font-bold text-red-500 disabled:opacity-50"
                           >
-                            취소
+                            {booking.status === "pending" ? "거절" : "취소"}
                           </button>
                         ) : (
                           <button

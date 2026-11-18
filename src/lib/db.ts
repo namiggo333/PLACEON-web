@@ -3,9 +3,11 @@ import { mapBooking, mapProfile, mapSpace, type BookingRow, type ProfileRow, typ
 import { createSeedBookings, createSeedProfiles, createSeedSpaces, DEMO_PASSWORDS } from "./seed";
 import { supabase } from "./supabase";
 import type {
+  BankAccount,
   Booking,
   BookingInput,
   BookingStatus,
+  CancelReason,
   Profile,
   Role,
   Space,
@@ -14,12 +16,16 @@ import type {
 
 const DB_KEY = "placeon.db.v1";
 const SESSION_KEY = "placeon.session.v1";
+/** 입금 기한(분) — DB 의 create_booking RPC(now() + 15분)와 같은 값이어야 한다. */
+export const DEPOSIT_WINDOW_MINUTES = 15;
 
 interface LocalDB {
   profiles: Profile[];
   passwords: Record<string, string>;
   spaces: Space[];
   bookings: Booking[];
+  /** spaceId → 입금 계좌 (미리보기 모드 전용) */
+  accounts: Record<string, BankAccount>;
 }
 
 /* ------------------------------------------------------------------ */
@@ -27,12 +33,35 @@ interface LocalDB {
 /* ------------------------------------------------------------------ */
 
 function emptyDB(): LocalDB {
+  const spaces = createSeedSpaces();
+  const accounts: Record<string, BankAccount> = {};
+  for (const space of spaces) {
+    accounts[space.id] = { bankName: "국민은행", accountNumber: "123-45-678901", accountHolder: space.hostName };
+  }
   return {
     profiles: createSeedProfiles(),
     passwords: { ...DEMO_PASSWORDS },
-    spaces: createSeedSpaces(),
+    spaces,
     bookings: createSeedBookings(),
+    accounts,
   };
+}
+
+/** 지난 pending 예약을 cancelled(사유 expired)로 정리한다. (미리보기 모드) */
+function sweepExpiredBookings(db: LocalDB): boolean {
+  const now = Date.now();
+  let changed = false;
+  for (const booking of db.bookings) {
+    if (booking.status !== "pending") continue;
+    const limit = booking.expiresAt ? new Date(booking.expiresAt).getTime() : null;
+    const started = booking.date && booking.startTime ? new Date(`${booking.date}T${booking.startTime}:00`).getTime() : null;
+    if ((limit !== null && limit < now) || (started !== null && started < now)) {
+      booking.status = "cancelled";
+      booking.cancelReason = "expired";
+      changed = true;
+    }
+  }
+  return changed;
 }
 
 function readDB(): LocalDB {
@@ -45,12 +74,15 @@ function readDB(): LocalDB {
       return seeded;
     }
     const parsed = JSON.parse(raw) as LocalDB;
-    return {
+    const db: LocalDB = {
       profiles: parsed.profiles ?? [],
       passwords: parsed.passwords ?? {},
       spaces: parsed.spaces ?? [],
       bookings: parsed.bookings ?? [],
+      accounts: parsed.accounts ?? {},
     };
+    if (sweepExpiredBookings(db)) writeDB(db);
+    return db;
   } catch {
     return emptyDB();
   }
@@ -248,7 +280,82 @@ function spaceRowPayload(input: SpaceInput, host: Profile) {
   };
 }
 
+/* ------------------------------------------------------------------ */
+/* space accounts (사장님 입금 계좌)                                    */
+/* ------------------------------------------------------------------ */
+
+function accountFromInput(input: Partial<SpaceInput>): BankAccount | null {
+  if (input.bankName === undefined && input.accountNumber === undefined && input.accountHolder === undefined) {
+    return null;
+  }
+  return {
+    bankName: (input.bankName ?? "").trim(),
+    accountNumber: (input.accountNumber ?? "").trim(),
+    accountHolder: (input.accountHolder ?? "").trim(),
+  };
+}
+
+/**
+ * 내가 관리하는 공간의 입금 계좌 목록 (spaceId → 계좌).
+ * Supabase 모드에서는 RLS(`space_accounts_select_owner`)가 본인·관리자 범위만 돌려준다.
+ */
+export async function fetchSpaceAccounts(): Promise<Record<string, BankAccount>> {
+  if (supabase) {
+    const { data, error } = await supabase.from("space_accounts").select("*");
+    if (error) {
+      console.error("[db] 입금 계좌를 불러오지 못했어요.", error);
+      return {};
+    }
+    const map: Record<string, BankAccount> = {};
+    for (const row of data ?? []) {
+      map[row.space_id as string] = {
+        bankName: row.bank_name ?? "",
+        accountNumber: row.account_number ?? "",
+        accountHolder: row.account_holder ?? "",
+      };
+    }
+    return map;
+  }
+  return readDB().accounts;
+}
+
+/** 공간별 입금 계좌 저장 (비우면 계좌 미등록 상태가 된다). */
+export async function saveSpaceAccount(spaceId: string, account: BankAccount): Promise<void> {
+  const bankName = account.bankName.trim();
+  const accountNumber = account.accountNumber.trim();
+  const accountHolder = account.accountHolder.trim();
+
+  if (supabase) {
+    if (!bankName && !accountNumber && !accountHolder) {
+      const { error } = await supabase.from("space_accounts").delete().eq("space_id", spaceId);
+      if (error) throw new Error(`입금 계좌를 삭제하지 못했어요. (${error.message})`);
+      return;
+    }
+    const { error } = await supabase.from("space_accounts").upsert(
+      {
+        space_id: spaceId,
+        bank_name: bankName,
+        account_number: accountNumber,
+        account_holder: accountHolder,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "space_id" }
+    );
+    if (error) throw new Error(`입금 계좌를 저장하지 못했어요. (${error.message})`);
+    return;
+  }
+
+  const db = readDB();
+  if (!bankName && !accountNumber && !accountHolder) {
+    delete db.accounts[spaceId];
+  } else {
+    db.accounts[spaceId] = { bankName, accountNumber, accountHolder };
+  }
+  writeDB(db);
+}
+
 export async function insertSpace(input: SpaceInput, host: Profile): Promise<Space> {
+  const account = accountFromInput(input);
   if (supabase) {
     const { data, error } = await supabase
       .from("spaces")
@@ -256,7 +363,16 @@ export async function insertSpace(input: SpaceInput, host: Profile): Promise<Spa
       .select("*")
       .single();
     if (error) throw new Error(`공간을 등록하지 못했어요. (${error.message})`);
-    return mapSpace(data as SpaceRow);
+    const created = mapSpace(data as SpaceRow);
+    if (account) {
+      try {
+        await saveSpaceAccount(created.id, account);
+      } catch (accountError) {
+        console.error("[db] 입금 계좌 저장 실패", accountError);
+        throw accountError;
+      }
+    }
+    return created;
   }
   const db = readDB();
   const space: Space = {
@@ -284,6 +400,7 @@ export async function insertSpace(input: SpaceInput, host: Profile): Promise<Spa
     createdAt: new Date().toISOString(),
   };
   db.spaces.unshift(space);
+  if (account) db.accounts[space.id] = account;
   writeDB(db);
   return space;
 }
@@ -313,6 +430,8 @@ export async function patchSpace(
     if (patch.hidden !== undefined) row.is_hidden = patch.hidden;
     const { data, error } = await supabase.from("spaces").update(row).eq("id", id).select("*").single();
     if (error) throw new Error(`공간 정보를 수정하지 못했어요. (${error.message})`);
+    const account = accountFromInput(patch);
+    if (account) await saveSpaceAccount(id, account);
     return mapSpace(data as SpaceRow);
   }
   const db = readDB();
@@ -320,6 +439,11 @@ export async function patchSpace(
   if (index < 0) return null;
   const updated: Space = { ...db.spaces[index], ...patch };
   db.spaces[index] = updated;
+  const account = accountFromInput(patch);
+  if (account) {
+    if (!account.bankName && !account.accountNumber && !account.accountHolder) delete db.accounts[id];
+    else db.accounts[id] = account;
+  }
   writeDB(db);
   return updated;
 }
@@ -401,6 +525,8 @@ export async function insertBooking(input: BookingInput, user: Profile | null): 
   }
 
   const db = readDB();
+  const account = db.accounts[space.id];
+  const now = Date.now();
   const booking: Booking = {
     id: crypto.randomUUID(),
     spaceId: space.id,
@@ -417,7 +543,12 @@ export async function insertBooking(input: BookingInput, user: Profile | null): 
     status: "pending",
     memo: input.memo ?? "",
     source: input.source ?? "web",
-    createdAt: new Date().toISOString(),
+    createdAt: new Date(now).toISOString(),
+    expiresAt: new Date(now + DEPOSIT_WINDOW_MINUTES * 60 * 1000).toISOString(),
+    payBankName: account?.bankName ?? "",
+    payAccountNumber: account?.accountNumber ?? "",
+    payAccountHolder: account?.accountHolder ?? "",
+    cancelReason: null,
   };
   db.bookings.unshift(booking);
   writeDB(db);
@@ -465,21 +596,48 @@ export async function fetchAdminData(): Promise<AdminData> {
   };
 }
 
-export async function updateBookingStatus(id: string, status: BookingStatus): Promise<Booking | null> {
+export async function updateBookingStatus(
+  id: string,
+  status: BookingStatus,
+  reason: CancelReason | null = null
+): Promise<Booking | null> {
   if (supabase) {
-    const { data, error } = await supabase
-      .from("bookings")
-      .update({ status })
-      .eq("id", id)
-      .select("*")
-      .single();
-    if (error) throw new Error(`예약 상태를 바꾸지 못했어요. (${error.message})`);
-    return mapBooking(data as BookingRow);
+    // 상태 변경은 서버 API 한 곳에서: 권한 확인 + 사장님 알림 메일 + 만료 기한 재설정.
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+    if (!token) throw new Error("로그인이 끝났어요. 다시 로그인해 주세요.");
+
+    const response = await fetch("/api/bookings/status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ bookingId: id, status, reason }),
+    });
+
+    let payload: { booking?: BookingRow; error?: string } | null = null;
+    try {
+      payload = (await response.json()) as { booking?: BookingRow; error?: string };
+    } catch {
+      payload = null;
+    }
+    if (!response.ok || !payload?.booking) {
+      throw new Error(payload?.error ?? "예약 상태를 바꾸지 못했어요. 잠시 후 다시 시도해 주세요.");
+    }
+    return mapBooking(payload.booking);
   }
+
   const db = readDB();
   const index = db.bookings.findIndex((b) => b.id === id);
   if (index < 0) return null;
-  db.bookings[index] = { ...db.bookings[index], status };
+  const current = db.bookings[index];
+  db.bookings[index] = {
+    ...current,
+    status,
+    cancelReason: status === "cancelled" ? (reason ?? "host") : null,
+    expiresAt:
+      status === "pending"
+        ? new Date(Date.now() + DEPOSIT_WINDOW_MINUTES * 60 * 1000).toISOString()
+        : current.expiresAt,
+  };
   writeDB(db);
   return db.bookings[index];
 }

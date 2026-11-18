@@ -4,11 +4,13 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import {
   fetchBookings,
   fetchSpaces,
+  fetchSpaceAccounts,
   getSessionProfile,
   insertBooking,
   insertSpace,
   patchSpace,
   removeSpace,
+  saveSpaceAccount,
   signInWithEmail,
   signOutUser,
   signUpWithEmail,
@@ -18,7 +20,17 @@ import {
 import { dataMode } from "@/lib/supabase";
 import { revalidateHomeCache } from "@/lib/revalidate";
 import { DEMO_ACCOUNTS } from "@/lib/constants";
-import type { Booking, BookingInput, BookingStatus, Profile, Role, Space, SpaceInput } from "@/lib/types";
+import type {
+  BankAccount,
+  Booking,
+  BookingInput,
+  BookingStatus,
+  CancelReason,
+  Profile,
+  Role,
+  Space,
+  SpaceInput,
+} from "@/lib/types";
 
 interface AppContextValue {
   ready: boolean;
@@ -28,6 +40,9 @@ interface AppContextValue {
   /** 손님에게 보여지는 공간 목록 (비공개 처리한 공간은 사장님 본인에게만 남는다) */
   visibleSpaces: Space[];
   bookings: Booking[];
+  /** 공간별 사장님 입금 계좌 (spaceId → 계좌), 권한이 있는 공간만 내려온다 */
+  spaceAccounts: Record<string, BankAccount>;
+  accountFor: (spaceId: string) => BankAccount | null;
   signIn: (email: string, password: string) => Promise<Profile>;
   signUp: (input: { email: string; password: string; name: string; role: Role; phone?: string }) => Promise<Profile>;
   demoSignIn: (role: Role) => Promise<Profile>;
@@ -40,7 +55,8 @@ interface AppContextValue {
   ) => Promise<void>;
   deleteSpace: (id: string) => Promise<void>;
   createBooking: (input: BookingInput) => Promise<Booking>;
-  setBookingStatus: (id: string, status: BookingStatus) => Promise<void>;
+  setBookingStatus: (id: string, status: BookingStatus, reason?: CancelReason | null) => Promise<void>;
+  saveAccount: (spaceId: string, account: BankAccount) => Promise<void>;
   findSpace: (idOrSlug: string) => Space | undefined;
   reset: () => void;
 }
@@ -52,6 +68,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<Profile | null>(null);
   const [spaces, setSpaces] = useState<Space[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [spaceAccounts, setSpaceAccounts] = useState<Record<string, BankAccount>>({});
 
   const bootstrap = useCallback(async () => {
     try {
@@ -60,6 +77,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setSpaces(spaceList);
       setUser(profile);
       setBookings(profile ? await fetchBookings(profile) : []);
+      setSpaceAccounts(await fetchSpaceAccounts());
     } catch (error) {
       console.error(error);
     } finally {
@@ -80,6 +98,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const profile = await signInWithEmail(email, password);
     setUser(profile);
     setBookings(await fetchBookings(profile));
+    setSpaceAccounts(await fetchSpaceAccounts());
     return profile;
   }, []);
 
@@ -88,6 +107,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const profile = await signUpWithEmail(input);
       setUser(profile);
       setBookings(await fetchBookings(profile));
+      setSpaceAccounts(await fetchSpaceAccounts());
       return profile;
     },
     []
@@ -119,6 +139,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(async () => {
     const spaceList = await fetchSpaces();
     setSpaces(spaceList);
+    setSpaceAccounts(await fetchSpaceAccounts());
     if (user) setBookings(await fetchBookings(user));
   }, [user]);
 
@@ -127,6 +148,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (!user) throw new Error("로그인 후 이용해 주세요.");
       const space = await insertSpace(input, user);
       setSpaces((prev) => [space, ...prev]);
+      setSpaceAccounts(await fetchSpaceAccounts());
       revalidateHomeCache();
       return space;
     },
@@ -139,10 +161,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (updated) {
         setSpaces((prev) => prev.map((space) => (space.id === id ? updated : space)));
       }
+      setSpaceAccounts(await fetchSpaceAccounts());
       revalidateHomeCache();
     },
     []
   );
+
+  const saveAccount = useCallback(async (spaceId: string, account: BankAccount) => {
+    await saveSpaceAccount(spaceId, account);
+    setSpaceAccounts(await fetchSpaceAccounts());
+  }, []);
 
   const deleteSpace = useCallback(async (id: string) => {
     await removeSpace(id);
@@ -160,12 +188,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [user]
   );
 
-  const setBookingStatus = useCallback(async (id: string, status: BookingStatus) => {
-    const updated = await updateBookingStatus(id, status);
-    if (updated) {
-      setBookings((prev) => prev.map((booking) => (booking.id === id ? updated : booking)));
-    }
-  }, []);
+  const setBookingStatus = useCallback(
+    async (id: string, status: BookingStatus, reason: CancelReason | null = null) => {
+      const updated = await updateBookingStatus(id, status, reason);
+      if (updated) {
+        setBookings((prev) => prev.map((booking) => (booking.id === id ? updated : booking)));
+      }
+    },
+    []
+  );
+
+  const accountFor = useCallback((spaceId: string) => spaceAccounts[spaceId] ?? null, [spaceAccounts]);
 
   const findSpace = useCallback(
     (idOrSlug: string) => spaces.find((space) => space.id === idOrSlug || space.paySlug === idOrSlug),
@@ -189,6 +222,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       spaces,
       visibleSpaces,
       bookings,
+      spaceAccounts,
+      accountFor,
       signIn,
       signUp,
       demoSignIn,
@@ -199,6 +234,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       deleteSpace,
       createBooking,
       setBookingStatus,
+      saveAccount,
       findSpace,
       reset,
     }),
@@ -208,6 +244,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       spaces,
       visibleSpaces,
       bookings,
+      spaceAccounts,
+      accountFor,
       signIn,
       signUp,
       demoSignIn,
@@ -218,6 +256,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       deleteSpace,
       createBooking,
       setBookingStatus,
+      saveAccount,
       findSpace,
       reset,
     ]

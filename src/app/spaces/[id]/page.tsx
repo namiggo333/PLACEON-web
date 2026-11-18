@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useApp } from "@/components/AppProvider";
 import { BookingConsent } from "@/components/ConsentCheckbox";
+import { DepositGuide } from "@/components/DepositGuide";
 import { SpaceCard, SpaceMedia } from "@/components/SpaceCard";
 import { MascotAvatar } from "@/components/Logo";
 import {
@@ -225,7 +226,8 @@ export default function SpaceDetailPage() {
           <section className="mt-7 border-t border-ink-line pt-6">
             <h2 className="text-base font-extrabold text-ink">이용 안내</h2>
             <ul className="mt-2 space-y-1.5 text-sm leading-relaxed text-ink-soft">
-              <li>· 예약 신청 후 사장님이 확인하면 연락처로 확정 안내를 드려요.</li>
+              <li>· 예약 신청 후 15분 안에 사장님 계좌로 입금해 주세요. 확인되면 예약이 확정돼요.</li>
+              <li>· 15분 안에 입금이 확인되지 않으면 예약은 자동으로 풀려 다른 손님이 예약할 수 있어요.</li>
               <li>· 이용 시작 20분 전까지 도착해 주시면 세팅 시간을 드릴 수 있어요.</li>
               <li>· 실내 음주는 공간 규칙에 따라 가능하며, 반려동물은 사전 문의해 주세요.</li>
               <li>· 이용 3일 전까지 무료 취소, 이후에는 사장님과 협의가 필요해요.</li>
@@ -302,14 +304,7 @@ export default function SpaceDetailPage() {
                 </div>
               </dl>
 
-              <div className="mt-3 rounded-xl border border-brand/20 bg-brand-light p-3.5">
-                <p className="text-[11px] font-extrabold text-brand">예약 확정 안내</p>
-                <ol className="mt-1.5 list-decimal space-y-1 pl-4 text-[11px] leading-relaxed text-ink-soft">
-                  <li>사장님이 예약 내용을 확인하고, 연락처로 확정 여부를 알려드려요.</li>
-                  <li>결제는 확정 안내와 함께 사장님이 알려드리는 방법으로 진행돼요.</li>
-                  <li>이용 3일 전까지는 무료로 취소할 수 있어요.</li>
-                </ol>
-              </div>
+              <DepositGuide booking={done} className="mt-3" />
 
               <div className="mt-3 flex flex-col gap-2">
                 <Link href="/bookings" className="btn-primary w-full">
@@ -516,7 +511,7 @@ export default function SpaceDetailPage() {
                   {submitting ? "예약 신청 중…" : user ? "예약 신청하기" : "로그인하고 예약하기"}
                 </button>
                 <p className="text-center text-[10px] leading-relaxed text-ink-mute">
-                  예약 신청 후 사장님 확인 → 결제 안내 순서로 진행돼요.
+                  예약 신청 후 15분 안에 안내된 계좌로 입금하면 사장님 확인을 거쳐 확정돼요.
                 </p>
               </div>
             </form>

@@ -1,4 +1,4 @@
-import type { Booking, BookingStatus, Profile, Role, Space } from "./types";
+import type { Booking, BookingStatus, CancelReason, Profile, Role, Space } from "./types";
 
 export interface ProfileRow {
   id: string;
@@ -34,6 +34,13 @@ export interface SpaceRow {
   created_at: string | null;
 }
 
+export interface SpaceAccountRow {
+  space_id: string;
+  bank_name: string | null;
+  account_number: string | null;
+  account_holder: string | null;
+}
+
 export interface BookingRow {
   id: string;
   space_id: string;
@@ -53,6 +60,10 @@ export interface BookingRow {
   start_at?: string | null;
   end_at?: string | null;
   expires_at?: string | null;
+  pay_bank_name?: string | null;
+  pay_account_number?: string | null;
+  pay_account_holder?: string | null;
+  cancel_reason?: string | null;
   created_at: string | null;
 }
 
@@ -100,6 +111,10 @@ export function mapSpace(row: SpaceRow): Space {
 export function mapBooking(row: BookingRow): Booking {
   const status: BookingStatus =
     row.status === "confirmed" ? "confirmed" : row.status === "cancelled" ? "cancelled" : "pending";
+  const cancelReason: CancelReason | null =
+    row.cancel_reason === "expired" || row.cancel_reason === "host" || row.cancel_reason === "guest"
+      ? row.cancel_reason
+      : null;
   return {
     id: row.id,
     spaceId: row.space_id,
@@ -117,5 +132,10 @@ export function mapBooking(row: BookingRow): Booking {
     memo: row.memo ?? "",
     source: row.source === "link" ? "link" : "web",
     createdAt: row.created_at ?? new Date().toISOString(),
+    expiresAt: row.expires_at ?? null,
+    payBankName: row.pay_bank_name ?? "",
+    payAccountNumber: row.pay_account_number ?? "",
+    payAccountHolder: row.pay_account_holder ?? "",
+    cancelReason,
   };
 }

@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import type { BookingRow } from "@/lib/mappers";
+import { notifyHostOfBooking } from "@/lib/mail";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -152,5 +153,14 @@ export async function POST(request: Request) {
     return badRequest("예약을 접수하지 못했어요. 잠시 후 다시 시도해 주세요.", 500);
   }
 
-  return NextResponse.json({ booking: data as BookingRow }, { status: 201 });
+  // 사장님 알림 메일 — 실패해도 예약 접수는 그대로 성공 처리한다.
+  const booking = data as BookingRow;
+  try {
+    const mail = await notifyHostOfBooking("created", booking, { actor: "guest" });
+    if (!mail.sent) console.warn("[api/bookings] 사장님 알림을 보내지 못했어요.", mail);
+  } catch (mailError) {
+    console.error("[api/bookings] 사장님 알림 예외", mailError);
+  }
+
+  return NextResponse.json({ booking }, { status: 201 });
 }
