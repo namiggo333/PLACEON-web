@@ -5,13 +5,12 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useApp } from "@/components/AppProvider";
 import { CategoryChips } from "@/components/Bits";
-import { SearchPanel, TimeDealSection } from "@/components/HomeSections";
-import { SpaceGrid, SpaceMedia } from "@/components/SpaceCard";
-import { BoltIcon, ChevronRightIcon, SparkleIcon, StoreIcon } from "@/components/Icons";
+import { MascotBanner, SearchPanel, TimeDealSection } from "@/components/HomeSections";
+import { SpaceGrid } from "@/components/SpaceCard";
+import { ChevronRightIcon, SparkleIcon, StoreIcon } from "@/components/Icons";
 import { SloganUnderline } from "@/components/Logo";
 import { PRICE_RANGES, REGIONS } from "@/lib/constants";
 import { averageRating, filterSpaces, type SortKey } from "@/lib/filter";
-import { won } from "@/lib/format";
 import type { Category } from "@/lib/types";
 
 const SORTS: { key: SortKey; label: string }[] = [
@@ -34,7 +33,6 @@ export default function HomePage() {
   );
 
   const todayBookings = bookings.filter((booking) => booking.status !== "cancelled").length;
-  const showcase = visibleSpaces.find((space) => space.featured && space.timeDeal) ?? visibleSpaces[0];
 
   function selectCategory(category: Category | "all") {
     router.push(category === "all" ? "/search" : `/search?category=${category}`);
@@ -48,105 +46,91 @@ export default function HomePage() {
 
   return (
     <div>
-      <section className="relative overflow-hidden bg-[linear-gradient(180deg,#FFF0E2_0%,#FFF6ED_45%,#FFFDFB_82%,#FFFFFF_100%)]">
+      <section className="relative overflow-hidden bg-[linear-gradient(180deg,#FFF0F6_0%,#FFF6FA_45%,#FFFCFE_82%,#FFFFFF_100%)]">
         <div
           className="pointer-events-none absolute -right-24 -top-28 h-80 w-80 rounded-full bg-brand/15 blur-3xl"
           aria-hidden
         />
         <div
-          className="pointer-events-none absolute -left-24 top-40 h-72 w-72 rounded-full bg-[#FFD7B8]/70 blur-3xl"
+          className="pointer-events-none absolute -left-24 top-40 h-72 w-72 rounded-full bg-[#FFD9E9]/70 blur-3xl"
           aria-hidden
         />
-        <div className="container-page relative pb-8 pt-9 sm:pb-14 sm:pt-16">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/20 bg-white/80 px-3 py-1 text-[11px] font-bold text-brand">
-            <BoltIcon size={13} />
-            시간 단위로 빌리는 모든 공간
-          </span>
-
-          <div className="relative max-w-2xl">
-            <h1 className="mt-4 text-[31px] font-black leading-[1.22] tracking-[-0.04em] text-ink sm:text-[44px] lg:text-[48px]">
-              <span className="block">원하는 공간,</span>
-              <span className="block">
-                <span className="relative inline-block text-brand">
-                  지금 바로
-                  <SloganUnderline className="-bottom-1.5 sm:-bottom-2" />
-                </span>{" "}
-                찾아보세요!
+        <div className="container-page relative pb-8 pt-9 sm:pb-12 sm:pt-14">
+          <div className="grid gap-6 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:gap-10">
+            <div className="min-w-0">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/20 bg-white/80 px-3 py-1 text-[11px] font-bold text-brand">
+                <SparkleIcon size={13} />
+                찾고, 예약하고, 결제까지 — 한 번에!
               </span>
-            </h1>
-            <p className="mt-4 max-w-lg text-sm leading-relaxed text-ink-soft sm:text-base">
-              파티룸 · 키즈룸 · 연습실 · 촬영스튜디오 · 회의실 · 공유주방 · 루프탑 · 스터디룸.
-              <br className="hidden sm:block" />
-              실시간으로 비어 있는 공간을 골라 시간당 요금으로 예약하세요.
-            </p>
-          </div>
 
-          {showcase ? (
-            <div className="absolute right-4 top-16 hidden w-[288px] xl:block" aria-hidden>
-              <div className="rotate-2 rounded-2xl bg-white/95 p-3 shadow-float ring-1 ring-brand/10">
-                <div className="relative aspect-[16/10] overflow-hidden rounded-xl">
-                  <SpaceMedia space={showcase} />
-                  <span className="badge absolute left-2 top-2 bg-brand text-white">실시간 예약</span>
+              <h1 className="mt-4 text-[31px] font-black leading-[1.2] tracking-[-0.045em] text-ink sm:text-[42px] lg:text-[46px]">
+                <span className="block">원하는 공간,</span>
+                <span className="block">
+                  <span className="relative inline-block text-brand">
+                    지금 바로
+                    <SloganUnderline className="-bottom-1.5 text-brand sm:-bottom-2" />
+                  </span>{" "}
+                  찾아보세요!
+                </span>
+              </h1>
+
+              <p className="mt-3.5 max-w-lg text-sm leading-relaxed text-ink-soft sm:text-base">
+                파티룸 · 키즈룸 · 연습실 · 촬영스튜디오 · 회의실 · 공유주방 · 루프탑 · 스터디룸.
+                <br className="hidden sm:block" />
+                실시간으로 비어 있는 공간을 골라 시간당 요금으로 예약하세요.
+              </p>
+
+              <MascotBanner compact className="mt-5 lg:hidden" />
+
+              <div className="mt-5 max-w-3xl sm:mt-6">
+                <SearchPanel />
+              </div>
+
+              <div className="mt-6 flex max-w-md divide-x divide-brand/15 sm:max-w-lg">
+                <div className="pr-5 sm:pr-7">
+                  {ready ? (
+                    <p className="text-xl font-extrabold text-ink sm:text-2xl">{visibleSpaces.length}</p>
+                  ) : (
+                    <div className="skeleton h-7 w-12 sm:h-8" />
+                  )}
+                  <p className="mt-0.5 text-[11px] text-ink-mute">등록 공간</p>
                 </div>
-                <div className="px-1 pb-0.5 pt-2.5">
-                  <p className="truncate text-xs font-extrabold text-ink">{showcase.name}</p>
-                  <p className="mt-0.5 text-[10px] text-ink-mute">
-                    {showcase.region} {showcase.district} · 최대 {showcase.capacity}명
-                  </p>
-                  <div className="mt-1 flex items-baseline gap-1">
-                    <span className="text-sm font-black text-brand">
-                      {won(Math.round((showcase.pricePerHour * (100 - showcase.discountRate)) / 100))}
-                    </span>
-                    <span className="text-[10px] text-ink-mute">/시간</span>
-                  </div>
+                <div className="px-5 sm:px-7">
+                  {ready ? (
+                    <p className="text-xl font-extrabold text-ink sm:text-2xl">{averageRating(visibleSpaces)}</p>
+                  ) : (
+                    <div className="skeleton h-7 w-12 sm:h-8" />
+                  )}
+                  <p className="mt-0.5 text-[11px] text-ink-mute">평균 평점</p>
+                </div>
+                <div className="pl-5 sm:pl-7">
+                  {ready ? (
+                    <p className="text-xl font-extrabold text-ink sm:text-2xl">{todayBookings}</p>
+                  ) : (
+                    <div className="skeleton h-7 w-10 sm:h-8" />
+                  )}
+                  <p className="mt-0.5 text-[11px] text-ink-mute">내 예약 현황</p>
                 </div>
               </div>
-              <div className="ml-6 mt-3 inline-flex -rotate-1 items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-[10px] font-bold text-brand shadow-card ring-1 ring-brand/10">
-                <SparkleIcon size={12} />
-                사장님 자체 손님은 수수료 0%
-              </div>
             </div>
-          ) : ready ? null : (
-            <div className="absolute right-4 top-16 hidden w-[288px] xl:block" aria-hidden>
-              <div className="rotate-2 rounded-2xl bg-white/95 p-3 shadow-float ring-1 ring-brand/10">
-                <div className="skeleton aspect-[16/10] rounded-xl" />
-                <div className="space-y-2 px-1 pb-0.5 pt-2.5">
-                  <div className="skeleton h-3 w-3/4" />
-                  <div className="skeleton h-2.5 w-1/2" />
-                  <div className="skeleton h-4 w-1/3" />
-                </div>
-              </div>
-            </div>
-          )}
 
-          <div className="mt-7 max-w-3xl">
-            <SearchPanel />
-          </div>
-
-          <div className="mt-7 flex max-w-md divide-x divide-brand/15 sm:max-w-lg">
-            <div className="pr-5 sm:pr-7">
-              {ready ? (
-                <p className="text-xl font-extrabold text-ink sm:text-2xl">{visibleSpaces.length}</p>
-              ) : (
-                <div className="skeleton h-7 w-12 sm:h-8" />
-              )}
-              <p className="mt-0.5 text-[11px] text-ink-mute">등록 공간</p>
-            </div>
-            <div className="px-5 sm:px-7">
-              {ready ? (
-                <p className="text-xl font-extrabold text-ink sm:text-2xl">{averageRating(visibleSpaces)}</p>
-              ) : (
-                <div className="skeleton h-7 w-12 sm:h-8" />
-              )}
-              <p className="mt-0.5 text-[11px] text-ink-mute">평균 평점</p>
-            </div>
-            <div className="pl-5 sm:pl-7">
-              {ready ? (
-                <p className="text-xl font-extrabold text-ink sm:text-2xl">{todayBookings}</p>
-              ) : (
-                <div className="skeleton h-7 w-10 sm:h-8" />
-              )}
-              <p className="mt-0.5 text-[11px] text-ink-mute">내 예약 현황</p>
+            <div className="hidden lg:block">
+              <MascotBanner />
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5">
+                {[
+                  { icon: "⚡", label: "예약 3초" },
+                  { icon: "🩷", label: "사장님 수수료 0%" },
+                  { icon: "🔍", label: "실시간 공실" },
+                ].map((item) => (
+                  <span
+                    key={item.label}
+                    className="inline-flex items-center gap-1 rounded-full border border-brand/15 bg-white/90 px-2.5 py-1 text-[10.5px] font-bold text-ink-soft shadow-sm"
+                  >
+                    <span aria-hidden>{item.icon}</span>
+                    {item.label}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -233,14 +217,14 @@ export default function HomePage() {
           )}
         </section>
 
-        <section className="relative overflow-hidden rounded-xl2 bg-gradient-to-br from-[#14192D] via-[#1D2740] to-[#2A3350] p-6 text-white sm:p-8">
+        <section className="relative overflow-hidden rounded-xl3 bg-gradient-to-br from-[#1B1624] via-[#2A1B2C] to-[#4A1F38] p-6 text-white sm:p-8">
           <div
-            className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand/25 blur-3xl"
+            className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand/30 blur-3xl"
             aria-hidden
           />
-          <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-brand/20 px-2.5 py-1 text-[11px] font-bold text-[#FFB173]">
+          <div className="relative flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+            <div className="max-w-md">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-brand/25 px-2.5 py-1 text-[11px] font-bold text-[#FFB0CE]">
                 <StoreIcon size={13} /> 사장님을 위한 이곳저곳
               </span>
               <h2 className="mt-3 text-xl font-black leading-snug sm:text-2xl">
@@ -251,19 +235,25 @@ export default function HomePage() {
               <p className="mt-2 text-xs leading-relaxed text-white/70 sm:text-sm">
                 공간 등록 3분이면 끝. 예약 승인·공실 광고·타임특가·간편 결제 링크까지 사장님 센터에서 한 번에.
               </p>
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                <Link href="/host" className="btn bg-brand text-white hover:bg-brand-dark sm:w-auto">
+                  <SparkleIcon size={16} />
+                  사장님 센터 열기
+                </Link>
+                <Link
+                  href="/auth?mode=signup&role=host"
+                  className="btn border border-white/30 text-white hover:bg-white/10 sm:w-auto"
+                >
+                  무료로 공간 등록하기
+                </Link>
+              </div>
             </div>
-            <div className="flex shrink-0 flex-col gap-2 sm:w-52">
-              <Link href="/host" className="btn bg-brand text-white hover:bg-brand-dark">
-                <SparkleIcon size={16} />
-                사장님 센터 열기
-              </Link>
-              <Link
-                href="/auth?mode=signup&role=host"
-                className="btn border border-white/30 text-white hover:bg-white/10"
-              >
-                무료로 공간 등록하기
-              </Link>
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/mascot-wave.png"
+              alt="엄지척하는 이곳저곳 마스코트"
+              className="pointer-events-none hidden h-44 w-44 shrink-0 rounded-full object-cover ring-4 ring-white/15 sm:block lg:h-52 lg:w-52"
+            />
           </div>
         </section>
       </div>

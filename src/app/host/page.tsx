@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "@/components/AppProvider";
-import { LogoMark } from "@/components/Logo";
+import { LogoMark, MascotAvatar } from "@/components/Logo";
 import { DemoAccountButtons } from "@/components/Bits";
 import { SpaceMedia } from "@/components/SpaceCard";
 import {
@@ -391,9 +391,7 @@ export default function HostPage() {
     return (
       <div className="container-page py-12 sm:py-16">
         <div className="mx-auto max-w-md text-center">
-          <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-brand-light">
-            <LogoMark size={40} decorative />
-          </span>
+          <MascotAvatar size={92} className="mx-auto" />
           <h1 className="mt-4 text-xl font-black text-ink">사장님 센터</h1>
           <p className="mt-1.5 text-sm leading-relaxed text-ink-mute">
             공간을 등록하고 예약·광고·결제 링크를 관리하려면 사장님 계정으로 로그인해 주세요.
@@ -567,9 +565,9 @@ export default function HostPage() {
             </section>
           </div>
 
-          <section className="rounded-xl2 bg-gradient-to-br from-[#14192D] via-[#1D2740] to-[#3A2B28] p-5 text-white">
+          <section className="relative overflow-hidden rounded-xl2 bg-gradient-to-br from-[#1B1624] via-[#2A1B2C] to-[#4A1F38] p-5 text-white">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
+              <div className="max-w-sm">
                 <p className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold">
                   <SparkleIcon size={12} /> 무료 운영 단계
                 </p>
@@ -578,10 +576,13 @@ export default function HostPage() {
                   플랫폼 예약·전용 결제 링크 모두 수수료 없이 정산됩니다. 정식 오픈 시점과 요율은 사전에 안내드려요.
                 </p>
               </div>
-              <span className="rounded-xl bg-white/10 px-4 py-3 text-center">
-                <span className="block text-2xl font-black">0%</span>
-                <span className="block text-[10px] text-white/70">현재 수수료</span>
-              </span>
+              <div className="flex items-center gap-3">
+                <MascotAvatar size={64} className="hidden ring-white/30 sm:inline-grid" />
+                <span className="rounded-xl bg-white/10 px-4 py-3 text-center">
+                  <span className="block text-2xl font-black">0%</span>
+                  <span className="block text-[10px] text-white/70">현재 수수료</span>
+                </span>
+              </div>
             </div>
           </section>
         </div>
@@ -598,8 +599,8 @@ export default function HostPage() {
           </div>
 
           {mySpaces.length === 0 ? (
-            <div className="card mt-3 flex flex-col items-center gap-2 px-6 py-14 text-center">
-              <StoreIcon size={30} className="text-brand/60" />
+            <div className="card mt-3 flex flex-col items-center gap-2 px-6 py-12 text-center">
+              <MascotAvatar size={72} className="animate-floaty" />
               <p className="text-sm font-bold text-ink">아직 등록한 공간이 없어요</p>
               <p className="text-xs text-ink-mute">3분이면 공간을 등록하고 예약을 받을 수 있어요.</p>
               <button type="button" onClick={openCreate} className="btn-primary btn-sm mt-2">

@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useApp } from "@/components/AppProvider";
 import { SpaceCard, SpaceMedia } from "@/components/SpaceCard";
+import { MascotAvatar } from "@/components/Logo";
 import {
   ArrowLeftIcon,
   BoltIcon,
@@ -66,7 +67,7 @@ export default function SpaceDetailPage() {
   if (!space) {
     return (
       <div className="container-page py-20 text-center">
-        <p className="text-4xl">🧭</p>
+        <MascotAvatar size={84} className="mx-auto" />
         <h1 className="mt-3 text-xl font-extrabold">공간을 찾을 수 없어요</h1>
         <p className="mt-1 text-sm text-ink-mute">주소가 바뀌었거나 삭제된 공간이에요.</p>
         <Link href="/" className="btn-primary mt-5">
@@ -263,8 +264,11 @@ export default function SpaceDetailPage() {
           {done ? (
             <div className="card animate-pop-in p-5">
               <div className="flex flex-col items-center text-center">
-                <span className="grid h-12 w-12 place-items-center rounded-full bg-emerald-50 text-emerald-600">
-                  <CheckIcon size={26} />
+                <span className="relative">
+                  <MascotAvatar size={76} />
+                  <span className="absolute -bottom-1 -right-1 grid h-6 w-6 place-items-center rounded-full bg-emerald-500 text-white ring-2 ring-white">
+                    <CheckIcon size={14} />
+                  </span>
                 </span>
                 <h2 className="mt-3 text-lg font-black text-ink">예약 신청 완료!</h2>
                 <p className="mt-1 text-xs text-ink-mute">

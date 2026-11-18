@@ -3,6 +3,7 @@ import { CATEGORY_MAP } from "@/lib/constants";
 import { cn, won } from "@/lib/format";
 import type { Space } from "@/lib/types";
 import { StarIcon, UsersIcon } from "./Icons";
+import { MascotAvatar } from "./Logo";
 
 export function SpaceMedia({
   space,
@@ -143,9 +144,9 @@ export function SpaceGrid({
 }) {
   if (!spaces.length) {
     return (
-      <div className="card flex flex-col items-center justify-center gap-2 px-6 py-16 text-center">
-        <span className="text-3xl">🔍</span>
-        <p className="text-sm font-bold text-ink">{emptyTitle}</p>
+      <div className="card flex flex-col items-center justify-center gap-2 px-6 py-14 text-center">
+        <MascotAvatar size={76} className="animate-floaty" />
+        <p className="mt-1 text-sm font-bold text-ink">{emptyTitle}</p>
         <p className="text-xs text-ink-mute">{emptyHint}</p>
         {onReset && (
           <button type="button" onClick={onReset} className="btn-ghost btn-sm mt-2">

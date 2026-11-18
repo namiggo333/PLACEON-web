@@ -6,6 +6,7 @@ import { useApp } from "@/components/AppProvider";
 import { DemoAccountButtons } from "@/components/Bits";
 import { SpaceMedia } from "@/components/SpaceCard";
 import { CalendarIcon, CheckIcon, ClockIcon, LinkIcon, UsersIcon } from "@/components/Icons";
+import { MascotAvatar } from "@/components/Logo";
 import { STATUS_LABEL, STATUS_STYLE } from "@/lib/constants";
 import { cn, endTime, formatDate, formatRelativeDate, formatTime, shortId, won } from "@/lib/format";
 import type { BookingStatus, Role } from "@/lib/types";
@@ -70,7 +71,7 @@ export default function BookingsPage() {
     return (
       <div className="container-page py-12 sm:py-16">
         <div className="mx-auto max-w-md text-center">
-          <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-brand-light text-2xl">🗓️</span>
+          <MascotAvatar size={88} className="mx-auto" />
           <h1 className="mt-4 text-xl font-black text-ink">로그인하면 예약 내역을 볼 수 있어요</h1>
           <p className="mt-1.5 text-sm text-ink-mute">
             예약 상태 확인과 취소를 한 곳에서 관리해 보세요.
@@ -143,9 +144,9 @@ export default function BookingsPage() {
 
       <div className="mt-4 space-y-3">
         {filtered.length === 0 ? (
-          <div className="card flex flex-col items-center gap-2 px-6 py-16 text-center">
-            <CalendarIcon size={30} className="text-brand/60" />
-            <p className="text-sm font-bold text-ink">아직 예약 내역이 없어요</p>
+          <div className="card flex flex-col items-center gap-2 px-6 py-14 text-center">
+            <MascotAvatar size={76} className="animate-floaty" />
+            <p className="mt-1 text-sm font-bold text-ink">아직 예약 내역이 없어요</p>
             <p className="text-xs text-ink-mute">파티룸부터 스터디룸까지, 지금 비어 있는 공간을 찾아보세요.</p>
             <Link href="/search" className="btn-primary btn-sm mt-2">
               공간 찾기

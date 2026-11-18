@@ -52,9 +52,9 @@ export const CATEGORIES: {
     key: "kitchen",
     label: "공유주방",
     emoji: "🍳",
-    gradient: "from-[#FFE9D6] via-[#FFD8B5] to-[#FFC08A]",
-    pastel: "bg-[#FFEEDD]",
-    tone: "text-[#E07A28]",
+    gradient: "from-[#FFE3E9] via-[#FFD0D9] to-[#FFB9C8]",
+    pastel: "bg-[#FFECE6]",
+    tone: "text-[#E2624A]",
   },
   {
     key: "rooftop",
@@ -83,8 +83,8 @@ export const ALL_CATEGORY_STYLE = {
   key: "all" as const,
   label: "전체",
   emoji: "✨",
-  pastel: "bg-[#FFF1E5]",
-  tone: "text-[#FF6B00]",
+  pastel: "bg-[#FFE4EF]",
+  tone: "text-[#FF2E7E]",
 };
 
 export const REGIONS = [

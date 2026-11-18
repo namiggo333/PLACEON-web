@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useApp } from "@/components/AppProvider";
-import { LogoMark } from "@/components/Logo";
+import { LogoMark, MascotAvatar } from "@/components/Logo";
 import { SpaceMedia } from "@/components/SpaceCard";
 import { CheckIcon, ClockIcon, PinIcon, UsersIcon } from "@/components/Icons";
 import { CATEGORY_MAP, HOUR_OPTIONS, TIME_SLOTS } from "@/lib/constants";
@@ -48,7 +48,7 @@ export default function PayPage() {
     return (
       <div className="min-h-dvh bg-brand-light/60 px-4 py-16">
         <div className="mx-auto max-w-md rounded-xl2 bg-white p-8 text-center shadow-card">
-          <p className="text-4xl">🔗</p>
+          <MascotAvatar size={76} className="mx-auto" />
           <h1 className="mt-3 text-lg font-black text-ink">링크를 찾을 수 없어요</h1>
           <p className="mt-1 text-xs leading-relaxed text-ink-mute">
             사장님이 링크를 새로 만들었거나 공간이 삭제되었을 수 있어요. 사장님께 다시 링크를 요청해 주세요.
@@ -96,12 +96,13 @@ export default function PayPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-gradient-to-b from-brand-light via-[#FFF9F4] to-white">
+    <div className="min-h-dvh bg-gradient-to-b from-brand-light via-[#FFF8FB] to-white">
       <header className="border-b border-brand/10 bg-white/70 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
           <Link href="/" className="flex items-center gap-2" aria-label="이곳저곳 홈">
             <LogoMark size={30} decorative />
-            <span className="text-[17px] font-black tracking-[-0.03em] text-ink">이곳저곳</span>
+            <span className="text-[17px] font-black tracking-[-0.035em] text-ink">이곳저곳</span>
+            <MascotAvatar size={26} ring={false} className="ml-0.5 hidden sm:inline-grid" />
           </Link>
           <span className="badge bg-brand-light text-brand">간편 예약 · 로그인 없이</span>
         </div>
@@ -111,8 +112,11 @@ export default function PayPage() {
         {done ? (
           <div className="animate-pop-in rounded-xl2 bg-white p-6 shadow-float sm:p-8">
             <div className="flex flex-col items-center text-center">
-              <span className="grid h-14 w-14 place-items-center rounded-full bg-emerald-50 text-emerald-600">
-                <CheckIcon size={30} />
+              <span className="relative">
+                <MascotAvatar size={86} />
+                <span className="absolute -bottom-1 -right-1 grid h-7 w-7 place-items-center rounded-full bg-emerald-500 text-white ring-2 ring-white">
+                  <CheckIcon size={16} />
+                </span>
               </span>
               <h1 className="mt-3 text-xl font-black text-ink">예약 신청이 접수됐어요</h1>
               <p className="mt-1 text-xs text-ink-mute">

@@ -7,7 +7,91 @@ import { REGIONS } from "@/lib/constants";
 import { midnightCountdown, won } from "@/lib/format";
 import type { Space } from "@/lib/types";
 import { SpaceMedia } from "./SpaceCard";
-import { ClockIcon, PinIcon, SearchIcon, SparkleIcon, UsersIcon } from "./Icons";
+import { ChevronRightIcon, ClockIcon, PinIcon, SearchIcon, SparkleIcon, UsersIcon } from "./Icons";
+
+/** 홈 히어로의 마스코트 배너 — 마스코트가 크게 등장하는 브랜드 카드 */
+export function MascotBanner({
+  className,
+  compact = false,
+}: {
+  className?: string;
+  compact?: boolean;
+}) {
+  if (compact) {
+    return (
+      <div
+        className={`overflow-hidden rounded-xl3 bg-blush shadow-float ring-1 ring-white/70 ${
+          className ?? ""
+        }`}
+      >
+        <div className="relative aspect-[4/3]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/mascot-hero.png"
+            alt="핫핑크 야구모자와 돋보기를 든 이곳저곳 마스코트"
+            className="absolute inset-0 h-full w-full object-cover object-[50%_14%]"
+          />
+          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/85 px-2.5 py-1 text-[10px] font-extrabold text-brand shadow-sm backdrop-blur">
+            <SparkleIcon size={11} />
+            이곳저곳 PICK
+          </span>
+        </div>
+        <div className="flex items-center gap-2 bg-white px-3 py-2.5">
+          <p className="min-w-0 flex-1 text-[11.5px] font-extrabold leading-snug text-ink">
+            지금, 이곳저곳에서 특별한 공간을 만나보세요!
+          </p>
+          <Link
+            href="/search"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand text-white shadow-pop transition hover:bg-brand-dark"
+            aria-label="공간 둘러보기"
+          >
+            <ChevronRightIcon size={16} />
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={`relative aspect-[5/6] overflow-hidden rounded-xl3 bg-blush shadow-float ring-1 ring-white/70 ${
+        className ?? ""
+      }`}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/images/mascot-hero.png"
+        alt="핫핑크 야구모자와 돋보기를 든 이곳저곳 마스코트"
+        className="absolute inset-0 h-full w-full object-cover object-[50%_16%]"
+      />
+      <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/85 px-2.5 py-1 text-[10px] font-extrabold text-brand shadow-sm backdrop-blur">
+        <SparkleIcon size={11} />
+        이곳저곳 PICK
+      </span>
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-brand-deep/40 via-brand-deep/5 to-transparent p-3 pt-14 sm:p-3.5 sm:pt-16">
+        <div className="flex items-center gap-3 rounded-2xl bg-white p-3 shadow-card ring-1 ring-brand/10">
+          <div className="min-w-0 flex-1">
+            <p className="text-[12.5px] font-extrabold leading-snug text-ink sm:text-[13px]">
+              지금, 이곳저곳에서
+              <br />
+              특별한 공간을 만나보세요!
+            </p>
+            <p className="mt-0.5 truncate text-[10px] font-semibold text-ink-mute sm:text-[10.5px]">
+              찾고, 예약하고, 결제까지 한 번에
+            </p>
+          </div>
+          <Link
+            href="/search"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand text-white shadow-pop transition hover:bg-brand-dark"
+            aria-label="공간 둘러보기"
+          >
+            <ChevronRightIcon size={17} />
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function SearchPanel() {
   const router = useRouter();
@@ -97,7 +181,7 @@ export function TimeDealSection({ spaces }: { spaces: Space[] }) {
   if (!deals.length) return null;
 
   return (
-    <section className="overflow-hidden rounded-xl2 bg-gradient-to-br from-[#14192D] via-[#1D2740] to-[#3A2B28] px-4 py-6 sm:px-6">
+    <section className="overflow-hidden rounded-xl2 bg-gradient-to-br from-[#1B1624] via-[#2A1B2C] to-[#4A1F38] px-4 py-6 sm:px-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-white">
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand text-white shadow-pop">

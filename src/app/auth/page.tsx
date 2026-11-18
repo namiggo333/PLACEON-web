@@ -6,7 +6,7 @@ import { Suspense, useState } from "react";
 import { useApp } from "@/components/AppProvider";
 import { DemoAccountButtons } from "@/components/Bits";
 import { CheckIcon } from "@/components/Icons";
-import { LogoMark } from "@/components/Logo";
+import { LogoMark, MascotAvatar } from "@/components/Logo";
 import { ROLE_LABEL } from "@/lib/constants";
 import { cn } from "@/lib/format";
 import type { Role } from "@/lib/types";
@@ -95,7 +95,15 @@ function AuthContent() {
               ))}
             </ul>
           </div>
-          <p className="text-[10px] text-white/60">© 2026 이곳저곳 · 공간대여 예약·결제·광고 통합 플랫폼</p>
+          <div className="mt-8 flex items-end gap-3">
+            <MascotAvatar size={84} className="ring-white/50" />
+            <p className="mb-1 text-[11px] font-semibold leading-relaxed text-white/85">
+              로그인 한 번이면,
+              <br />
+              예약부터 결제까지 이어져요.
+            </p>
+          </div>
+          <p className="mt-5 text-[10px] text-white/60">© 2026 이곳저곳 · 공간대여 예약·결제·광고 통합 플랫폼</p>
         </div>
 
         <div className="p-6 sm:p-8">
@@ -146,7 +154,8 @@ function AuthContent() {
                 ))}
               </div>
 
-              <h2 className="mt-5 text-xl font-black tracking-tight text-ink">
+              <h2 className="mt-5 flex items-center gap-2 text-xl font-black tracking-tight text-ink">
+                <MascotAvatar size={32} ring={false} className="lg:hidden" />
                 {tab === "login" ? "다시 오셨네요!" : "이곳저곳 시작하기"}
               </h2>
               <p className="mt-1 text-xs text-ink-mute">

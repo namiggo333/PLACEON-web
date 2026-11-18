@@ -6,29 +6,34 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          DEFAULT: "#FF6B00",
-          dark: "#F05F00",
-          deep: "#C74B00",
-          light: "#FFF7F2",
-          soft: "#FFE9D6",
-          glow: "#FF8A2B",
+          DEFAULT: "#FF2E7E",
+          hot: "#F01D71",
+          dark: "#E01867",
+          deep: "#B80D54",
+          light: "#FFF0F6",
+          soft: "#FFE4EF",
+          glow: "#FF5C9D",
         },
         ink: {
-          DEFAULT: "#14192D",
-          soft: "#4A5169",
-          mute: "#8A90A3",
-          line: "#EDEFF4",
+          DEFAULT: "#1B1624",
+          deep: "#14192D",
+          soft: "#4F4757",
+          mute: "#8E8798",
+          line: "#F2ECF1",
         },
-        cream: "#FFF7F2",
-        peach: "#FFE9D6",
+        blush: "#FFD9E9",
+        cream: "#FFF0F6",
+        peach: "#FFE4EF",
       },
       boxShadow: {
-        card: "0 2px 10px rgba(20, 25, 45, 0.06)",
-        pop: "0 16px 40px rgba(255, 107, 0, 0.18)",
-        float: "0 10px 30px rgba(20, 25, 45, 0.10)",
+        card: "0 2px 10px rgba(27, 22, 36, 0.06)",
+        pop: "0 16px 40px rgba(255, 46, 126, 0.22)",
+        float: "0 10px 30px rgba(184, 13, 84, 0.12)",
+        glowy: "0 0 0 6px rgba(255, 46, 126, 0.10)",
       },
       borderRadius: {
         xl2: "20px",
+        xl3: "28px",
       },
       fontFamily: {
         sans: [
@@ -51,6 +56,10 @@ const config: Config = {
           "0%": { opacity: "0", transform: "scale(.96)" },
           "100%": { opacity: "1", transform: "scale(1)" },
         },
+        floaty: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-6px)" },
+        },
         shimmer: {
           "0%": { backgroundPosition: "-400px 0" },
           "100%": { backgroundPosition: "400px 0" },
@@ -59,6 +68,7 @@ const config: Config = {
       animation: {
         "fade-up": "fade-up .35s ease-out both",
         "pop-in": "pop-in .2s ease-out both",
+        floaty: "floaty 4.5s ease-in-out infinite",
       },
     },
   },

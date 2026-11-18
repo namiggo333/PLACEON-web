@@ -3,11 +3,13 @@
 @tailwind utilities;
 
 :root {
-  --brand: #ff6b00;
-  --brand-dark: #f05f00;
-  --brand-light: #fff7f2;
-  --brand-soft: #ffe9d6;
-  --navy: #14192d;
+  --brand: #ff2e7e;
+  --brand-hot: #f01d71;
+  --brand-dark: #e01867;
+  --brand-deep: #b80d54;
+  --brand-light: #fff0f6;
+  --brand-soft: #ffe4ef;
+  --navy: #1b1624;
 }
 
 html {
@@ -20,8 +22,8 @@ body {
 
 @layer base {
   ::selection {
-    background: #ffe9d6;
-    color: #c74b00;
+    background: #ffe4ef;
+    color: #b80d54;
   }
 
   input,

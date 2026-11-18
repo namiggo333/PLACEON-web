@@ -1,8 +1,9 @@
 import { cn } from "@/lib/format";
 
-const ORANGE = "#FF6B00";
-const ORANGE_LIGHT = "#FF8A2B";
-const PEACH = "#FFE1CA";
+const PINK = "#FF2E7E";
+const PINK_HOT = "#F01D71";
+const PINK_DEEP = "#B80D54";
+const PINK_LIGHT = "#FF6FA5";
 
 export function LogoMark({
   size = 36,
@@ -25,21 +26,24 @@ export function LogoMark({
       aria-label={decorative ? undefined : "이곳저곳"}
       aria-hidden={decorative || undefined}
     >
-      {shadow && <ellipse cx="32" cy="60.4" rx="12.8" ry="2.7" fill={PEACH} />}
+      {shadow && <ellipse cx="31" cy="60.6" rx="12.4" ry="2.5" fill="#FFD9E9" />}
+      {/* 지도 핀 */}
       <path
-        d="M32 4.6C19.9 4.6 10.1 14.4 10.1 26.5c0 6.7 3.4 12.9 8.5 18.6 4.6 5.1 9.8 8.9 12.7 11.1.4.3 1 .3 1.4 0 2.9-2.2 8.1-6 12.7-11.1 5.1-5.7 8.5-11.9 8.5-18.6C53.9 14.4 44.1 4.6 32 4.6Z"
-        fill={ORANGE}
-        stroke={ORANGE}
-        strokeWidth="2.4"
-        strokeLinejoin="round"
+        d="M32 4.2C19.9 4.2 10.1 14 10.1 26.1c0 6.7 3.4 13 8.5 18.7 4.6 5.1 9.8 8.9 12.7 11.1.4.3 1 .3 1.4 0 2.9-2.2 8.1-6 12.7-11.1 5.1-5.7 8.5-12 8.5-18.7C53.9 14 44.1 4.2 32 4.2Z"
+        fill={PINK}
       />
+      {/* 아치문 화이트 하우스 */}
       <path
-        d="M32 19.6c.3 0 .6.12.83.35l10.2 9.4c.28.26.44.63.44 1.02v9.5c0 1.5-1.22 2.73-2.73 2.73H21.86a2.73 2.73 0 0 1-2.73-2.73v-9.5c0-.39.16-.76.44-1.02l10.2-9.4c.23-.23.53-.35.83-.35Z"
+        d="M32 18.6c.36 0 .71.14.98.4l10.4 9.5c.3.27.47.66.47 1.06v10.9c0 1.5-1.22 2.72-2.72 2.72H21.87a2.72 2.72 0 0 1-2.72-2.72V29.56c0-.4.17-.79.47-1.06l10.4-9.5c.27-.26.62-.4.98-.4Z"
         fill="#FFFFFF"
       />
-      <path d="M27.3 43.6v-6.4a4.7 4.7 0 0 1 9.4 0v6.4h-9.4Z" fill={ORANGE} />
-      <path d="M51.8 14.4 56 10.2" stroke={ORANGE_LIGHT} strokeWidth="3.4" strokeLinecap="round" />
-      <path d="M54.6 21.8 59.6 19.7" stroke={ORANGE_LIGHT} strokeWidth="3.4" strokeLinecap="round" />
+      <path
+        d="M28.3 43.2v-6.1a3.7 3.7 0 0 1 7.4 0v6.1h-7.4Z"
+        fill={PINK_HOT}
+      />
+      {/* 스파클 2획 */}
+      <path d="M52.2 15.1 56.6 10.9" stroke={PINK_LIGHT} strokeWidth="3.5" strokeLinecap="round" />
+      <path d="M55.6 22.8 60.6 20.4" stroke={PINK_LIGHT} strokeWidth="3.5" strokeLinecap="round" />
     </svg>
   );
 }
@@ -55,7 +59,7 @@ export function SloganUnderline({ className }: { className?: string }) {
       <path
         d="M2 6.2C22 1.6 55 1.2 98 4.4"
         fill="none"
-        stroke={ORANGE}
+        stroke="currentColor"
         strokeWidth="2.8"
         strokeLinecap="round"
       />
@@ -63,22 +67,57 @@ export function SloganUnderline({ className }: { className?: string }) {
   );
 }
 
+/** `이곳저곳` 글씨 위 핫핑크 포물선 아치 + 스파클 */
+export function Wordmark({
+  className,
+  size = "md",
+}: {
+  className?: string;
+  size?: "sm" | "md" | "lg";
+}) {
+  const textSize = size === "lg" ? "text-[28px]" : size === "sm" ? "text-[15px]" : "text-[21px]";
+  return (
+    <span className={cn("relative inline-flex flex-col", className)}>
+      <svg
+        viewBox="0 0 100 12"
+        preserveAspectRatio="none"
+        className="absolute -top-[12px] left-[3%] h-[11px] w-[94%] text-brand"
+        aria-hidden
+      >
+        <path
+          d="M4 9.4C20 2.6 54 0.8 94 4.2"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.8"
+          strokeLinecap="round"
+        />
+      </svg>
+      <span
+        className={cn(
+          "font-black leading-none tracking-[-0.045em] text-ink",
+          textSize
+        )}
+      >
+        이곳저곳
+      </span>
+    </span>
+  );
+}
+
 export function Slogan({ className, size = "sm" }: { className?: string; size?: "sm" | "md" }) {
   return (
     <span
       className={cn(
-        "relative flex flex-col font-bold leading-[1.35] tracking-tight text-ink",
-        size === "sm" ? "text-[12px]" : "text-sm",
+        "inline-flex flex-wrap items-center gap-x-1 font-bold leading-[1.4] tracking-tight text-ink-soft",
+        size === "sm" ? "text-[11.5px]" : "text-sm",
         className
       )}
     >
-      <span className="text-ink">원하는 공간,</span>
-      <span className="whitespace-nowrap text-ink">
-        <span className="relative inline-block font-extrabold text-brand">
-          여기저기
-          <SloganUnderline className="-bottom-[4px]" />
-        </span>{" "}
-        한곳에서
+      <span className="whitespace-nowrap">찾고, 예약하고, 결제까지</span>
+      <span className="text-ink-mute">—</span>
+      <span className="relative inline-block whitespace-nowrap font-extrabold text-brand">
+        한 번에!
+        <SloganUnderline className="-bottom-[3px] text-brand" />
       </span>
     </span>
   );
@@ -96,16 +135,39 @@ export function BrandLogo({
   return (
     <span className={cn("flex items-center gap-2", className)}>
       <LogoMark size={size} />
-      <span className="flex flex-col leading-none">
-        <span
-          className={cn(
-            "font-black tracking-[-0.03em] text-ink",
-            compact ? "text-[19px]" : "text-[22px]"
-          )}
-        >
-          이곳저곳
-        </span>
-      </span>
+      <Wordmark size={compact ? "sm" : "md"} />
     </span>
   );
 }
+
+/** 마스코트 원형 아바타 */
+export function MascotAvatar({
+  size = 64,
+  className,
+  ring = true,
+}: {
+  size?: number;
+  className?: string;
+  ring?: boolean;
+}) {
+  return (
+    <span
+      className={cn(
+        "relative inline-grid shrink-0 place-items-center overflow-hidden rounded-full bg-brand-light",
+        ring && "ring-2 ring-white shadow-card",
+        className
+      )}
+      style={{ width: size, height: size }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/images/mascot-avatar.png"
+        alt="이곳저곳 마스코트"
+        className="h-full w-full object-cover"
+        loading="lazy"
+      />
+    </span>
+  );
+}
+
+export { PINK, PINK_DEEP };

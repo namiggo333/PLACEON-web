@@ -5,7 +5,7 @@
  * HTML 문서, /api 요청, Supabase(외부 도메인) 실시간·인증 요청은 respondWith로 가로채지
  * 않으므로 항상 네트워크로 그대로 나간다 → 로그인/실시간 예약 흐름에 영향 없음.
  */
-const CACHE_NAME = "placeon-static-v2";
+const CACHE_NAME = "placeon-static-v3";
 const ICON_PREFIX = "/icons/";
 const PRECACHE = [
   "/icons/apple-touch-icon.png",
