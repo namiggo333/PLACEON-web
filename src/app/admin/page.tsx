@@ -382,7 +382,7 @@ export default function AdminPage() {
 
   return (
     <div className="container-page py-6 sm:py-10">
-      <section className="overflow-hidden rounded-xl2 bg-gradient-to-br from-[#2A0A1C] via-[#7A0F40] to-[#E31C79] p-5 text-white sm:p-6">
+      <section className="overflow-hidden rounded-xl2 bg-gradient-to-br from-[#14192D] via-[#1D2740] to-[#8A3F00] p-5 text-white sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-bold tracking-wide">

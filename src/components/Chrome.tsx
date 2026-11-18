@@ -11,9 +11,9 @@ import {
   LogoutIcon,
   SearchIcon,
   ShieldIcon,
-  SparkleIcon,
   StoreIcon,
 } from "./Icons";
+import { LogoMark, Slogan } from "./Logo";
 import { isAdminEmail } from "@/lib/admin";
 
 const NAV = [
@@ -34,19 +34,19 @@ function SiteHeader() {
   const { user, signOut, ready } = useApp();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-ink-line/80 bg-white/90 backdrop-blur">
-      <div className="container-page flex h-14 items-center justify-between gap-4 sm:h-16">
-        <div className="flex items-center gap-7">
-          <Link href="/" className="flex items-center gap-2" aria-label="이곳저곳 홈">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand text-white shadow-sm">
-              <SparkleIcon size={19} />
-            </span>
-            <span className="flex flex-col leading-none">
-              <span className="text-[17px] font-extrabold tracking-tight text-ink">이곳저곳</span>
-              <span className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.18em] text-brand">SPACE PLATFORM</span>
-            </span>
+    <header className="sticky top-0 z-40 border-b border-ink-line/70 bg-white/92 backdrop-blur-md">
+      <div className="container-page flex h-16 items-center justify-between gap-3 sm:h-[74px]">
+        <div className="flex min-w-0 items-center gap-3 lg:gap-5">
+          <Link href="/" className="flex shrink-0 items-center gap-2" aria-label="이곳저곳 홈">
+            <LogoMark size={34} className="sm:hidden" />
+            <LogoMark size={40} className="hidden sm:block" />
+            <span className="text-[21px] font-black tracking-[-0.035em] text-ink sm:text-[24px]">이곳저곳</span>
           </Link>
-          <nav className="hidden items-center gap-1 md:flex">
+
+          <span className="hidden h-9 w-px bg-ink-line lg:block" aria-hidden />
+          <Slogan className="hidden lg:flex" />
+
+          <nav className="ml-1 hidden items-center gap-0.5 md:flex lg:ml-3">
             {NAV.map((item) => {
               const active = isActive(pathname, item.href);
               return (
@@ -54,7 +54,7 @@ function SiteHeader() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "rounded-lg px-3 py-2 text-sm font-semibold transition",
+                    "rounded-full px-3 py-2 text-[13.5px] font-semibold transition",
                     active ? "bg-brand-light text-brand" : "text-ink-soft hover:bg-ink-line/60 hover:text-ink"
                   )}
                 >
@@ -65,12 +65,12 @@ function SiteHeader() {
           </nav>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5">
           {ready && user && isAdminEmail(user.email) && (
             <Link
               href="/admin"
               className={cn(
-                "inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition",
+                "inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-bold transition",
                 pathname.startsWith("/admin")
                   ? "bg-brand text-white"
                   : "bg-brand-light text-brand hover:bg-brand-soft"
@@ -80,6 +80,13 @@ function SiteHeader() {
               <span>관리자</span>
             </Link>
           )}
+          <Link
+            href="/search"
+            className="grid h-9 w-9 place-items-center rounded-full text-ink-soft transition hover:bg-ink-line/60 hover:text-ink md:hidden"
+            aria-label="공간 검색"
+          >
+            <SearchIcon size={20} />
+          </Link>
           {ready && user ? (
             <>
               <div className="hidden items-center gap-2 sm:flex">
@@ -104,7 +111,7 @@ function SiteHeader() {
               </button>
             </>
           ) : (
-            <Link href="/auth" className="btn-primary btn-sm px-4 py-2">
+            <Link href="/auth" className="btn-primary btn-sm rounded-full px-4 py-2">
               로그인
             </Link>
           )}
@@ -143,17 +150,17 @@ function BottomNav() {
 
 function SiteFooter() {
   return (
-    <footer className="mt-16 border-t border-ink-line bg-ink-line/20">
+    <footer className="mt-16 border-t border-ink-line bg-brand-light/60">
       <div className="container-page flex flex-col gap-6 py-10 md:flex-row md:items-start md:justify-between">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand text-white">
-              <SparkleIcon size={17} />
-            </span>
-            <span className="text-base font-extrabold text-ink">이곳저곳</span>
-            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand">SPACE PLATFORM</span>
+          <div className="flex items-start gap-2.5">
+            <LogoMark size={34} shadow={false} />
+            <div className="flex flex-col gap-1">
+              <span className="text-[19px] font-black leading-none tracking-[-0.03em] text-ink">이곳저곳</span>
+              <Slogan className="text-[11.5px]" />
+            </div>
           </div>
-          <p className="mt-3 max-w-sm text-xs leading-relaxed text-ink-mute">
+          <p className="mt-3.5 max-w-sm text-xs leading-relaxed text-ink-mute">
             시간 단위로 빌리는 모든 공간. 예약부터 결제·광고까지 한 곳에서. 사장님의 자체 손님은 전용 예약 링크로
             바로 모실 수 있어요.
           </p>

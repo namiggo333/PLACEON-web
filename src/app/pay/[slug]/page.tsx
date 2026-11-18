@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useApp } from "@/components/AppProvider";
+import { LogoMark } from "@/components/Logo";
 import { SpaceMedia } from "@/components/SpaceCard";
-import { CheckIcon, ClockIcon, PinIcon, SparkleIcon, UsersIcon } from "@/components/Icons";
+import { CheckIcon, ClockIcon, PinIcon, UsersIcon } from "@/components/Icons";
 import { CATEGORY_MAP, HOUR_OPTIONS, TIME_SLOTS } from "@/lib/constants";
 import { calcTotal, cn, endTime, formatDate, formatTime, shortId, todayISO, won } from "@/lib/format";
 import type { Booking } from "@/lib/types";
@@ -95,14 +96,12 @@ export default function PayPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-gradient-to-b from-brand-light via-[#FFF9FC] to-white">
+    <div className="min-h-dvh bg-gradient-to-b from-brand-light via-[#FFF9F4] to-white">
       <header className="border-b border-brand/10 bg-white/70 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
           <Link href="/" className="flex items-center gap-2">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand text-white">
-              <SparkleIcon size={16} />
-            </span>
-            <span className="text-sm font-extrabold text-ink">이곳저곳</span>
+            <LogoMark size={30} />
+            <span className="text-[17px] font-black tracking-[-0.03em] text-ink">이곳저곳</span>
           </Link>
           <span className="badge bg-brand-light text-brand">간편 예약 · 로그인 없이</span>
         </div>

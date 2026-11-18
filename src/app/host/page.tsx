@@ -139,7 +139,7 @@ export default function HostPage() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [busyBooking, setBusyBooking] = useState<string | null>(null);
   const [toast, setToast] = useState("");
-  const [origin, setOrigin] = useState("https://placeon-web.vercel.app");
+  const [origin, setOrigin] = useState("https://igotjeogot.vercel.app");
   const [linkSpaceId, setLinkSpaceId] = useState("");
   const [demoBusy, setDemoBusy] = useState<Role | null>(null);
 
@@ -566,7 +566,7 @@ export default function HostPage() {
             </section>
           </div>
 
-          <section className="rounded-xl2 bg-gradient-to-br from-[#2A0A1C] to-[#8E0F4A] p-5 text-white">
+          <section className="rounded-xl2 bg-gradient-to-br from-[#14192D] via-[#1D2740] to-[#3A2B28] p-5 text-white">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold">

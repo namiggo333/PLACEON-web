@@ -1,6 +1,7 @@
-import { CATEGORY_MAP, DEMO_ACCOUNTS } from "@/lib/constants";
+import { ALL_CATEGORY_STYLE, CATEGORY_MAP, DEMO_ACCOUNTS } from "@/lib/constants";
 import { cn } from "@/lib/format";
 import type { Category, Role } from "@/lib/types";
+import { CategoryGlyph } from "./CategoryIcons";
 
 export function CategoryChips({
   active,
@@ -13,16 +14,9 @@ export function CategoryChips({
   className?: string;
   size?: "md" | "sm";
 }) {
-  const items: { key: Category | "all"; label: string; emoji: string }[] = [
-    { key: "all", label: "전체", emoji: "✨" },
-    ...Object.values(CATEGORY_MAP).map((category) => ({
-      key: category.key,
-      label: category.label,
-      emoji: category.emoji,
-    })),
-  ];
+  const items = [ALL_CATEGORY_STYLE, ...Object.values(CATEGORY_MAP)];
   return (
-    <div className={cn("no-scrollbar flex gap-2 overflow-x-auto", className)}>
+    <div className={cn("no-scrollbar flex gap-1.5 overflow-x-auto pb-1 sm:gap-3", className)}>
       {items.map((item) => {
         const isActive = active === item.key;
         return (
@@ -30,15 +24,28 @@ export function CategoryChips({
             key={item.key}
             type="button"
             onClick={() => onSelect(item.key)}
-            className={cn(
-              "chip",
-              size === "sm" && "px-3 py-1.5 text-xs",
-              isActive && "chip-active"
-            )}
+            className="group flex w-[66px] shrink-0 flex-col items-center gap-1.5 rounded-2xl py-1 outline-none focus-visible:ring-2 focus-visible:ring-brand/40 sm:w-[76px]"
             aria-pressed={isActive}
           >
-            <span aria-hidden>{item.emoji}</span>
-            {item.label}
+            <span
+              className={cn(
+                "grid place-items-center rounded-full transition duration-200",
+                size === "sm" ? "h-12 w-12" : "h-[56px] w-[56px] sm:h-[60px] sm:w-[60px]",
+                isActive
+                  ? "bg-brand text-white shadow-pop"
+                  : cn(item.pastel, item.tone, "group-hover:-translate-y-0.5 group-hover:shadow-card")
+              )}
+            >
+              <CategoryGlyph category={item.key} size={size === "sm" ? 22 : 26} />
+            </span>
+            <span
+              className={cn(
+                "text-center text-[11.5px] font-semibold leading-tight tracking-tight transition",
+                isActive ? "text-brand" : "text-ink-soft group-hover:text-ink"
+              )}
+            >
+              {item.label}
+            </span>
           </button>
         );
       })}

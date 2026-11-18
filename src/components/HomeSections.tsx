@@ -34,7 +34,7 @@ export function SearchPanel() {
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="지역, 공간명, 키워드로 찾아보세요"
+          placeholder="어떤 공간을 찾으시나요?"
           className="w-full bg-transparent text-sm font-medium text-ink outline-none placeholder:text-ink-mute"
           aria-label="공간 검색"
         />
@@ -97,11 +97,11 @@ export function TimeDealSection({ spaces }: { spaces: Space[] }) {
   if (!deals.length) return null;
 
   return (
-    <section className="overflow-hidden rounded-xl2 bg-gradient-to-br from-[#2A0A1C] via-[#4A0F2E] to-[#8E0F4A] px-4 py-6 sm:px-6">
+    <section className="overflow-hidden rounded-xl2 bg-gradient-to-br from-[#14192D] via-[#1D2740] to-[#3A2B28] px-4 py-6 sm:px-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-white">
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand text-white">
-            <SparkleIcon size={16} />
+          <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand text-white shadow-pop">
+            <SparkleIcon size={17} />
           </span>
           <div>
             <h2 className="text-base font-extrabold sm:text-lg">오늘의 공실 타임특가</h2>

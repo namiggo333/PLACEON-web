@@ -8,6 +8,7 @@ import { CategoryChips } from "@/components/Bits";
 import { SearchPanel, TimeDealSection } from "@/components/HomeSections";
 import { SpaceGrid, SpaceMedia } from "@/components/SpaceCard";
 import { BoltIcon, ChevronRightIcon, SparkleIcon, StoreIcon } from "@/components/Icons";
+import { SloganUnderline } from "@/components/Logo";
 import { PRICE_RANGES, REGIONS } from "@/lib/constants";
 import { averageRating, filterSpaces, type SortKey } from "@/lib/filter";
 import { won } from "@/lib/format";
@@ -47,27 +48,31 @@ export default function HomePage() {
 
   return (
     <div>
-      <section className="relative overflow-hidden bg-gradient-to-b from-brand-light via-[#FFF7FB] to-white">
+      <section className="relative overflow-hidden bg-gradient-to-b from-[#FFF0E2] via-[#FFF7F2] to-white">
         <div
-          className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-brand/10 blur-3xl"
+          className="pointer-events-none absolute -right-24 -top-28 h-80 w-80 rounded-full bg-brand/15 blur-3xl"
           aria-hidden
         />
         <div
-          className="pointer-events-none absolute -left-16 top-40 h-56 w-56 rounded-full bg-fuchsia-300/20 blur-3xl"
+          className="pointer-events-none absolute -left-24 top-40 h-72 w-72 rounded-full bg-[#FFD7B8]/70 blur-3xl"
           aria-hidden
         />
-        <div className="container-page relative pb-8 pt-10 sm:pb-12 sm:pt-16">
+        <div className="container-page relative pb-8 pt-9 sm:pb-14 sm:pt-16">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/20 bg-white/80 px-3 py-1 text-[11px] font-bold text-brand">
             <BoltIcon size={13} />
             시간 단위로 빌리는 모든 공간
           </span>
+
           <div className="relative max-w-2xl">
-            <h1 className="mt-4 text-[30px] font-black leading-[1.2] tracking-tight text-ink sm:text-[44px] lg:text-5xl">
-              <span className="block">오늘 놀 곳,</span>
+            <h1 className="mt-4 text-[31px] font-black leading-[1.22] tracking-[-0.04em] text-ink sm:text-[44px] lg:text-[48px]">
+              <span className="block">원하는 공간,</span>
               <span className="block">
-                1초 만에 <span className="text-brand">예약</span>하고
+                <span className="relative inline-block text-brand">
+                  지금 바로
+                  <SloganUnderline className="-bottom-1 sm:-bottom-1.5" />
+                </span>{" "}
+                찾아보세요!
               </span>
-              <span className="block">바로 결제하세요</span>
             </h1>
             <p className="mt-4 max-w-lg text-sm leading-relaxed text-ink-soft sm:text-base">
               파티룸 · 키즈룸 · 연습실 · 촬영스튜디오 · 회의실 · 공유주방 · 루프탑 · 스터디룸.
@@ -118,8 +123,8 @@ export default function HomePage() {
             <SearchPanel />
           </div>
 
-          <div className="mt-6 grid grid-cols-3 gap-3 sm:max-w-lg">
-            <div>
+          <div className="mt-7 flex max-w-md divide-x divide-brand/15 sm:max-w-lg">
+            <div className="pr-5 sm:pr-7">
               {ready ? (
                 <p className="text-xl font-extrabold text-ink sm:text-2xl">{visibleSpaces.length}</p>
               ) : (
@@ -127,7 +132,7 @@ export default function HomePage() {
               )}
               <p className="mt-0.5 text-[11px] text-ink-mute">등록 공간</p>
             </div>
-            <div>
+            <div className="px-5 sm:px-7">
               {ready ? (
                 <p className="text-xl font-extrabold text-ink sm:text-2xl">{averageRating(visibleSpaces)}</p>
               ) : (
@@ -135,7 +140,7 @@ export default function HomePage() {
               )}
               <p className="mt-0.5 text-[11px] text-ink-mute">평균 평점</p>
             </div>
-            <div>
+            <div className="pl-5 sm:pl-7">
               {ready ? (
                 <p className="text-xl font-extrabold text-ink sm:text-2xl">{todayBookings}</p>
               ) : (
@@ -149,14 +154,14 @@ export default function HomePage() {
 
       <div className="container-page -mt-1 space-y-10 pb-4 pt-6 sm:space-y-12 sm:pt-8">
         <section>
-          <div className="mb-3 flex items-center justify-between">
+          <div className="mb-2.5 flex items-center justify-between">
             <h2 className="section-title">어떤 공간이 필요하세요?</h2>
             <Link href="/search" className="flex items-center gap-0.5 text-xs font-semibold text-ink-mute hover:text-brand">
               전체 보기
               <ChevronRightIcon size={14} />
             </Link>
           </div>
-          <CategoryChips active="all" onSelect={selectCategory} />
+          <CategoryChips active="all" onSelect={selectCategory} className="-mx-1 px-1" />
         </section>
 
         {ready && <TimeDealSection spaces={visibleSpaces} />}
@@ -228,10 +233,14 @@ export default function HomePage() {
           )}
         </section>
 
-        <section className="overflow-hidden rounded-xl2 bg-gradient-to-br from-brand to-brand-dark p-6 text-white sm:p-8">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+        <section className="relative overflow-hidden rounded-xl2 bg-gradient-to-br from-[#14192D] via-[#1D2740] to-[#2A3350] p-6 text-white sm:p-8">
+          <div
+            className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand/25 blur-3xl"
+            aria-hidden
+          />
+          <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-bold">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-brand/20 px-2.5 py-1 text-[11px] font-bold text-[#FFB173]">
                 <StoreIcon size={13} /> 사장님을 위한 이곳저곳
               </span>
               <h2 className="mt-3 text-xl font-black leading-snug sm:text-2xl">
@@ -239,21 +248,18 @@ export default function HomePage() {
                 <br />
                 수수료 부담 없이 전용 링크로 받으세요
               </h2>
-              <p className="mt-2 text-xs leading-relaxed text-white/80 sm:text-sm">
+              <p className="mt-2 text-xs leading-relaxed text-white/70 sm:text-sm">
                 공간 등록 3분이면 끝. 예약 승인·공실 광고·타임특가·간편 결제 링크까지 사장님 센터에서 한 번에.
               </p>
             </div>
             <div className="flex shrink-0 flex-col gap-2 sm:w-52">
-              <Link
-                href="/host"
-                className="btn bg-white text-brand hover:bg-brand-light"
-              >
+              <Link href="/host" className="btn bg-brand text-white hover:bg-brand-dark">
                 <SparkleIcon size={16} />
                 사장님 센터 열기
               </Link>
               <Link
                 href="/auth?mode=signup&role=host"
-                className="btn border border-white/40 text-white hover:bg-white/10"
+                className="btn border border-white/30 text-white hover:bg-white/10"
               >
                 무료로 공간 등록하기
               </Link>

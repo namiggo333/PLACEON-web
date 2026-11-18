@@ -1,20 +1,91 @@
 import type { BookingStatus, Category, Role } from "./types";
 
-export const CATEGORIES: { key: Category; label: string; emoji: string; gradient: string }[] = [
-  { key: "party", label: "파티룸", emoji: "🎉", gradient: "from-rose-400 via-pink-500 to-fuchsia-600" },
-  { key: "kidsroom", label: "키즈룸", emoji: "🧸", gradient: "from-yellow-300 via-amber-400 to-orange-500" },
-  { key: "practice", label: "연습실", emoji: "🎧", gradient: "from-violet-400 via-purple-500 to-indigo-600" },
-  { key: "studio", label: "촬영스튜디오", emoji: "📸", gradient: "from-amber-300 via-orange-400 to-rose-500" },
-  { key: "meeting", label: "회의실", emoji: "💼", gradient: "from-sky-400 via-blue-500 to-indigo-500" },
-  { key: "kitchen", label: "공유주방", emoji: "🍳", gradient: "from-lime-300 via-emerald-400 to-teal-500" },
-  { key: "rooftop", label: "루프탑", emoji: "🌇", gradient: "from-pink-400 via-rose-500 to-orange-400" },
-  { key: "study", label: "스터디룸", emoji: "📚", gradient: "from-slate-300 via-slate-400 to-slate-600" },
+export const CATEGORIES: {
+  key: Category;
+  label: string;
+  emoji: string;
+  gradient: string;
+  pastel: string;
+  tone: string;
+}[] = [
+  {
+    key: "party",
+    label: "파티룸",
+    emoji: "🎉",
+    gradient: "from-[#FFD9E4] via-[#FFC2D4] to-[#FF9DBB]",
+    pastel: "bg-[#FFE7EE]",
+    tone: "text-[#F0578A]",
+  },
+  {
+    key: "kidsroom",
+    label: "키즈룸",
+    emoji: "🧸",
+    gradient: "from-[#FFF0C2] via-[#FFE29E] to-[#FFC97A]",
+    pastel: "bg-[#FFF2CC]",
+    tone: "text-[#D99B00]",
+  },
+  {
+    key: "practice",
+    label: "연습실",
+    emoji: "🎧",
+    gradient: "from-[#E7E0FF] via-[#D6C9FF] to-[#BFA9FF]",
+    pastel: "bg-[#EEE9FF]",
+    tone: "text-[#7B61FF]",
+  },
+  {
+    key: "studio",
+    label: "촬영스튜디오",
+    emoji: "📸",
+    gradient: "from-[#DCEFFF] via-[#C4E3FF] to-[#9FCBFF]",
+    pastel: "bg-[#E4F2FF]",
+    tone: "text-[#3B8FD9]",
+  },
+  {
+    key: "meeting",
+    label: "회의실",
+    emoji: "💼",
+    gradient: "from-[#DDF3E9] via-[#C3E9DB] to-[#9ED9C6]",
+    pastel: "bg-[#E4F6EE]",
+    tone: "text-[#2FA37A]",
+  },
+  {
+    key: "kitchen",
+    label: "공유주방",
+    emoji: "🍳",
+    gradient: "from-[#FFE9D6] via-[#FFD8B5] to-[#FFC08A]",
+    pastel: "bg-[#FFEEDD]",
+    tone: "text-[#E07A28]",
+  },
+  {
+    key: "rooftop",
+    label: "루프탑",
+    emoji: "🌇",
+    gradient: "from-[#FFE3DC] via-[#FFCBC0] to-[#FFAE9C]",
+    pastel: "bg-[#FFE9E4]",
+    tone: "text-[#EC6B4E]",
+  },
+  {
+    key: "study",
+    label: "스터디룸",
+    emoji: "📚",
+    gradient: "from-[#E8ECF3] via-[#D8DEE9] to-[#BFC7D6]",
+    pastel: "bg-[#ECEFF5]",
+    tone: "text-[#5B6784]",
+  },
 ];
 
 export const CATEGORY_MAP = Object.fromEntries(CATEGORIES.map((c) => [c.key, c])) as Record<
   Category,
   (typeof CATEGORIES)[number]
 >;
+
+export const ALL_CATEGORY_STYLE = {
+  key: "all" as const,
+  label: "전체",
+  emoji: "✨",
+  pastel: "bg-[#FFF1E5]",
+  tone: "text-[#FF6B00]",
+};
 
 export const REGIONS = [
   "서울",
