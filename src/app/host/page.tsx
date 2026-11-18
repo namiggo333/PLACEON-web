@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "@/components/AppProvider";
+import { LogoMark } from "@/components/Logo";
 import { DemoAccountButtons } from "@/components/Bits";
 import { SpaceMedia } from "@/components/SpaceCard";
 import {
@@ -390,8 +391,8 @@ export default function HostPage() {
     return (
       <div className="container-page py-12 sm:py-16">
         <div className="mx-auto max-w-md text-center">
-          <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-brand-light text-2xl">
-            🧑‍💼
+          <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-brand-light">
+            <LogoMark size={40} decorative />
           </span>
           <h1 className="mt-4 text-xl font-black text-ink">사장님 센터</h1>
           <p className="mt-1.5 text-sm leading-relaxed text-ink-mute">

@@ -99,8 +99,8 @@ export default function PayPage() {
     <div className="min-h-dvh bg-gradient-to-b from-brand-light via-[#FFF9F4] to-white">
       <header className="border-b border-brand/10 bg-white/70 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
-          <Link href="/" className="flex items-center gap-2">
-            <LogoMark size={30} />
+          <Link href="/" className="flex items-center gap-2" aria-label="이곳저곳 홈">
+            <LogoMark size={30} decorative />
             <span className="text-[17px] font-black tracking-[-0.03em] text-ink">이곳저곳</span>
           </Link>
           <span className="badge bg-brand-light text-brand">간편 예약 · 로그인 없이</span>

@@ -8,10 +8,12 @@ export function LogoMark({
   size = 36,
   className,
   shadow = true,
+  decorative = false,
 }: {
   size?: number;
   className?: string;
   shadow?: boolean;
+  decorative?: boolean;
 }) {
   return (
     <svg
@@ -19,8 +21,9 @@ export function LogoMark({
       height={size}
       viewBox="0 0 64 64"
       className={cn("shrink-0", className)}
-      role="img"
-      aria-label="이곳저곳"
+      role={decorative ? undefined : "img"}
+      aria-label={decorative ? undefined : "이곳저곳"}
+      aria-hidden={decorative || undefined}
     >
       {shadow && <ellipse cx="32" cy="60.4" rx="12.8" ry="2.7" fill={PEACH} />}
       <path
@@ -69,11 +72,11 @@ export function Slogan({ className, size = "sm" }: { className?: string; size?: 
         className
       )}
     >
-      <span className="text-ink-soft">원하는 공간,</span>
+      <span className="text-ink">원하는 공간,</span>
       <span className="whitespace-nowrap text-ink">
         <span className="relative inline-block font-extrabold text-brand">
           여기저기
-          <SloganUnderline className="-bottom-[3px]" />
+          <SloganUnderline className="-bottom-[4px]" />
         </span>{" "}
         한곳에서
       </span>

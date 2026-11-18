@@ -48,7 +48,7 @@ export default function HomePage() {
 
   return (
     <div>
-      <section className="relative overflow-hidden bg-gradient-to-b from-[#FFF0E2] via-[#FFF7F2] to-white">
+      <section className="relative overflow-hidden bg-[linear-gradient(180deg,#FFF0E2_0%,#FFF6ED_45%,#FFFDFB_82%,#FFFFFF_100%)]">
         <div
           className="pointer-events-none absolute -right-24 -top-28 h-80 w-80 rounded-full bg-brand/15 blur-3xl"
           aria-hidden
@@ -69,7 +69,7 @@ export default function HomePage() {
               <span className="block">
                 <span className="relative inline-block text-brand">
                   지금 바로
-                  <SloganUnderline className="-bottom-1 sm:-bottom-1.5" />
+                  <SloganUnderline className="-bottom-1.5 sm:-bottom-2" />
                 </span>{" "}
                 찾아보세요!
               </span>

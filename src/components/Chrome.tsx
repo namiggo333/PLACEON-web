@@ -38,8 +38,8 @@ function SiteHeader() {
       <div className="container-page flex h-16 items-center justify-between gap-3 sm:h-[74px]">
         <div className="flex min-w-0 items-center gap-3 lg:gap-5">
           <Link href="/" className="flex shrink-0 items-center gap-2" aria-label="이곳저곳 홈">
-            <LogoMark size={34} className="sm:hidden" />
-            <LogoMark size={40} className="hidden sm:block" />
+            <LogoMark size={34} className="sm:hidden" decorative />
+            <LogoMark size={40} className="hidden sm:block" decorative />
             <span className="text-[21px] font-black tracking-[-0.035em] text-ink sm:text-[24px]">이곳저곳</span>
           </Link>
 
@@ -154,7 +154,7 @@ function SiteFooter() {
       <div className="container-page flex flex-col gap-6 py-10 md:flex-row md:items-start md:justify-between">
         <div>
           <div className="flex items-start gap-2.5">
-            <LogoMark size={34} shadow={false} />
+            <LogoMark size={34} shadow={false} decorative />
             <div className="flex flex-col gap-1">
               <span className="text-[19px] font-black leading-none tracking-[-0.03em] text-ink">이곳저곳</span>
               <Slogan className="text-[11.5px]" />

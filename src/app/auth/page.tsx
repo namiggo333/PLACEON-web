@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { useApp } from "@/components/AppProvider";
 import { DemoAccountButtons } from "@/components/Bits";
-import { CheckIcon, SparkleIcon } from "@/components/Icons";
+import { CheckIcon } from "@/components/Icons";
+import { LogoMark } from "@/components/Logo";
 import { ROLE_LABEL } from "@/lib/constants";
 import { cn } from "@/lib/format";
 import type { Role } from "@/lib/types";
@@ -69,8 +70,8 @@ function AuthContent() {
         <div className="hidden flex-col justify-between bg-gradient-to-br from-brand via-brand to-brand-dark p-8 text-white lg:flex">
           <div>
             <div className="flex items-center gap-2">
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-white/20">
-                <SparkleIcon size={18} />
+              <span className="grid h-10 w-10 place-items-center rounded-2xl bg-white shadow-sm">
+                <LogoMark size={26} decorative />
               </span>
               <span className="text-base font-extrabold">이곳저곳</span>
             </div>
