@@ -77,7 +77,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setSpaces(spaceList);
       setUser(profile);
       setBookings(profile ? await fetchBookings(profile) : []);
-      setSpaceAccounts(await fetchSpaceAccounts());
+      setSpaceAccounts(profile ? await fetchSpaceAccounts() : {});
     } catch (error) {
       console.error(error);
     } finally {
@@ -134,6 +134,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await signOutUser();
     setUser(null);
     setBookings([]);
+    setSpaceAccounts({});
   }, []);
 
   const refresh = useCallback(async () => {
