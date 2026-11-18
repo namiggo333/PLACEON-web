@@ -1,4 +1,5 @@
 import { makeSlug } from "./format";
+import { mapBooking, mapProfile, mapSpace, type BookingRow, type ProfileRow, type SpaceRow } from "./mappers";
 import { createSeedBookings, createSeedProfiles, createSeedSpaces, DEMO_PASSWORDS } from "./seed";
 import { supabase } from "./supabase";
 import type {
@@ -19,59 +20,6 @@ interface LocalDB {
   passwords: Record<string, string>;
   spaces: Space[];
   bookings: Booking[];
-}
-
-interface ProfileRow {
-  id: string;
-  email: string;
-  name: string | null;
-  role: string | null;
-  phone: string | null;
-  created_at: string | null;
-}
-
-interface SpaceRow {
-  id: string;
-  host_id: string;
-  host_name: string | null;
-  name: string;
-  category: string;
-  region: string;
-  district: string | null;
-  address: string | null;
-  price_per_hour: number;
-  capacity: number;
-  discount_rate: number | null;
-  description: string | null;
-  amenities: string[] | null;
-  rating: number | string | null;
-  review_count: number | null;
-  featured: boolean | null;
-  time_deal: boolean | null;
-  pay_slug: string;
-  image_url: string | null;
-  image_urls: string[] | null;
-  is_hidden: boolean | null;
-  created_at: string | null;
-}
-
-interface BookingRow {
-  id: string;
-  space_id: string;
-  space_name: string;
-  host_id: string;
-  guest_id: string | null;
-  guest_name: string;
-  guest_phone: string;
-  date: string;
-  start_time: string;
-  hours: number;
-  guests: number;
-  total_amount: number;
-  status: string;
-  memo: string | null;
-  source: string;
-  created_at: string | null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -134,70 +82,6 @@ function setDemoSession(id: string | null): void {
   if (typeof window === "undefined") return;
   if (id) window.localStorage.setItem(SESSION_KEY, id);
   else window.localStorage.removeItem(SESSION_KEY);
-}
-
-function mapProfile(row: ProfileRow): Profile {
-  const role: Role = row.role === "host" ? "host" : "guest";
-  return {
-    id: row.id,
-    email: row.email,
-    name: row.name ?? row.email.split("@")[0],
-    role,
-    phone: row.phone ?? "",
-    createdAt: row.created_at ?? new Date().toISOString(),
-  };
-}
-
-function mapSpace(row: SpaceRow): Space {
-  const extraImages = Array.isArray(row.image_urls) ? row.image_urls.filter(Boolean) : [];
-  const imageUrls = extraImages.length > 0 ? extraImages : row.image_url ? [row.image_url] : [];
-  return {
-    id: row.id,
-    hostId: row.host_id,
-    hostName: row.host_name ?? "이곳저곳 호스트",
-    name: row.name,
-    category: row.category as Space["category"],
-    region: row.region,
-    district: row.district ?? "",
-    address: row.address ?? "",
-    pricePerHour: Number(row.price_per_hour),
-    capacity: Number(row.capacity),
-    discountRate: Number(row.discount_rate ?? 0),
-    description: row.description ?? "",
-    amenities: Array.isArray(row.amenities) ? row.amenities : [],
-    rating: Number(row.rating ?? 0),
-    reviewCount: Number(row.review_count ?? 0),
-    featured: Boolean(row.featured),
-    timeDeal: Boolean(row.time_deal),
-    paySlug: row.pay_slug,
-    imageUrl: imageUrls[0] ?? null,
-    imageUrls,
-    hidden: Boolean(row.is_hidden),
-    createdAt: row.created_at ?? new Date().toISOString(),
-  };
-}
-
-function mapBooking(row: BookingRow): Booking {
-  const status: BookingStatus =
-    row.status === "confirmed" ? "confirmed" : row.status === "cancelled" ? "cancelled" : "pending";
-  return {
-    id: row.id,
-    spaceId: row.space_id,
-    spaceName: row.space_name,
-    hostId: row.host_id,
-    guestId: row.guest_id,
-    guestName: row.guest_name,
-    guestPhone: row.guest_phone,
-    date: row.date,
-    startTime: row.start_time,
-    hours: Number(row.hours),
-    guests: Number(row.guests),
-    totalAmount: Number(row.total_amount),
-    status,
-    memo: row.memo ?? "",
-    source: row.source === "link" ? "link" : "web",
-    createdAt: row.created_at ?? new Date().toISOString(),
-  };
 }
 
 function authErrorMessage(message: string): string {
@@ -478,28 +362,42 @@ export async function insertBooking(input: BookingInput, user: Profile | null): 
   const totalAmount = Math.round((gross * (100 - space.discountRate)) / 100);
 
   if (supabase) {
-    const { data, error } = await supabase
-      .from("bookings")
-      .insert({
-        space_id: space.id,
-        space_name: space.name,
-        host_id: space.hostId,
-        guest_id: user?.id ?? null,
-        guest_name: input.guestName,
-        guest_phone: input.guestPhone,
+    // 예약 생성은 서버 API 한 곳에서만: 금액 재계산 · 더블부킹 차단 · 만료 pending 정리.
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+
+    const response = await fetch("/api/bookings", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({
+        spaceId: space.id,
+        paySlug: space.paySlug,
+        source: input.source ?? "web",
         date: input.date,
-        start_time: input.startTime,
+        startTime: input.startTime,
         hours: input.hours,
         guests: input.guests,
-        total_amount: totalAmount,
-        status: "pending",
+        guestName: input.guestName,
+        guestPhone: input.guestPhone,
         memo: input.memo ?? "",
-        source: input.source ?? "web",
-      })
-      .select("*")
-      .single();
-    if (error) throw new Error(`예약을 접수하지 못했어요. (${error.message})`);
-    return mapBooking(data as BookingRow);
+      }),
+    });
+
+    let payload: { booking?: BookingRow; error?: string } | null = null;
+    try {
+      payload = (await response.json()) as { booking?: BookingRow; error?: string };
+    } catch {
+      payload = null;
+    }
+
+    if (!response.ok || !payload?.booking) {
+      throw new Error(payload?.error ?? "예약을 접수하지 못했어요. 잠시 후 다시 시도해 주세요.");
+    }
+
+    return mapBooking(payload.booking);
   }
 
   const db = readDB();

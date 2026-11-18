@@ -260,6 +260,20 @@ function AuthContent() {
                 <button type="submit" disabled={busy} className="btn-primary w-full py-3">
                   {busy ? "처리 중…" : tab === "login" ? "로그인" : "회원가입"}
                 </button>
+
+                {tab === "signup" && (
+                  <p className="text-center text-[10.5px] leading-relaxed text-ink-mute">
+                    가입하면{" "}
+                    <Link href="/terms" target="_blank" className="font-semibold text-brand hover:underline">
+                      이용약관
+                    </Link>
+                    과{" "}
+                    <Link href="/privacy" target="_blank" className="font-semibold text-brand hover:underline">
+                      개인정보처리방침
+                    </Link>
+                    에 동의하는 것으로 봅니다.
+                  </p>
+                )}
               </form>
 
               {mode === "demo" && (

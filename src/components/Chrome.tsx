@@ -178,11 +178,29 @@ function SiteFooter() {
             <Link href="/host" className="hover:text-brand">공간 등록</Link>
             <Link href="/host" className="hover:text-brand">결제 링크 만들기</Link>
           </div>
+          <div className="flex flex-col gap-2">
+            <span className="font-bold text-ink">약관·정책</span>
+            <Link href="/terms" className="hover:text-brand">이용약관</Link>
+            <Link href="/privacy" className="font-semibold hover:text-brand">개인정보처리방침</Link>
+            <Link href="/refund" className="hover:text-brand">취소·환불 규정</Link>
+          </div>
         </div>
       </div>
       <div className="border-t border-ink-line/70">
-        <div className="container-page flex flex-col gap-1 py-4 text-[11px] text-ink-mute sm:flex-row sm:items-center sm:justify-between">
-          <span>© 2026 이곳저곳. 공간대여 예약·결제·광고 통합 플랫폼.</span>
+        <div className="container-page py-4 text-[11px] leading-relaxed text-ink-mute">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <Link href="/terms" className="font-semibold text-ink-soft hover:text-brand">이용약관</Link>
+            <span className="text-ink-line">|</span>
+            <Link href="/privacy" className="font-semibold text-ink-soft hover:text-brand">개인정보처리방침</Link>
+            <span className="text-ink-line">|</span>
+            <Link href="/refund" className="font-semibold text-ink-soft hover:text-brand">취소·환불 규정</Link>
+          </div>
+          <p className="mt-2">
+            상호 이곳저곳 · 대표자 박기남 · 사업자등록번호: 사업자 등록 후 기재 · 통신판매업 신고: 신고 후 기재
+            <br className="hidden sm:block" />
+            주소: 사업장 주소 등록 후 기재 · 문의 namiggo333@gmail.com
+          </p>
+          <p className="mt-1.5">© 2026 이곳저곳. 공간대여 예약·결제·광고 통합 플랫폼.</p>
         </div>
       </div>
     </footer>

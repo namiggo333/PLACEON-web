@@ -19,6 +19,7 @@ import {
 import { isAdminEmail } from "@/lib/admin";
 import { CATEGORY_MAP, STATUS_LABEL, STATUS_STYLE } from "@/lib/constants";
 import { fetchAdminData, patchSpace, removeSpace, updateBookingStatus, type AdminData } from "@/lib/db";
+import { revalidateHomeCache } from "@/lib/revalidate";
 import {
   cn,
   endTime,
@@ -269,6 +270,7 @@ export default function AdminPage() {
         );
       }
       setToast(message);
+      revalidateHomeCache();
       void refresh();
     } catch (err) {
       setToast(err instanceof Error ? err.message : "변경에 실패했어요.");
@@ -291,6 +293,7 @@ export default function AdminPage() {
           : prev
       );
       setConfirmDelete(null);
+      revalidateHomeCache();
       setToast("공간을 삭제했어요. 연결된 예약도 함께 정리했어요.");
       void refresh();
     } catch (err) {

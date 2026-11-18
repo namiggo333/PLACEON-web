@@ -16,6 +16,7 @@ import {
   resetDemoData,
 } from "@/lib/db";
 import { dataMode } from "@/lib/supabase";
+import { revalidateHomeCache } from "@/lib/revalidate";
 import { DEMO_ACCOUNTS } from "@/lib/constants";
 import type { Booking, BookingInput, BookingStatus, Profile, Role, Space, SpaceInput } from "@/lib/types";
 
@@ -126,6 +127,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (!user) throw new Error("로그인 후 이용해 주세요.");
       const space = await insertSpace(input, user);
       setSpaces((prev) => [space, ...prev]);
+      revalidateHomeCache();
       return space;
     },
     [user]
@@ -137,6 +139,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (updated) {
         setSpaces((prev) => prev.map((space) => (space.id === id ? updated : space)));
       }
+      revalidateHomeCache();
     },
     []
   );
@@ -145,6 +148,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await removeSpace(id);
     setSpaces((prev) => prev.filter((space) => space.id !== id));
     setBookings((prev) => prev.filter((booking) => booking.spaceId !== id));
+    revalidateHomeCache();
   }, []);
 
   const createBooking = useCallback(

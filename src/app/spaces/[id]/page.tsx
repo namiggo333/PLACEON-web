@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useApp } from "@/components/AppProvider";
+import { BookingConsent } from "@/components/ConsentCheckbox";
 import { SpaceCard, SpaceMedia } from "@/components/SpaceCard";
 import { MascotAvatar } from "@/components/Logo";
 import {
@@ -34,6 +35,7 @@ export default function SpaceDetailPage() {
   const [name, setName] = useState(user?.name ?? "");
   const [phone, setPhone] = useState(user?.phone ?? "");
   const [memo, setMemo] = useState("");
+  const [agreed, setAgreed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState<Booking | null>(null);
@@ -96,6 +98,7 @@ export default function SpaceDetailPage() {
     if (!name.trim()) return setError("예약자 이름을 입력해 주세요.");
     if (!phone.trim()) return setError("연락처를 입력해 주세요.");
     if (guests > space.capacity) return setError(`이 공간은 최대 ${space.capacity}명까지 이용할 수 있어요.`);
+    if (!agreed) return setError("이용약관과 취소·환불 규정에 먼저 동의해 주세요.");
     setSubmitting(true);
     try {
       const booking = await createBooking({
@@ -501,6 +504,8 @@ export default function SpaceDetailPage() {
                     className="input resize-none"
                   />
                 </div>
+
+                <BookingConsent checked={agreed} onChange={setAgreed} id="space-booking-consent" />
 
                 {error && (
                   <p className="rounded-lg bg-red-50 px-3 py-2 text-[11px] font-medium text-red-600">{error}</p>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useApp } from "@/components/AppProvider";
+import { BookingConsent } from "@/components/ConsentCheckbox";
 import { LogoMark, MascotAvatar } from "@/components/Logo";
 import { SpaceMedia } from "@/components/SpaceCard";
 import { CheckIcon, ClockIcon, PinIcon, UsersIcon } from "@/components/Icons";
@@ -26,6 +27,7 @@ export default function PayPage() {
   const [phone, setPhone] = useState("");
   const [memo, setMemo] = useState("");
   const [error, setError] = useState("");
+  const [agreed, setAgreed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState<Booking | null>(null);
 
@@ -73,6 +75,7 @@ export default function PayPage() {
     if (!name.trim()) return setError("예약자 이름을 입력해 주세요.");
     if (!phone.trim()) return setError("연락처를 입력해 주세요.");
     if (guests > space.capacity) return setError(`이 공간은 최대 ${space.capacity}명까지 이용할 수 있어요.`);
+    if (!agreed) return setError("이용약관과 취소·환불 규정에 먼저 동의해 주세요.");
     setSubmitting(true);
     try {
       const booking = await createBooking({
@@ -349,6 +352,8 @@ export default function PayPage() {
                     {formatDate(date)} {formatTime(startTime)} ~ {endTime(startTime, hours)}
                   </p>
                 </div>
+
+                <BookingConsent checked={agreed} onChange={setAgreed} id="pay-booking-consent" />
 
                 {error && (
                   <p className="rounded-lg bg-red-50 px-3 py-2 text-[11px] font-medium text-red-600">{error}</p>

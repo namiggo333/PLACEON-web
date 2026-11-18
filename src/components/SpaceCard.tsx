@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { CATEGORY_MAP } from "@/lib/constants";
 import { cn, won } from "@/lib/format";
@@ -20,13 +21,15 @@ export function SpaceMedia({
   const cover = space.imageUrls?.[0] ?? space.imageUrl;
   if (cover) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={cover}
-        alt={space.name}
-        className={cn("h-full w-full object-cover", className)}
-        loading="lazy"
-      />
+      <span className={cn("relative block h-full w-full overflow-hidden", className)}>
+        <Image
+          src={cover}
+          alt={space.name}
+          fill
+          sizes="(max-width: 640px) 112px, (max-width: 1024px) 46vw, 300px"
+          className="object-cover"
+        />
+      </span>
     );
   }
   return (

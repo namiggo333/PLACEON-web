@@ -82,12 +82,16 @@ create table if not exists public.bookings (
   status text not null default 'pending' check (status in ('pending', 'confirmed', 'cancelled')),
   memo text default '',
   source text not null default 'web' check (source in ('web', 'link')),
+  start_at timestamptz,                   -- date + start_time (Asia/Seoul). 트리거가 자동 계산
+  end_at timestamptz,                     -- start_at + hours. 트리거가 자동 계산
+  expires_at timestamptz,                 -- pending 임시 점유 만료 시각
   created_at timestamptz not null default now()
 );
 
 create index if not exists bookings_host_id_idx on public.bookings (host_id);
 create index if not exists bookings_guest_id_idx on public.bookings (guest_id);
 create index if not exists bookings_space_id_idx on public.bookings (space_id);
+create index if not exists bookings_start_at_idx on public.bookings (start_at);
 
 -- ------------------------------------------------------------
 -- 2. RLS (행 수준 보안)
@@ -142,11 +146,11 @@ create policy "bookings_select_participants"
   on public.bookings for select
   using (guest_id = auth.uid() or host_id = auth.uid());
 
--- 예약 신청: 로그인 손님은 본인 id 로, 비로그인 손님(전용 결제 링크)은 guest_id null 로
-drop policy if exists "bookings_insert_any" on public.bookings;
-create policy "bookings_insert_any"
-  on public.bookings for insert
-  with check (guest_id is null or guest_id = auth.uid());
+-- 예약 신청: 모든 예약은 서버 API(/api/bookings) → create_booking RPC(service_role)로만 만든다.
+-- 브라우저에서 bookings 로 직접 INSERT 하는 경로는 정식 오픈 전에 닫았습니다(002_lock_direct_insert.sql).
+-- 아래 정책을 되살리면 anon/authenticated 가 금액을 임의로 넣고 예약을 만들 수 있으니 주의하세요.
+-- create policy "bookings_insert_any" on public.bookings for insert
+--   with check (guest_id is null or guest_id = auth.uid());
 
 -- 예약 상태 변경: 사장님은 내 예약 승인/거절, 게스트는 내 예약 취소
 drop policy if exists "bookings_update_host" on public.bookings;
@@ -297,6 +301,240 @@ insert into public.spaces (
     4.7, 64, false, false, 'meeting-gangnam'
   )
 on conflict (id) do nothing;
+
+-- ------------------------------------------------------------
+-- 5-1. 예약 무결성: 더블부킹 방지 + 서버 금액 재계산
+--      (자세한 내용은 supabase/migrations/001_booking_integrity.sql)
+-- ------------------------------------------------------------
+
+create extension if not exists btree_gist;
+
+-- 기존 INSERT 호환: date/start_time/hours 만 넣어도 start_at·end_at·expires_at 을 채운다.
+create or replace function public.bookings_sync_range()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.date is null
+     or new.start_time is null
+     or new.start_time !~ '^[0-2][0-9]:[0-5][0-9]$'
+     or new.hours is null then
+    raise exception 'INVALID_TIME' using errcode = 'P0001';
+  end if;
+
+  new.start_at := (new.date::timestamp + new.start_time::interval) at time zone 'Asia/Seoul';
+  new.end_at := new.start_at + make_interval(hours => new.hours);
+
+  if new.expires_at is null and coalesce(new.status, 'pending') = 'pending' then
+    new.expires_at := now() + interval '15 minutes';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists bookings_sync_range on public.bookings;
+create trigger bookings_sync_range
+  before insert or update on public.bookings
+  for each row execute function public.bookings_sync_range();
+
+alter table public.bookings drop constraint if exists bookings_end_after_start;
+alter table public.bookings
+  add constraint bookings_end_after_start
+  check (end_at is null or start_at is null or end_at > start_at);
+
+alter table public.bookings drop constraint if exists bookings_no_overlap;
+alter table public.bookings
+  add constraint bookings_no_overlap
+  exclude using gist (
+    space_id with =,
+    tstzrange(start_at, end_at, '[)') with &&
+  ) where (
+    status in ('pending', 'confirmed')
+    and start_at is not null
+    and end_at is not null
+  );
+
+-- 서버 금액 계산 (spaces 의 시간당 요금·할인율 기준)
+create or replace function public.calc_booking_amount(p_space uuid, p_hours integer)
+returns integer
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select case
+           when s.id is null then null
+           when p_hours is null or p_hours < 1 then null
+           else greatest(
+                  0,
+                  round(s.price_per_hour * p_hours * (100 - coalesce(s.discount_rate, 0)) / 100.0)
+                )::integer
+         end
+    from public.spaces s
+   where s.id = p_space;
+$$;
+
+-- 예약 생성 (공간 id 기준)
+create or replace function public.create_booking(
+  p_space     uuid,
+  p_date      date,
+  p_start_time text,
+  p_hours     integer,
+  p_guests    integer,
+  p_guest_name text,
+  p_guest_phone text,
+  p_memo      text default '',
+  p_guest_id  uuid default null,
+  p_source    text default 'web'
+)
+returns public.bookings
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_space   public.spaces%rowtype;
+  v_start   timestamptz;
+  v_end     timestamptz;
+  v_amount  integer;
+  v_booking public.bookings%rowtype;
+begin
+  if p_date is null then
+    raise exception 'INVALID_DATE' using errcode = 'P0001';
+  end if;
+  if p_hours is null or p_hours < 1 or p_hours > 24 then
+    raise exception 'INVALID_HOURS' using errcode = 'P0001';
+  end if;
+  if p_guests is null or p_guests < 1 then
+    raise exception 'INVALID_GUESTS' using errcode = 'P0001';
+  end if;
+  if coalesce(btrim(p_guest_name), '') = '' or coalesce(btrim(p_guest_phone), '') = '' then
+    raise exception 'INVALID_GUEST' using errcode = 'P0001';
+  end if;
+  if p_start_time is null or p_start_time !~ '^[0-2][0-9]:[0-5][0-9]$' then
+    raise exception 'INVALID_TIME' using errcode = 'P0001';
+  end if;
+
+  select * into v_space from public.spaces where id = p_space;
+  if not found then
+    raise exception 'SPACE_NOT_FOUND' using errcode = 'P0001';
+  end if;
+  if p_guests > v_space.capacity then
+    raise exception 'OVER_CAPACITY' using errcode = 'P0001';
+  end if;
+
+  v_start := (p_date::timestamp + p_start_time::interval) at time zone 'Asia/Seoul';
+  v_end   := v_start + make_interval(hours => p_hours);
+
+  if v_start <= now() then
+    raise exception 'PAST_TIME' using errcode = 'P0001';
+  end if;
+
+  v_amount := public.calc_booking_amount(v_space.id, p_hours);
+  if v_amount is null then
+    raise exception 'SPACE_NOT_FOUND' using errcode = 'P0001';
+  end if;
+
+  -- 만료된 pending 점유를 먼저 풀어준다 (같은 공간)
+  update public.bookings b
+     set status = 'cancelled'
+   where b.space_id = v_space.id
+     and b.status = 'pending'
+     and (b.start_at is null
+          or b.start_at < now()
+          or (b.expires_at is not null and b.expires_at < now()));
+
+  insert into public.bookings (
+    space_id, space_name, host_id, guest_id,
+    guest_name, guest_phone, date, start_time, hours, guests,
+    total_amount, status, memo, source,
+    start_at, end_at, expires_at
+  ) values (
+    v_space.id,
+    v_space.name,
+    v_space.host_id,
+    p_guest_id,
+    btrim(p_guest_name),
+    btrim(p_guest_phone),
+    p_date,
+    p_start_time,
+    p_hours,
+    p_guests,
+    v_amount,
+    'pending',
+    coalesce(p_memo, ''),
+    case when p_source = 'link' then 'link' else 'web' end,
+    v_start,
+    v_end,
+    now() + interval '15 minutes'
+  )
+  returning * into v_booking;
+
+  return v_booking;
+
+exception
+  when exclusion_violation then
+    raise exception 'SLOT_TAKEN' using errcode = 'P0001';
+end;
+$$;
+
+comment on function public.create_booking(uuid, date, text, integer, integer, text, text, text, uuid, text) is
+  '예약 생성 RPC. 금액 재계산·과거 시간 차단·만료 pending 정리·중복 시간(SLOT_TAKEN) 차단을 모두 서버에서 처리합니다.';
+
+-- 예약 생성 (전용 결제 링크 slug 기준, 비로그인 허용)
+create or replace function public.create_booking_by_slug(
+  p_slug      text,
+  p_date      date,
+  p_start_time text,
+  p_hours     integer,
+  p_guests    integer,
+  p_guest_name text,
+  p_guest_phone text,
+  p_memo      text default '',
+  p_guest_id  uuid default null
+)
+returns public.bookings
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_space_id uuid;
+begin
+  if coalesce(btrim(p_slug), '') = '' then
+    raise exception 'SPACE_NOT_FOUND' using errcode = 'P0001';
+  end if;
+
+  select s.id into v_space_id
+    from public.spaces s
+   where s.pay_slug = p_slug
+      or s.id::text = p_slug
+   limit 1;
+
+  if v_space_id is null then
+    raise exception 'SPACE_NOT_FOUND' using errcode = 'P0001';
+  end if;
+
+  return public.create_booking(
+    v_space_id, p_date, p_start_time, p_hours, p_guests,
+    p_guest_name, p_guest_phone, p_memo, p_guest_id, 'link'
+  );
+end;
+$$;
+
+comment on function public.create_booking_by_slug(text, date, text, integer, integer, text, text, text, uuid) is
+  '전용 결제 링크(pay_slug) 예약 생성 RPC. 로그인 없이도 동작하며 내부적으로 create_booking 을 호출합니다.';
+
+-- RPC 실행 권한: 서버(service_role)만
+revoke all on function public.calc_booking_amount(uuid, integer) from public;
+revoke all on function public.create_booking(uuid, date, text, integer, integer, text, text, text, uuid, text) from public;
+revoke all on function public.create_booking_by_slug(text, date, text, integer, integer, text, text, text, uuid) from public;
+grant execute on function public.calc_booking_amount(uuid, integer) to service_role;
+grant execute on function public.create_booking(uuid, date, text, integer, integer, text, text, text, uuid, text) to service_role;
+grant execute on function public.create_booking_by_slug(text, date, text, integer, integer, text, text, text, uuid) to service_role;
 
 -- ------------------------------------------------------------
 -- 6. 총괄 관리자 (/admin)
