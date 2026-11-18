@@ -24,7 +24,6 @@ export function BookingConsent({
           checked={checked}
           onChange={(event) => onChange(event.target.checked)}
           className="mt-0.5 h-4 w-4 shrink-0 accent-[#FF2E7E]"
-          required
         />
         <span>
           <span className="font-bold text-brand">[필수]</span> 이용약관, 개인정보 수집·이용, 취소·환불 규정을

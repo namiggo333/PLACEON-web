@@ -77,7 +77,7 @@ export default function HomeView({ initialSpaces }: { initialSpaces: Space[] }) 
               </h1>
 
               <p className="mt-3.5 max-w-lg text-sm leading-relaxed text-ink-soft sm:text-base">
-                파티룸 · 키즈룸 · 연습실 · 촬영스튜디오 · 회의실 · 공유주방 · 루프탑 · 스터디룸.
+                파티룸 · 키즈룸 · 연습실 · 촬영스튜디오 · 회의실 · 공유주방 · 루프탑 · 스터디룸.{" "}
                 <br className="hidden sm:block" />
                 실시간으로 비어 있는 공간을 골라 시간당 요금으로 예약하세요.
               </p>
