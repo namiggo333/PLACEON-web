@@ -121,7 +121,7 @@ export function SpaceCard({ space, className }: { space: Space; className?: stri
           {discounted && (
             <span className="text-[11px] font-extrabold text-brand sm:text-xs">{space.discountRate}%</span>
           )}
-          <span className="text-[14px] font-extrabold text-ink sm:text-[15px]">{won(finalPrice)}</span>
+          <span className="font-display text-[15px] text-ink sm:text-[16px]">{won(finalPrice)}</span>
           <span className="text-[10px] text-ink-mute sm:text-[11px]">/시간</span>
           {discounted && (
             <span className="ml-auto hidden text-[11px] font-medium text-ink-mute line-through sm:inline">

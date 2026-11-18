@@ -40,7 +40,7 @@ export function CategoryChips({
             </span>
             <span
               className={cn(
-                "text-center text-[11.5px] font-semibold leading-tight tracking-tight transition",
+                "text-center font-display text-[12.5px] leading-tight tracking-tight transition",
                 isActive ? "text-brand" : "text-ink-soft group-hover:text-ink"
               )}
             >

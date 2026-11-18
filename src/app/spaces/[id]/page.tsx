@@ -21,7 +21,7 @@ import {
   UsersIcon,
 } from "@/components/Icons";
 import { CATEGORY_MAP, HOUR_OPTIONS, TIME_SLOTS } from "@/lib/constants";
-import { calcTotal, cn, endTime, formatDate, formatTime, shortId, todayISO, won } from "@/lib/format";
+import { calcTotal, cn, formatDate, formatTime, shortId, timeRange, todayISO, won } from "@/lib/format";
 import type { Booking } from "@/lib/types";
 
 export default function SpaceDetailPage() {
@@ -84,7 +84,6 @@ export default function SpaceDetailPage() {
   const subtotal = space.pricePerHour * hours;
   const total = calcTotal(space.pricePerHour, hours, space.discountRate);
   const discount = subtotal - total;
-  const end = endTime(startTime, hours);
   const photos = space.imageUrls ?? [];
   const safePhotoIndex = photos.length > 0 ? Math.min(photoIndex, photos.length - 1) : 0;
 
@@ -291,7 +290,7 @@ export default function SpaceDetailPage() {
                 <div className="flex justify-between gap-3">
                   <dt className="text-ink-mute">일시</dt>
                   <dd className="text-right font-semibold text-ink">
-                    {formatDate(done.date)} {formatTime(done.startTime)} ~ {endTime(done.startTime, done.hours)}
+                    {formatDate(done.date)} {timeRange(done.startTime, done.hours)}
                   </dd>
                 </div>
                 <div className="flex justify-between gap-3">
@@ -454,7 +453,7 @@ export default function SpaceDetailPage() {
                     <span>{won(total)}</span>
                   </div>
                   <p className="mt-1 text-[10px] text-ink-mute">
-                    {formatDate(date)} {formatTime(startTime)} ~ {end}
+                    {formatDate(date)} {timeRange(startTime, hours)}
                   </p>
                 </div>
 
@@ -546,7 +545,7 @@ export default function SpaceDetailPage() {
                 <span className="text-[10px] text-ink-mute">/ {hours}시간</span>
               </p>
               <p className="truncate text-[10px] text-ink-mute">
-                {formatDate(date)} {formatTime(startTime)} ~ {end}
+                {formatDate(date)} {timeRange(startTime, hours)}
               </p>
             </div>
             <button

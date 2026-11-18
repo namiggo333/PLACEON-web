@@ -1,9 +1,15 @@
 import type { Metadata, Viewport } from "next";
+import "./jua-fontface.css";
 import "./globals.css";
 import { AppProvider } from "@/components/AppProvider";
 import { Chrome } from "@/components/Chrome";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 
+/** 포인트 요소(로고·히어로·제목·CTA)용 둥근 디스플레이 폰트 — 주아체
+ *  주아체는 Next의 next/font/google 메타데이터에 한글 서브셋이 없어(Korean
+ *  유니코드 슬라이스가 latin으로만 노출) 한글이 fallback으로 떨어지는 문제가 있다.
+ *  같은 Google 웹폰트를 유니코드 슬라이스 그대로 셀프호스팅해(jua-fontface.css)
+ *  한글까지 둥근 글씨체로 렌더링되게 했다. */
 const SITE_TITLE = "이곳저곳 · 공간 예약부터 결제까지";
 const SITE_DESCRIPTION =
   "시간 단위로 빌리는 모든 공간. 파티룸·키즈룸·연습실·촬영스튜디오·회의실·공유주방·루프탑·스터디룸을 한 번에 찾고, 1초 만에 예약하고 결제하세요.";

@@ -37,11 +37,17 @@ const config: Config = {
       },
       fontFamily: {
         sans: [
-          "Pretendard",
-          "-apple-system",
-          "BlinkMacSystemFont",
+          "NanumSquareRound",
+          "Jua",
           "Apple SD Gothic Neo",
-          "Noto Sans KR",
+          "Malgun Gothic",
+          "system-ui",
+          "sans-serif",
+        ],
+        display: [
+          "Jua",
+          "NanumSquareRound",
+          "Apple SD Gothic Neo",
           "Malgun Gothic",
           "system-ui",
           "sans-serif",

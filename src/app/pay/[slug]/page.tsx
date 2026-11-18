@@ -1,17 +1,133 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useApp } from "@/components/AppProvider";
 import { BookingConsent } from "@/components/ConsentCheckbox";
 import { DepositGuide } from "@/components/DepositGuide";
 import { LogoMark, MascotAvatar } from "@/components/Logo";
 import { SpaceMedia } from "@/components/SpaceCard";
-import { CheckIcon, ClockIcon, PinIcon, UsersIcon } from "@/components/Icons";
+import {
+  ArrowLeftIcon,
+  BoltIcon,
+  CalendarIcon,
+  CheckIcon,
+  ChevronRightIcon,
+  ClockIcon,
+  PinIcon,
+  SparkleIcon,
+  StarIcon,
+  UsersIcon,
+} from "@/components/Icons";
 import { CATEGORY_MAP, HOUR_OPTIONS, TIME_SLOTS } from "@/lib/constants";
-import { calcTotal, cn, endTime, formatDate, formatTime, shortId, todayISO, won } from "@/lib/format";
-import type { Booking } from "@/lib/types";
+import {
+  addDays,
+  calcTotal,
+  cn,
+  formatDate,
+  formatTime,
+  shortId,
+  timeRange,
+  toISO,
+  todayISO,
+  won,
+} from "@/lib/format";
+import type { Booking, Space } from "@/lib/types";
+
+/** 공간 사진 갤러리 — 대표 사진 + 썸네일 (여러 장이면 넘겨 보기) */
+function PhotoGallery({ space }: { space: Space }) {
+  const photos = space.imageUrls?.length ? space.imageUrls : [];
+  const [index, setIndex] = useState(0);
+  const category = CATEGORY_MAP[space.category] ?? CATEGORY_MAP.party;
+  const safeIndex = photos.length ? Math.min(index, photos.length - 1) : 0;
+
+  return (
+    <div>
+      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl3 bg-ink-line/40 shadow-card sm:aspect-[16/10]">
+        {photos.length ? (
+          <Image
+            src={photos[safeIndex]}
+            alt={`${space.name} 사진 ${safeIndex + 1}`}
+            fill
+            priority
+            sizes="(max-width: 1024px) 100vw, 620px"
+            className="object-cover"
+          />
+        ) : (
+          <SpaceMedia space={space} emojiSize="text-7xl" />
+        )}
+
+        {photos.length === 0 && (
+          <span className="absolute bottom-3 left-3 rounded-full bg-white/85 px-2.5 py-1 text-[10.5px] font-bold text-ink-soft backdrop-blur">
+            사장님이 공간 사진을 준비하고 있어요
+          </span>
+        )}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/25 to-transparent" />
+        <div className="absolute left-3 top-3 flex flex-wrap items-center gap-1.5">
+          <span className="badge bg-white/90 text-brand-deep backdrop-blur">
+            {category.emoji} {category.label}
+          </span>
+          {space.discountRate > 0 && (
+            <span className="badge bg-brand text-white shadow-sm">타임특가 {space.discountRate}%</span>
+          )}
+        </div>
+
+        {photos.length > 1 && (
+          <>
+            <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/30 to-transparent" />
+            <div className="absolute bottom-3 right-3 rounded-full bg-ink/60 px-2.5 py-0.5 text-[11px] font-bold text-white backdrop-blur">
+              {safeIndex + 1} / {photos.length}
+            </div>
+            <button
+              type="button"
+              aria-label="이전 사진"
+              onClick={() => setIndex((value) => (value - 1 + photos.length) % photos.length)}
+              className="absolute left-2 top-1/2 hidden h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/85 text-ink shadow-card backdrop-blur transition hover:bg-white sm:grid"
+            >
+              <ArrowLeftIcon size={18} />
+            </button>
+            <button
+              type="button"
+              aria-label="다음 사진"
+              onClick={() => setIndex((value) => (value + 1) % photos.length)}
+              className="absolute right-2 top-1/2 hidden h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/85 text-ink shadow-card backdrop-blur transition hover:bg-white sm:grid"
+            >
+              <ChevronRightIcon size={18} />
+            </button>
+          </>
+        )}
+      </div>
+
+      {photos.length > 1 && (
+        <div className="no-scrollbar mt-2 flex gap-1.5 overflow-x-auto pb-1">
+          {photos.map((photo, photoIndex) => (
+            <button
+              key={`${photo}-${photoIndex}`}
+              type="button"
+              onClick={() => setIndex(photoIndex)}
+              aria-label={`${photoIndex + 1}번째 사진 보기`}
+              aria-pressed={photoIndex === safeIndex}
+              className={cn(
+                "relative h-14 w-14 shrink-0 overflow-hidden rounded-xl ring-2 transition",
+                photoIndex === safeIndex ? "ring-brand" : "ring-transparent hover:ring-brand/40"
+              )}
+            >
+              <Image src={photo} alt="" fill sizes="56px" className="object-cover" />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const STEPS = [
+  { emoji: "🗓", title: "날짜·시간 선택", desc: "비어 있는 시간대를 골라요" },
+  { emoji: "🩷", title: "예약 신청", desc: "로그인 없이 3초면 끝" },
+  { emoji: "✅", title: "입금 확인 후 확정", desc: "사장님이 확인하면 확정" },
+];
 
 export default function PayPage() {
   const params = useParams<{ slug: string }>();
@@ -39,21 +155,33 @@ export default function PayPage() {
     }
   }, [user]);
 
+  const quickDates = useMemo(
+    () => [0, 1, 2].map((offset) => ({ iso: toISO(addDays(offset)), label: offset === 0 ? "오늘" : offset === 1 ? "내일" : "모레" })),
+    []
+  );
+
+  const subtotal = space ? space.pricePerHour * hours : 0;
+  const total = space ? calcTotal(space.pricePerHour, hours, space.discountRate) : 0;
+  const discount = subtotal - total;
+
   if (!ready) {
     return (
-      <div className="min-h-dvh bg-brand-light/60 p-4">
-        <div className="mx-auto mt-10 max-w-lg skeleton h-96" />
+      <div className="min-h-dvh bg-brand-light/50 p-4">
+        <div className="mx-auto mt-10 max-w-5xl">
+          <div className="skeleton h-64 w-full" />
+          <div className="mt-4 skeleton h-40 w-full" />
+        </div>
       </div>
     );
   }
 
   if (!space) {
     return (
-      <div className="min-h-dvh bg-brand-light/60 px-4 py-16">
-        <div className="mx-auto max-w-md rounded-xl2 bg-white p-8 text-center shadow-card">
-          <MascotAvatar size={76} className="mx-auto" />
-          <h1 className="mt-3 text-lg font-black text-ink">링크를 찾을 수 없어요</h1>
-          <p className="mt-1 text-xs leading-relaxed text-ink-mute">
+      <div className="min-h-dvh bg-gradient-to-b from-brand-light via-[#FFF8FB] to-white px-4 py-16">
+        <div className="mx-auto max-w-md rounded-xl3 bg-white p-8 text-center shadow-float">
+          <MascotAvatar size={80} className="mx-auto" />
+          <h1 className="mt-3 text-[20px] text-ink">링크를 찾을 수 없어요</h1>
+          <p className="mt-1.5 text-xs leading-relaxed text-ink-mute">
             사장님이 링크를 새로 만들었거나 공간이 삭제되었을 수 있어요. 사장님께 다시 링크를 요청해 주세요.
           </p>
           <Link href="/" className="btn-primary mt-5 w-full">
@@ -64,10 +192,9 @@ export default function PayPage() {
     );
   }
 
-  const subtotal = space.pricePerHour * hours;
-  const total = calcTotal(space.pricePerHour, hours, space.discountRate);
-  const discount = subtotal - total;
-  const category = CATEGORY_MAP[space.category];
+  const category = CATEGORY_MAP[space.category] ?? CATEGORY_MAP.party;
+  const discountedPrice = Math.round((space.pricePerHour * (100 - space.discountRate)) / 100);
+  const place = space.address?.trim() || `${space.region} ${space.district}`.trim();
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -100,35 +227,45 @@ export default function PayPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-gradient-to-b from-brand-light via-[#FFF8FB] to-white">
-      <header className="border-b border-brand/10 bg-white/70 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
-          <Link href="/" className="flex items-center gap-2" aria-label="이곳저곳 홈">
-            <LogoMark size={30} decorative />
-            <span className="text-[17px] font-black tracking-[-0.035em] text-ink">이곳저곳</span>
-            <MascotAvatar size={26} ring={false} className="ml-0.5 hidden sm:inline-grid" />
+    <div className="min-h-dvh bg-[linear-gradient(180deg,#FFF0F6_0%,#FFF7FB_38%,#FFFFFF_78%)]">
+      {/* 상단 바 — 전용 예약 페이지임을 한눈에 */}
+      <header className="sticky top-0 z-40 border-b border-brand/10 bg-white/85 backdrop-blur-md">
+        <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-2 px-4">
+          <Link href="/" className="flex shrink-0 items-center gap-1.5" aria-label="이곳저곳 홈">
+            <LogoMark size={28} decorative />
+            <span className="font-display text-[21px] leading-none text-ink">이곳저곳</span>
           </Link>
-          <span className="badge bg-brand-light text-brand">간편 예약 · 로그인 없이</span>
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="hidden items-center gap-1 rounded-full bg-brand-light px-2.5 py-1 text-[11px] font-bold text-brand sm:inline-flex">
+              <SparkleIcon size={12} />
+              수수료 0원 · 전용 예약 페이지
+            </span>
+            {!done && (
+              <a href="#booking" className="btn-primary btn-sm rounded-full px-3.5 py-1.5 lg:hidden">
+                예약하기
+              </a>
+            )}
+          </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-4 py-6 sm:py-10">
+      <main className="mx-auto w-full max-w-5xl px-4 pb-14 pt-4 sm:pt-6">
         {done ? (
-          <div className="animate-pop-in rounded-xl2 bg-white p-6 shadow-float sm:p-8">
+          <div className="mx-auto max-w-lg animate-pop-in rounded-xl3 bg-white p-5 shadow-float sm:p-7">
             <div className="flex flex-col items-center text-center">
               <span className="relative">
-                <MascotAvatar size={86} />
+                <MascotAvatar size={88} />
                 <span className="absolute -bottom-1 -right-1 grid h-7 w-7 place-items-center rounded-full bg-emerald-500 text-white ring-2 ring-white">
                   <CheckIcon size={16} />
                 </span>
               </span>
-              <h1 className="mt-3 text-xl font-black text-ink">예약 신청이 접수됐어요</h1>
+              <h1 className="mt-3 text-[22px] text-ink">예약 신청이 접수됐어요</h1>
               <p className="mt-1 text-xs text-ink-mute">
                 예약번호 <b className="text-ink">{shortId(done.id)}</b> · 15분 안에 입금하면 예약이 확정돼요.
               </p>
             </div>
 
-            <dl className="mt-5 space-y-2 rounded-xl bg-ink-line/30 p-4 text-xs">
+            <dl className="mt-5 space-y-2 rounded-2xl bg-[#FFF8FB] p-4 text-xs ring-1 ring-ink-line">
               <div className="flex justify-between gap-3">
                 <dt className="text-ink-mute">공간</dt>
                 <dd className="text-right font-bold text-ink">{done.spaceName}</dd>
@@ -136,7 +273,7 @@ export default function PayPage() {
               <div className="flex justify-between gap-3">
                 <dt className="text-ink-mute">일시</dt>
                 <dd className="text-right font-bold text-ink">
-                  {formatDate(done.date)} {formatTime(done.startTime)} ~ {endTime(done.startTime, done.hours)}
+                  {formatDate(done.date)} {timeRange(done.startTime, done.hours)}
                 </dd>
               </div>
               <div className="flex justify-between gap-3">
@@ -153,75 +290,174 @@ export default function PayPage() {
               </div>
               <div className="flex justify-between gap-3 border-t border-ink-line pt-2">
                 <dt className="font-bold text-ink">이용 요금</dt>
-                <dd className="text-right text-base font-black text-brand">{won(done.totalAmount)}</dd>
+                <dd className="text-right text-base text-brand">{won(done.totalAmount)}</dd>
               </div>
             </dl>
 
-            <DepositGuide booking={done} className="mt-4" />
+            <DepositGuide booking={done} className="mt-3" />
 
             <div className="mt-4 flex flex-col gap-2">
               {user && (
-                <Link href="/bookings" className="btn-primary w-full">
+                <Link href="/bookings" className="btn-primary w-full py-3">
                   예약 내역 보기
                 </Link>
               )}
-              <Link href="/" className={cn("w-full", user ? "btn-ghost" : "btn-primary")}>
+              <Link href="/" className={cn("w-full py-3", user ? "btn-ghost" : "btn-primary")}>
                 이곳저곳 둘러보기
               </Link>
             </div>
+            {user && (
+              <p className="mt-2 text-center text-[10.5px] leading-relaxed text-ink-mute">
+                예약이 확정되면 예약 내역에서 💌 모임 초대 카드를 만들어 친구에게 보낼 수 있어요.
+              </p>
+            )}
           </div>
         ) : (
-          <div className="grid gap-4">
-            <div className="overflow-hidden rounded-xl2 bg-white shadow-card">
-              <div className="relative h-40 sm:h-48">
-                <SpaceMedia space={space} emojiSize="text-6xl" showLabel />
-              </div>
-              <div className="p-4 sm:p-5">
+          <div className="grid gap-5 lg:grid-cols-[1.06fr_0.94fr] lg:items-start lg:gap-7">
+            <div className="min-w-0 space-y-4">
+              <PhotoGallery space={space} />
+
+              {/* 공간 소개 */}
+              <section className="rounded-xl2 bg-white p-4 shadow-card sm:p-5">
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="badge bg-brand-light text-brand">{category.label}</span>
-                  {space.discountRate > 0 && (
-                    <span className="badge bg-brand text-white">타임특가 {space.discountRate}%</span>
+                  <span className={cn("badge", category.pastel, category.tone)}>
+                    {category.emoji} {category.label}
+                  </span>
+                  {space.timeDeal && space.discountRate > 0 && (
+                    <span className="badge bg-brand-light text-brand">
+                      <BoltIcon size={11} /> 지금 타임특가
+                    </span>
                   )}
+                  <span className="badge bg-ink-line/60 text-ink-soft">
+                    <UsersIcon size={11} /> 최대 {space.capacity}명
+                  </span>
+                  <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-semibold text-ink-soft">
+                    <StarIcon size={12} className="text-amber-400" />
+                    {space.reviewCount > 0 ? (
+                      <>
+                        {space.rating.toFixed(1)} <span className="text-ink-mute">({space.reviewCount})</span>
+                      </>
+                    ) : (
+                      <span className="text-ink-mute">신규 공간</span>
+                    )}
+                  </span>
                 </div>
-                <h1 className="mt-2 text-xl font-black tracking-tight text-ink">{space.name}</h1>
-                <p className="mt-1 flex items-center gap-1 text-[11px] text-ink-soft">
+
+                <h1 className="mt-2.5 text-[24px] leading-snug text-ink sm:text-[28px]">{space.name}</h1>
+
+                <a
+                  href={`https://map.naver.com/p/search/${encodeURIComponent(place)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-1.5 inline-flex items-center gap-1 text-[12px] font-semibold text-ink-soft underline-offset-2 hover:text-brand hover:underline"
+                >
                   <PinIcon size={13} className="text-ink-mute" />
-                  {space.address || `${space.region} ${space.district}`}
+                  {place || "위치는 사장님께 문의해 주세요"}
+                </a>
+
+                <div className="mt-3 flex flex-wrap items-end gap-x-2 gap-y-1 rounded-2xl bg-[#FFF8FB] px-3.5 py-3 ring-1 ring-ink-line">
+                  {space.discountRate > 0 && (
+                    <span className="text-[15px] text-brand">{space.discountRate}%</span>
+                  )}
+                  <span className="font-display text-[27px] leading-none text-ink">{won(discountedPrice)}</span>
+                  <span className="text-[12px] font-semibold text-ink-mute">/시간</span>
+                  {space.discountRate > 0 && (
+                    <span className="text-[12px] font-semibold text-ink-mute line-through">{won(space.pricePerHour)}</span>
+                  )}
+                  <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-semibold text-ink-soft">
+                    <ClockIcon size={12} /> 시간 단위 예약
+                  </span>
+                </div>
+
+                <div className="mt-3.5">
+                  <h2 className="text-[15px] text-ink">공간 소개</h2>
+                  <p className="mt-1 whitespace-pre-line text-[13px] leading-relaxed text-ink-soft">
+                    {space.description || "사장님이 공간 소개를 준비하고 있어요."}
+                  </p>
+                </div>
+
+                {space.amenities.length > 0 && (
+                  <div className="mt-3.5">
+                    <h2 className="text-[15px] text-ink">편의시설</h2>
+                    <ul className="mt-1.5 flex flex-wrap gap-1.5">
+                      {space.amenities.map((amenity) => (
+                        <li
+                          key={amenity}
+                          className="inline-flex items-center gap-1 rounded-full bg-ink-line/50 px-2.5 py-1 text-[11px] font-semibold text-ink-soft"
+                        >
+                          <CheckIcon size={11} className="text-brand" />
+                          {amenity}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <div className="mt-3.5 flex items-center gap-2.5 rounded-2xl border border-ink-line px-3 py-2.5">
+                  <MascotAvatar size={34} ring={false} />
+                  <div className="min-w-0">
+                    <p className="truncate text-[12px] font-bold text-ink">{space.hostName} 사장님의 공간</p>
+                    <p className="truncate text-[10.5px] text-ink-mute">이곳저곳 전용 예약 페이지로 받는 예약은 수수료 0원</p>
+                  </div>
+                </div>
+              </section>
+
+              {/* 예약 절차 */}
+              <section className="rounded-xl2 bg-white p-4 shadow-card sm:p-5">
+                <h2 className="text-[15px] text-ink">이렇게 예약해요</h2>
+                <ol className="mt-2.5 grid gap-2 sm:grid-cols-3">
+                  {STEPS.map((step, index) => (
+                    <li key={step.title} className="relative rounded-2xl bg-[#FFF8FB] px-3 py-2.5 ring-1 ring-ink-line">
+                      <span className="text-[15px]" aria-hidden>
+                        {step.emoji}
+                      </span>
+                      <p className="mt-0.5 text-[12.5px] font-bold text-ink">
+                        {index + 1}. {step.title}
+                      </p>
+                      <p className="text-[10.5px] text-ink-mute">{step.desc}</p>
+                    </li>
+                  ))}
+                </ol>
+                <p className="mt-2.5 flex items-start gap-1.5 rounded-xl bg-brand-light/70 px-3 py-2 text-[11px] font-semibold leading-relaxed text-brand-deep">
+                  <SparkleIcon size={13} className="mt-0.5 shrink-0" />
+                  인스타·카톡으로 받은 손님도 이 페이지에서 바로 예약할 수 있어요. 중간 수수료 없이 사장님께 그대로
+                  전달돼요.
                 </p>
-                <div className="mt-2 flex items-baseline gap-1.5">
-                  {space.discountRate > 0 && (
-                    <span className="text-sm font-black text-brand">{space.discountRate}%</span>
-                  )}
-                  <span className="text-lg font-black text-ink">
-                    {won(Math.round((space.pricePerHour * (100 - space.discountRate)) / 100))}
-                  </span>
-                  <span className="text-[11px] text-ink-mute">/시간</span>
-                  {space.discountRate > 0 && (
-                    <span className="text-[11px] text-ink-mute line-through">{won(space.pricePerHour)}</span>
-                  )}
-                </div>
-                <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-ink-soft">{space.description}</p>
-                <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-ink-mute">
-                  <span className="inline-flex items-center gap-1">
-                    <UsersIcon size={13} />
-                    최대 {space.capacity}명
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <ClockIcon size={13} />
-                    시간 단위 예약
-                  </span>
-                  <span>호스트 {space.hostName}</span>
-                </div>
-              </div>
+              </section>
             </div>
 
-            <form onSubmit={submit} className="rounded-xl2 bg-white p-4 shadow-card sm:p-5">
-              <h2 className="text-sm font-extrabold text-ink">예약 정보 입력</h2>
+            {/* 예약 폼 */}
+            <form
+              id="booking"
+              onSubmit={submit}
+              className="scroll-mt-20 rounded-xl2 border border-brand/10 bg-white p-4 shadow-float sm:p-5 lg:sticky lg:top-[76px]"
+            >
+              <div className="flex items-center justify-between">
+                <h2 className="text-[19px] text-ink">예약하기</h2>
+                <span className="badge bg-brand-light text-brand">로그인 없이</span>
+              </div>
               <p className="mt-0.5 text-[11px] text-ink-mute">날짜와 시간만 고르면 끝나요. 3초면 예약 완료!</p>
 
-              <div className="mt-3 space-y-3">
+              <div className="mt-3.5 space-y-3">
                 <div>
-                  <label className="label" htmlFor="pay-date">이용 날짜</label>
+                  <span className="label">이용 날짜</span>
+                  <div className="mb-1.5 flex gap-1.5">
+                    {quickDates.map((item) => (
+                      <button
+                        key={item.iso}
+                        type="button"
+                        onClick={() => setDate(item.iso)}
+                        className={cn(
+                          "flex-1 rounded-full border px-2 py-1.5 text-[11.5px] font-bold transition",
+                          date === item.iso
+                            ? "border-brand bg-brand text-white"
+                            : "border-ink-line bg-white text-ink-soft hover:border-brand/40 hover:text-brand"
+                        )}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
                   <input
                     id="pay-date"
                     type="date"
@@ -229,12 +465,16 @@ export default function PayPage() {
                     value={date}
                     onChange={(event) => setDate(event.target.value)}
                     className="input"
+                    aria-label="이용 날짜"
                     required
                   />
                 </div>
+
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="label" htmlFor="pay-start">시작 시간</label>
+                    <label className="label" htmlFor="pay-start">
+                      시작 시간
+                    </label>
                     <select
                       id="pay-start"
                       value={startTime}
@@ -249,7 +489,9 @@ export default function PayPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="label" htmlFor="pay-hours">이용 시간</label>
+                    <label className="label" htmlFor="pay-hours">
+                      이용 시간
+                    </label>
                     <select
                       id="pay-hours"
                       value={hours}
@@ -266,7 +508,9 @@ export default function PayPage() {
                 </div>
 
                 <div className="flex items-center justify-between rounded-xl border border-ink-line px-3 py-2">
-                  <span className="text-xs font-bold text-ink-soft">인원</span>
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-ink-soft">
+                    <UsersIcon size={13} className="text-ink-mute" /> 인원
+                  </span>
                   <div className="flex items-center gap-3">
                     <button
                       type="button"
@@ -290,7 +534,9 @@ export default function PayPage() {
 
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="label" htmlFor="pay-name">예약자 이름</label>
+                    <label className="label" htmlFor="pay-name">
+                      예약자 이름
+                    </label>
                     <input
                       id="pay-name"
                       value={name}
@@ -301,7 +547,9 @@ export default function PayPage() {
                     />
                   </div>
                   <div>
-                    <label className="label" htmlFor="pay-phone">연락처</label>
+                    <label className="label" htmlFor="pay-phone">
+                      연락처
+                    </label>
                     <input
                       id="pay-phone"
                       value={phone}
@@ -315,7 +563,9 @@ export default function PayPage() {
                 </div>
 
                 <div>
-                  <label className="label" htmlFor="pay-memo">요청 사항 (선택)</label>
+                  <label className="label" htmlFor="pay-memo">
+                    요청 사항 (선택)
+                  </label>
                   <textarea
                     id="pay-memo"
                     value={memo}
@@ -326,7 +576,7 @@ export default function PayPage() {
                   />
                 </div>
 
-                <div className="rounded-xl bg-ink-line/30 p-3 text-[11px]">
+                <div className="rounded-2xl bg-[#FFF8FB] p-3 text-[11.5px] ring-1 ring-ink-line">
                   <div className="flex justify-between text-ink-soft">
                     <span>
                       {won(space.pricePerHour)} × {hours}시간
@@ -339,12 +589,13 @@ export default function PayPage() {
                       <span>−{won(discount)}</span>
                     </div>
                   )}
-                  <div className="mt-1.5 flex justify-between border-t border-ink-line pt-1.5 text-sm font-black text-ink">
-                    <span>총 금액</span>
-                    <span className="text-brand">{won(total)}</span>
+                  <div className="mt-1.5 flex items-baseline justify-between border-t border-ink-line pt-1.5">
+                    <span className="text-[12px] font-bold text-ink">총 금액</span>
+                    <span className="font-display text-[20px] text-brand">{won(total)}</span>
                   </div>
-                  <p className="mt-1 text-[10px] text-ink-mute">
-                    {formatDate(date)} {formatTime(startTime)} ~ {endTime(startTime, hours)}
+                  <p className="mt-1 flex items-center gap-1 text-[10.5px] text-ink-mute">
+                    <CalendarIcon size={11} />
+                    {formatDate(date)} {timeRange(startTime, hours)}
                   </p>
                 </div>
 
@@ -354,17 +605,38 @@ export default function PayPage() {
                   <p className="rounded-lg bg-red-50 px-3 py-2 text-[11px] font-medium text-red-600">{error}</p>
                 )}
 
-                <button type="submit" disabled={submitting} className="btn-primary w-full py-3">
-                  {submitting ? "접수 중…" : "예약 신청하기"}
+                <button type="submit" disabled={submitting} className="btn-primary w-full py-3 text-[15px]">
+                  {submitting ? "접수 중…" : `${won(total)} · 예약 신청하기`}
                 </button>
-                <p className="text-center text-[10px] leading-relaxed text-ink-mute">
-                  예약 신청 후 15분 안에 안내된 계좌로 입금하면 사장님 확인을 거쳐 확정돼요.
+                <p className="text-center text-[10.5px] leading-relaxed text-ink-mute">
+                  신청 후 15분 안에 안내된 계좌로 입금하면 사장님 확인을 거쳐 확정돼요.
                 </p>
               </div>
             </form>
           </div>
         )}
       </main>
+
+      <footer className="border-t border-brand/10 bg-white/70">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-2 px-4 py-5 text-[11px] text-ink-mute sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-1.5">
+            <LogoMark size={20} shadow={false} decorative />
+            <span className="text-[13px] text-ink">이곳저곳</span>
+            <span>· 사장님이 만든 전용 예약 페이지</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+            <Link href="/terms" className="font-semibold hover:text-brand">
+              이용약관
+            </Link>
+            <Link href="/privacy" className="font-semibold hover:text-brand">
+              개인정보처리방침
+            </Link>
+            <Link href="/refund" className="font-semibold hover:text-brand">
+              취소·환불 규정
+            </Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

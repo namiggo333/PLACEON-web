@@ -75,7 +75,7 @@ export function Wordmark({
   className?: string;
   size?: "sm" | "md" | "lg";
 }) {
-  const textSize = size === "lg" ? "text-[28px]" : size === "sm" ? "text-[15px]" : "text-[21px]";
+  const textSize = size === "lg" ? "text-[31px]" : size === "sm" ? "text-[17px]" : "text-[23px]";
   return (
     <span className={cn("relative inline-flex flex-col", className)}>
       <svg
@@ -93,10 +93,7 @@ export function Wordmark({
         />
       </svg>
       <span
-        className={cn(
-          "font-black leading-none tracking-[-0.045em] text-ink",
-          textSize
-        )}
+        className={cn("font-display leading-none tracking-[-0.005em] text-ink", textSize)}
       >
         이곳저곳
       </span>
@@ -108,14 +105,14 @@ export function Slogan({ className, size = "sm" }: { className?: string; size?: 
   return (
     <span
       className={cn(
-        "inline-flex flex-wrap items-center gap-x-1 font-bold leading-[1.4] tracking-tight text-ink-soft",
+        "inline-flex flex-wrap items-center gap-x-1 font-display leading-[1.45] tracking-tight text-ink-soft",
         size === "sm" ? "text-[11.5px]" : "text-sm",
         className
       )}
     >
       <span className="whitespace-nowrap">찾고, 예약하고, 결제까지</span>
       <span className="text-ink-mute">—</span>
-      <span className="relative inline-block whitespace-nowrap font-extrabold text-brand">
+      <span className="relative inline-block whitespace-nowrap font-display text-brand">
         한 번에!
         <SloganUnderline className="-bottom-[3px] text-brand" />
       </span>

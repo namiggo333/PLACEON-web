@@ -2,7 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 나눔스퀘어라운드 — 본문 기본 폰트 (둥글고 말랑한 인상, 작은 글씨 가독성 유지)
+   웹폰트 파일은 public/fonts 에 두고 직접 서빙한다. */
+@font-face {
+  font-family: "NanumSquareRound";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/NanumSquareRoundR.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "NanumSquareRound";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/NanumSquareRoundB.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "NanumSquareRound";
+  font-style: normal;
+  font-weight: 800 900;
+  font-display: swap;
+  src: url("/fonts/NanumSquareRoundEB.woff2") format("woff2");
+}
+
 :root {
+  --font-round: "NanumSquareRound", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-round-display: "Jua", "NanumSquareRound", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
   --brand: #ff2e7e;
   --brand-hot: #f01d71;
   --brand-dark: #e01867;
@@ -18,6 +46,20 @@ html {
 
 body {
   word-break: keep-all;
+  font-family: var(--font-round);
+  /* 둥근 폰트의 실제 굵기만 사용한다 (없는 굵기를 인위적으로 늘리지 않음) */
+  font-synthesis-weight: none;
+}
+
+/* 제목은 어디서든 둥글고 귀여운 주아체로 — 플랫폼 전체 톤 통일 */
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-round-display);
+  font-weight: 400;
+  letter-spacing: -0.012em;
+  line-height: 1.32;
 }
 
 @layer base {
@@ -44,8 +86,10 @@ body {
   }
 
   .btn {
-    @apply inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition
+    @apply inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-[14.5px] font-semibold transition
       focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 disabled:cursor-not-allowed disabled:opacity-50;
+    font-family: var(--font-round-display);
+    letter-spacing: -0.005em;
   }
 
   .btn-primary {
@@ -79,6 +123,8 @@ body {
 
   .badge {
     @apply inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold leading-4;
+    font-family: var(--font-round-display);
+    letter-spacing: -0.005em;
   }
 
   .chip {
@@ -91,7 +137,9 @@ body {
   }
 
   .section-title {
-    @apply text-lg font-extrabold tracking-tight text-ink sm:text-xl;
+    @apply text-[19px] text-ink sm:text-[22px];
+    font-family: var(--font-round-display);
+    letter-spacing: -0.015em;
   }
 
   .muted {

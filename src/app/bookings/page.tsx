@@ -5,11 +5,12 @@ import { useMemo, useState } from "react";
 import { useApp } from "@/components/AppProvider";
 import { DemoAccountButtons } from "@/components/Bits";
 import { DepositGuide, isDepositExpired } from "@/components/DepositGuide";
+import { InviteCardModal } from "@/components/InviteCard";
 import { SpaceMedia } from "@/components/SpaceCard";
 import { CalendarIcon, CheckIcon, ClockIcon, LinkIcon, UsersIcon } from "@/components/Icons";
 import { MascotAvatar } from "@/components/Logo";
 import { bookingStatusMeta } from "@/lib/constants";
-import { cn, endTime, formatDate, formatRelativeDate, formatTime, shortId, won } from "@/lib/format";
+import { cn, formatDate, formatRelativeDate, shortId, timeRange, won } from "@/lib/format";
 import type { BookingStatus, Role } from "@/lib/types";
 
 const TABS: { key: BookingStatus | "all"; label: string }[] = [
@@ -25,6 +26,7 @@ export default function BookingsPage() {
   const [cancelling, setCancelling] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [demoBusy, setDemoBusy] = useState<Role | null>(null);
+  const [inviteBooking, setInviteBooking] = useState<string | null>(null);
 
   const myBookings = useMemo(
     () =>
@@ -203,7 +205,7 @@ export default function BookingsPage() {
                       </span>
                       <span className="inline-flex items-center gap-1">
                         <ClockIcon size={13} className="text-ink-mute" />
-                        {formatTime(booking.startTime)} ~ {endTime(booking.startTime, booking.hours)}
+                        {timeRange(booking.startTime, booking.hours)}
                       </span>
                       <span className="inline-flex items-center gap-1">
                         <UsersIcon size={13} className="text-ink-mute" />
@@ -225,6 +227,9 @@ export default function BookingsPage() {
                           <CheckIcon size={13} className="mt-0.5 shrink-0" />
                           입금이 확인되어 예약이 확정됐어요. 이용 당일 20분 전까지 도착해 주세요.
                         </p>
+                        <p className="mt-1 pl-4 text-[10.5px] leading-relaxed text-emerald-600/90">
+                          💌 모임 초대 카드로 친구들에게 바로 공유해 보세요.
+                        </p>
                       </div>
                     )}
                     {booking.status === "cancelled" && booking.cancelReason === "expired" && (
@@ -237,6 +242,15 @@ export default function BookingsPage() {
                     )}
 
                     <div className="mt-3 flex flex-wrap gap-2">
+                      {booking.status === "confirmed" && (
+                        <button
+                          type="button"
+                          onClick={() => setInviteBooking(booking.id)}
+                          className="btn-primary btn-sm"
+                        >
+                          💌 모임 초대 카드
+                        </button>
+                      )}
                       {space && (
                         <Link href={`/spaces/${space.id}`} className="btn-ghost btn-sm">
                           공간 보기
@@ -300,6 +314,19 @@ export default function BookingsPage() {
           <li>15분 안에 입금이 확인되지 않으면 예약은 자동으로 취소되어 다른 손님이 예약할 수 있어요.</li>
         </ol>
       </div>
+
+      {(() => {
+        const target = myBookings.find((booking) => booking.id === inviteBooking);
+        if (!target) return null;
+        return (
+          <InviteCardModal
+            booking={target}
+            space={spaces.find((item) => item.id === target.spaceId) ?? null}
+            open
+            onClose={() => setInviteBooking(null)}
+          />
+        );
+      })()}
     </div>
   );
 }

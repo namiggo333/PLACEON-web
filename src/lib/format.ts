@@ -45,6 +45,7 @@ export function formatDateShort(iso: string): string {
 
 export function formatTime(hhmm: string): string {
   const [h, m] = hhmm.split(":").map(Number);
+  if (h === 24) return "자정";
   const period = h < 12 ? "오전" : "오후";
   const hour12 = h % 12 === 0 ? 12 : h % 12;
   return `${period} ${hour12}:${String(m).padStart(2, "0")}`;
@@ -58,7 +59,7 @@ export function endTime(start: string, hours: number): string {
 }
 
 export function timeRange(start: string, hours: number): string {
-  return `${formatTime(start)} ~ ${endTime(start, hours)}`;
+  return `${formatTime(start)} ~ ${formatTime(endTime(start, hours))}`;
 }
 
 export function categoryLabel(key: string): string {
