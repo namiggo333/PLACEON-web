@@ -27,8 +27,10 @@ export function MascotBanner({
         <div className="relative aspect-[4/3]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/images/mascot-hero.png"
+            src="/images/mascot-hero.webp"
             alt="핫핑크 야구모자와 돋보기를 든 이곳저곳 마스코트"
+            loading="eager"
+            decoding="async"
             className="absolute inset-0 h-full w-full object-cover object-[50%_14%]"
           />
           <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/85 px-2.5 py-1 text-[10px] font-extrabold text-brand shadow-sm backdrop-blur">
@@ -60,8 +62,10 @@ export function MascotBanner({
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/images/mascot-hero.png"
+        src="/images/mascot-hero.webp"
         alt="핫핑크 야구모자와 돋보기를 든 이곳저곳 마스코트"
+        loading="eager"
+        decoding="async"
         className="absolute inset-0 h-full w-full object-cover object-[50%_16%]"
       />
       <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/85 px-2.5 py-1 text-[10px] font-extrabold text-brand shadow-sm backdrop-blur">

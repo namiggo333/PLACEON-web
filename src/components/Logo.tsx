@@ -161,7 +161,7 @@ export function MascotAvatar({
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/images/mascot-avatar.png"
+        src="/images/mascot-avatar.webp"
         alt="이곳저곳 마스코트"
         className="h-full w-full object-cover"
         loading="lazy"

@@ -250,7 +250,7 @@ export default function HomePage() {
             </div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/images/mascot-wave.png"
+              src="/images/mascot-wave.webp"
               alt="엄지척하는 이곳저곳 마스코트"
               className="pointer-events-none hidden h-44 w-44 shrink-0 rounded-full object-cover ring-4 ring-white/15 sm:block lg:h-52 lg:w-52"
             />
