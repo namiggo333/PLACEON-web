@@ -162,7 +162,15 @@ export default function PayPage() {
     setCheckingSlots(true);
     fetchOccupiedSlots(space.id, date, date)
       .then((list) => {
-        if (alive) setOccupied(buildSlotStatuses(date, TIME_SLOTS, hours, list));
+        if (!alive) return;
+        const statuses = buildSlotStatuses(date, TIME_SLOTS, hours, list);
+        setOccupied(statuses);
+        setStartTime((current) => {
+          const picked = statuses.find((entry) => entry.start === current);
+          if (picked && !picked.taken && !picked.past) return current;
+          const firstFree = statuses.find((entry) => !entry.taken && !entry.past);
+          return firstFree ? firstFree.start : current;
+        });
       })
       .finally(() => {
         if (alive) setCheckingSlots(false);

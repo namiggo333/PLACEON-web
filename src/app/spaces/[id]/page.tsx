@@ -66,7 +66,16 @@ export default function SpaceDetailPage() {
     const to = date;
     fetchOccupiedSlots(space.id, from, to)
       .then((list) => {
-        if (alive) setOccupied(buildSlotStatuses(date, TIME_SLOTS, hours, list));
+        if (!alive) return;
+        const statuses = buildSlotStatuses(date, TIME_SLOTS, hours, list);
+        setOccupied(statuses);
+        // 지난 시간이나 이미 찬 시간이 기본값으로 잡혀 있으면 가장 가까운 예약 가능 시간으로 옮긴다.
+        setStartTime((current) => {
+          const picked = statuses.find((entry) => entry.start === current);
+          if (picked && !picked.taken && !picked.past) return current;
+          const firstFree = statuses.find((entry) => !entry.taken && !entry.past);
+          return firstFree ? firstFree.start : current;
+        });
       })
       .finally(() => {
         if (alive) setCheckingSlots(false);
