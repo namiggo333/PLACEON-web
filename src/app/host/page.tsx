@@ -1128,7 +1128,7 @@ export default function HostPage() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-xs font-bold text-ink">{block.spaceName}</p>
                       <p className="text-[10px] text-ink-mute">
-                        {formatDate(block.date)} {formatTime(block.startTime)} ~ {endTime(block.startTime, block.hours)}
+                        {formatDate(block.date)} {formatTime(block.startTime)} ~ {formatTime(endTime(block.startTime, block.hours))}
                         {block.memo ? ` · ${block.memo}` : ""}
                       </p>
                     </div>

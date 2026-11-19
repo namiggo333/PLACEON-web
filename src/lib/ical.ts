@@ -89,8 +89,11 @@ export function parseIcs(text: string, limit = 500): ParseIcsResult {
         const startRaw = current.DTSTART;
         const endRaw = current.DTEND;
         const duration = current.DURATION?.value ?? "";
-        const start = startRaw ? parseIcsDateTime(startRaw.value, startRaw.params.VALUE !== "DATE", startRaw.params.TZID) : null;
-        let end = endRaw ? parseIcsDateTime(endRaw.value, endRaw.params.VALUE !== "DATE", endRaw.params.TZID) : null;
+        // Z(UTC) 로 끝나는 값만 UTC 로 본다. TZID=Asia/Seoul 이나 값만 있는 경우는 현지 시각.
+        const start = startRaw
+          ? parseIcsDateTime(startRaw.value, /Z$/i.test(startRaw.value), startRaw.params.TZID)
+          : null;
+        let end = endRaw ? parseIcsDateTime(endRaw.value, /Z$/i.test(endRaw.value), endRaw.params.TZID) : null;
         if (!end && start && /^PT(\d+)H/.test(duration)) {
           const hours = Number(duration.match(/^PT(\d+)H/)?.[1] ?? 0);
           if (hours > 0) {

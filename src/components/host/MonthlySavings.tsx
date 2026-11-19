@@ -7,6 +7,7 @@ import {
   PLATFORM_COMMISSION_RATE,
   computeMonthlyReport,
   monthKey,
+  monthLabel,
   recentMonths,
   type ReportBookingLike,
 } from "@/lib/report";
@@ -57,7 +58,7 @@ export function MonthlySavings({ bookings }: { bookings: Booking[] }) {
         >
           {months.map((item) => (
             <option key={item} value={item}>
-              {item.replace("-", "년 ")}월
+              {monthLabel(item)}
             </option>
           ))}
         </select>
