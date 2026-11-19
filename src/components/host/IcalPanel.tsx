@@ -238,6 +238,9 @@ export function IcalPanel({
   }
 
   const readyCount = importRows?.filter((row) => row.ok).length ?? 0;
+  // 공휴일 캘린더처럼 수백 건이 들어와도 화면이 버티도록 미리보기는 50건까지만 그린다.
+  const visibleRows = importRows?.slice(0, 50) ?? [];
+  const hiddenCount = (importRows?.length ?? 0) - visibleRows.length;
 
   return (
     <section className="card p-4 sm:p-5">
@@ -388,7 +391,7 @@ export function IcalPanel({
                 </tr>
               </thead>
               <tbody className="divide-y divide-ink-line">
-                {importRows.map((row, index) => (
+                {visibleRows.map((row, index) => (
                   <tr key={`${row.date}-${row.startTime}-${index}`} className={row.ok ? "" : "bg-red-50/40"}>
                     <td className="px-2.5 py-2">
                       <span className={cn("badge", row.ok ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500")}>
@@ -413,6 +416,7 @@ export function IcalPanel({
           <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
             <p className="text-[11px] text-ink-mute">
               등록 가능 <b className="text-brand">{readyCount}</b>건 / 전체 {importRows.length}건
+              {hiddenCount > 0 ? ` · 표시는 50건까지` : ""}
             </p>
             <button
               type="button"
