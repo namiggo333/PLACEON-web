@@ -277,6 +277,31 @@ async function sendWithBrevo(args: {
   return { sent: true, provider: "brevo" };
 }
 
+/**
+ * 일반 메일 발송(리포트 등). Resend → Brevo 순서로 있는 수단을 쓴다.
+ * 예약 알림과 같은 규칙으로 예외를 던지지 않고 결과만 돌려준다.
+ */
+export async function sendMail(args: {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+}): Promise<MailResult> {
+  try {
+    if (!process.env.RESEND_API_KEY && !process.env.BREVO_API_KEY) {
+      return { sent: false, skipped: "no_provider" };
+    }
+    if (!args.to || !args.to.includes("@")) return { sent: false, skipped: "no_recipient" };
+    const result = process.env.RESEND_API_KEY ? await sendWithResend(args) : await sendWithBrevo(args);
+    if (!result.sent) console.error("[mail] 발송 실패", args.subject, result.error);
+    return result;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[mail] 발송 예외", args.subject, message);
+    return { sent: false, error: message };
+  }
+}
+
 /** 사장님 이메일 주소를 찾는다 (service_role). */
 export async function fetchHostEmail(hostId: string): Promise<string | null> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

@@ -6,6 +6,11 @@ const nextConfig = {
   images: {
     remotePatterns: [{ protocol: "https", hostname: "**" }],
   },
+  // 공유 카드(opengraph-image)가 서버에서 직접 읽는 한글 폰트를 서버리스 번들에 포함한다.
+  outputFileTracingIncludes: {
+    "/spaces/[id]/opengraph-image": ["./src/assets/fonts/**"],
+    "/pay/[slug]/opengraph-image": ["./src/assets/fonts/**"],
+  },
 };
 
 export default nextConfig;

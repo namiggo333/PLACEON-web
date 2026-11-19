@@ -170,6 +170,7 @@ function SiteFooter() {
           <div className="flex flex-col gap-2">
             <span className="font-bold text-ink">이용하기</span>
             <Link href="/search" className="hover:text-brand">공간 찾기</Link>
+            <Link href="/areas" className="hover:text-brand">지역별 찾기</Link>
             <Link href="/bookings" className="hover:text-brand">예약 내역</Link>
           </div>
           <div className="flex flex-col gap-2">

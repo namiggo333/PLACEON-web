@@ -24,6 +24,9 @@ import {
   updateRefundStatus,
   resetDemoData,
   type BlockInput,
+  type BulkBlockItem,
+  type BulkBlockResult,
+  createSpaceBlocksBulk,
 } from "@/lib/db";
 import { dataMode } from "@/lib/supabase";
 import { revalidateHomeCache } from "@/lib/revalidate";
@@ -77,6 +80,8 @@ interface AppContextValue {
   updateRefund: (id: string, refundStatus: RefundStatus, memo?: string) => Promise<void>;
   approveSpace: (spaceId: string, status: ApprovalStatus, reason?: string) => Promise<void>;
   createBlock: (input: BlockInput) => Promise<void>;
+  /** 외부 예약·캘린더에서 가져온 여러 건을 한 번에 차단 등록 (건별 결과 반환) */
+  createBlocks: (spaceId: string, items: BulkBlockItem[]) => Promise<BulkBlockResult[]>;
   releaseBlock: (bookingId: string) => Promise<void>;
   findSpace: (idOrSlug: string) => Space | undefined;
   reset: () => void;
@@ -270,6 +275,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
+  const createBlocks = useCallback(async (spaceId: string, items: BulkBlockItem[]) => {
+    const results = await createSpaceBlocksBulk(spaceId, items);
+    const created = await fetchBookings(user as Profile);
+    setBookings(created);
+    fetchBookingEvents().then(setBookingEvents).catch(() => {});
+    return results;
+  }, [user]);
+
   const releaseBlock = useCallback(async (bookingId: string) => {
     const updated = await releaseSpaceBlock(bookingId);
     if (updated) {
@@ -319,6 +332,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       updateRefund,
       approveSpace,
       createBlock,
+      createBlocks,
       releaseBlock,
       findSpace,
       reset,
@@ -348,6 +362,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       updateRefund,
       approveSpace,
       createBlock,
+      createBlocks,
       releaseBlock,
       findSpace,
       reset,

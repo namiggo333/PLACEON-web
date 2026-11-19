@@ -5,13 +5,14 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 interface BlockRequestBody {
-  action?: "create" | "release";
+  action?: "create" | "release" | "bulk";
   spaceId?: string;
   bookingId?: string;
   date?: string;
   startTime?: string;
   hours?: number;
   memo?: string;
+  items?: { date?: string; startTime?: string; hours?: number; memo?: string }[];
 }
 
 function fail(error: string, status = 400) {
@@ -95,6 +96,75 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ booking: data }, { status: 201 });
+  }
+
+  if (action === "bulk") {
+    /** 붙여넣기·iCal 가져오기로 들어온 여러 건을 한 번에 차단 등록한다. */
+    const spaceId = (body.spaceId ?? "").trim();
+    const items = Array.isArray(body.items) ? body.items : [];
+    if (!spaceId) return fail("공간을 선택해 주세요.");
+    if (items.length === 0) return fail("등록할 시간이 없어요.");
+    if (items.length > 100) return fail("한 번에 최대 100건까지 등록할 수 있어요.");
+
+    const { data: space, error: spaceError } = await admin
+      .from("spaces")
+      .select("id, host_id")
+      .eq("id", spaceId)
+      .maybeSingle();
+    if (spaceError) {
+      console.error("[api/host/blocks] 공간 조회 실패", spaceError);
+      return fail("공간을 확인하지 못했어요.", 500);
+    }
+    if (!space) return fail("공간을 찾을 수 없어요.", 404);
+    if (space.host_id !== user.id) return fail("내 공간만 시간을 차단할 수 있어요.", 403);
+
+    const results: { index: number; ok: boolean; bookingId?: string; error?: string }[] = [];
+    for (let index = 0; index < items.length; index += 1) {
+      const item = items[index] ?? {};
+      const date = (item.date ?? "").trim();
+      const startTime = (item.startTime ?? "").trim();
+      const hours = Math.round(Number(item.hours));
+      const memo = (item.memo ?? "").trim().slice(0, 200);
+
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        results.push({ index, ok: false, error: "날짜 형식이 올바르지 않아요." });
+        continue;
+      }
+      if (!/^[0-2][0-9]:[0-5][0-9]$/.test(startTime)) {
+        results.push({ index, ok: false, error: "시작 시간 형식이 올바르지 않아요." });
+        continue;
+      }
+      if (!Number.isInteger(hours) || hours < 1 || hours > 24) {
+        results.push({ index, ok: false, error: "이용 시간은 1~24시간 사이여야 해요." });
+        continue;
+      }
+
+      const { data, error } = await admin.rpc("create_space_block", {
+        p_space: spaceId,
+        p_date: date,
+        p_start_time: startTime,
+        p_hours: hours,
+        p_memo: memo,
+        p_actor_id: user.id,
+      });
+
+      if (error) {
+        const message = `${error.message ?? ""}`;
+        const reason = message.includes("SLOT_TAKEN")
+          ? "이미 예약이나 차단이 있는 시간이에요."
+          : message.includes("PAST_TIME")
+            ? "이미 지난 시간이에요."
+            : "등록하지 못했어요. 잠시 후 다시 시도해 주세요.";
+        results.push({ index, ok: false, error: reason });
+        continue;
+      }
+
+      const created = data as { id?: string } | null;
+      results.push({ index, ok: true, bookingId: created?.id });
+    }
+
+    const created = results.filter((row) => row.ok).length;
+    return NextResponse.json({ results, created, failed: results.length - created }, { status: 201 });
   }
 
   if (action === "release") {

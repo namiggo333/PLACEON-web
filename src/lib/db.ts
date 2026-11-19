@@ -944,6 +944,62 @@ export interface BlockInput {
   memo?: string;
 }
 
+export interface BulkBlockItem {
+  date: string;
+  startTime: string;
+  hours: number;
+  memo?: string;
+}
+
+export interface BulkBlockResult {
+  index: number;
+  ok: boolean;
+  bookingId?: string;
+  error?: string;
+}
+
+/**
+ * 여러 건의 외부 일정을 한 번에 시간 차단으로 등록한다.
+ * - Supabase 모드: /api/host/blocks 의 bulk 액션이 create_space_block RPC 를 건별로 호출하고
+ *   건별 결과(성공/실패 사유)를 돌려준다.
+ * - 미리보기 모드: 같은 규칙으로 하나짜리 차단을 반복 등록한다.
+ */
+export async function createSpaceBlocksBulk(
+  spaceId: string,
+  items: BulkBlockItem[]
+): Promise<BulkBlockResult[]> {
+  if (supabase) {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+    if (!token) throw new Error("로그인이 끝났어요. 다시 로그인해 주세요.");
+
+    const response = await fetch("/api/host/blocks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ action: "bulk", spaceId, items }),
+    });
+    const payload = (await response.json().catch(() => null)) as
+      | { results?: BulkBlockResult[]; error?: string }
+      | null;
+    if (!response.ok || !payload?.results) {
+      throw new Error(payload?.error ?? "일괄 등록에 실패했어요. 잠시 후 다시 시도해 주세요.");
+    }
+    return payload.results;
+  }
+
+  const results: BulkBlockResult[] = [];
+  for (let index = 0; index < items.length; index += 1) {
+    const item = items[index];
+    try {
+      await createSpaceBlock({ spaceId, ...item });
+      results.push({ index, ok: true });
+    } catch (error) {
+      results.push({ index, ok: false, error: error instanceof Error ? error.message : "등록하지 못했어요." });
+    }
+  }
+  return results;
+}
+
 /** 사장님이 원하는 시간대를 차단한다 (bookings.source = 'block'). */
 export async function createSpaceBlock(input: BlockInput): Promise<Booking> {
   if (supabase) {

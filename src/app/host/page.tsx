@@ -42,6 +42,9 @@ import {
 } from "@/lib/storage";
 import type { Category, Role, Space, SpaceInput, SpacePrivate } from "@/lib/types";
 import { BookingTimeline } from "@/components/BookingAccess";
+import { IcalPanel } from "@/components/host/IcalPanel";
+import { MonthlySavings } from "@/components/host/MonthlySavings";
+import { PasteImporter } from "@/components/host/PasteImporter";
 
 type TabKey = "dashboard" | "spaces" | "bookings" | "schedule" | "links";
 
@@ -595,6 +598,8 @@ export default function HostPage() {
             </div>
           </div>
 
+          <MonthlySavings bookings={myBookings} />
+
           <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
             <section className="card p-4">
               <div className="flex items-center justify-between">
@@ -1099,6 +1104,15 @@ export default function HostPage() {
               <p className="mt-2 rounded-lg bg-red-50 px-2.5 py-1.5 text-[10.5px] font-medium text-red-600">{blockError}</p>
             )}
           </section>
+
+          <PasteImporter
+            mySpaces={mySpaces}
+            spaceId={blockForm.spaceId}
+            onSpaceChange={(id) => setBlockForm((prev) => ({ ...prev, spaceId: id }))}
+            onToast={setToast}
+          />
+
+          <IcalPanel mySpaces={mySpaces} onToast={setToast} />
 
           <section className="card p-4 sm:p-5">
             <h2 className="text-sm font-extrabold text-ink">
