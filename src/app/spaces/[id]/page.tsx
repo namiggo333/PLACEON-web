@@ -20,7 +20,8 @@ import {
   StarIcon,
   UsersIcon,
 } from "@/components/Icons";
-import { CATEGORY_MAP, HOUR_OPTIONS, TIME_SLOTS } from "@/lib/constants";
+import { APPROVAL_LABEL, CATEGORY_MAP, HOUR_OPTIONS, TIME_SLOTS } from "@/lib/constants";
+import { buildSlotStatuses, fetchOccupiedSlots, type SlotStatus } from "@/lib/availability";
 import { calcTotal, cn, formatDate, formatTime, shortId, timeRange, todayISO, won } from "@/lib/format";
 import type { Booking } from "@/lib/types";
 
@@ -42,6 +43,13 @@ export default function SpaceDetailPage() {
   const [done, setDone] = useState<Booking | null>(null);
   const [showPayGuide, setShowPayGuide] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
+  const [occupied, setOccupied] = useState<SlotStatus[]>([]);
+  const [checkingSlots, setCheckingSlots] = useState(false);
+  const [origin, setOrigin] = useState("https://igotjeogot.vercel.app");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") setOrigin(window.location.origin);
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -49,6 +57,24 @@ export default function SpaceDetailPage() {
       setPhone((value) => value || user.phone);
     }
   }, [user]);
+
+  useEffect(() => {
+    if (!space) return;
+    let alive = true;
+    setCheckingSlots(true);
+    const from = date;
+    const to = date;
+    fetchOccupiedSlots(space.id, from, to)
+      .then((list) => {
+        if (alive) setOccupied(buildSlotStatuses(date, TIME_SLOTS, hours, list));
+      })
+      .finally(() => {
+        if (alive) setCheckingSlots(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [space?.id, date, hours]);
 
   const similar = useMemo(
     () => spaces.filter((item) => item.id !== space?.id && item.category === space?.category).slice(0, 4),
@@ -98,6 +124,9 @@ export default function SpaceDetailPage() {
     if (!name.trim()) return setError("예약자 이름을 입력해 주세요.");
     if (!phone.trim()) return setError("연락처를 입력해 주세요.");
     if (guests > space.capacity) return setError(`이 공간은 최대 ${space.capacity}명까지 이용할 수 있어요.`);
+    const picked = occupied.find((slot) => slot.start === startTime);
+    if (picked?.taken) return setError("선택한 시간대는 이미 예약(또는 사장님 차단)되어 있어요. 다른 시간을 골라 주세요.");
+    if (picked?.past) return setError("지난 시간은 예약할 수 없어요. 다른 시간을 골라 주세요.");
     if (!agreed) return setError("이용약관과 취소·환불 규정에 먼저 동의해 주세요.");
     setSubmitting(true);
     try {
@@ -110,7 +139,7 @@ export default function SpaceDetailPage() {
         guestName: name.trim(),
         guestPhone: phone.trim(),
         memo,
-        source: "web",
+        channel: "web",
       });
       setDone(booking);
     } catch (err) {
@@ -167,6 +196,17 @@ export default function SpaceDetailPage() {
             )}
           </div>
 
+          {space.approvalStatus !== "approved" && (
+            <p className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-[11px] font-medium leading-relaxed text-amber-800">
+              <span className="shrink-0">🛡️</span>
+              <span>
+                {APPROVAL_LABEL[space.approvalStatus]} 상태예요. 관리자 확인이 끝나기 전에는 손님 화면에 노출되지
+                않고 예약도 받을 수 없어요.
+                {space.rejectionReason ? ` (반려 사유: ${space.rejectionReason})` : ""}
+              </span>
+            </p>
+          )}
+
           {space.hidden && (
             <p className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-[11px] font-medium leading-relaxed text-amber-800">
               <span className="shrink-0">🔒</span>
@@ -189,7 +229,7 @@ export default function SpaceDetailPage() {
             <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-ink-soft">
               <span className="inline-flex items-center gap-1">
                 <PinIcon size={14} className="text-ink-mute" />
-                {space.address || `${space.region} ${space.district}`}
+                {[space.region, space.district].filter(Boolean).join(" ") || "위치는 예약 확정 후 안내"}
               </span>
               <span className="inline-flex items-center gap-1">
                 <UsersIcon size={14} className="text-ink-mute" />
@@ -305,8 +345,21 @@ export default function SpaceDetailPage() {
 
               <DepositGuide booking={done} className="mt-3" />
 
+              {done.accessToken && (
+                <div className="mt-3 rounded-xl border border-ink-line bg-ink-line/20 p-3 text-[10.5px] leading-relaxed text-ink-soft">
+                  <p className="font-bold text-ink">비로그인 예약 확인 링크</p>
+                  <p className="mt-1 break-all">
+                    {origin}/bookings?booking={done.id}&amp;token={done.accessToken}
+                  </p>
+                  <p className="mt-1 text-ink-mute">
+                    이 링크로 예약 상태를 확인하고, 입금이 확인되면 상세주소·출입 안내를 볼 수 있어요. 링크를 꼭
+                    보관해 주세요.
+                  </p>
+                </div>
+              )}
+
               <div className="mt-3 flex flex-col gap-2">
-                <Link href="/bookings" className="btn-primary w-full">
+                <Link href={done.accessToken ? `/bookings?booking=${done.id}&token=${done.accessToken}` : "/bookings"} className="btn-primary w-full">
                   예약 내역 보기
                 </Link>
                 <button
@@ -384,11 +437,22 @@ export default function SpaceDetailPage() {
                       onChange={(event) => setStartTime(event.target.value)}
                       className="input"
                     >
-                      {TIME_SLOTS.map((slot) => (
-                        <option key={slot} value={slot}>
-                          {formatTime(slot)}
-                        </option>
-                      ))}
+                      {TIME_SLOTS.map((slot) => {
+                        const status = occupied.find((entry) => entry.start === slot);
+                        const label = status?.taken
+                          ? status.blockedBy === "block"
+                            ? " · 사장님 차단"
+                            : " · 예약됨"
+                          : status?.past
+                            ? " · 지난 시간"
+                            : "";
+                        return (
+                          <option key={slot} value={slot} disabled={Boolean(status?.taken || status?.past)}>
+                            {formatTime(slot)}
+                            {label}
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
                   <div>
@@ -455,6 +519,10 @@ export default function SpaceDetailPage() {
                   <p className="mt-1 text-[10px] text-ink-mute">
                     {formatDate(date)} {timeRange(startTime, hours)}
                   </p>
+                  {checkingSlots && <p className="mt-1 text-[10px] text-ink-mute">예약 가능한 시간을 확인하고 있어요…</p>}
+                  {!checkingSlots && occupied.some((slot) => slot.taken || slot.past) && (
+                    <p className="mt-1 text-[10px] text-brand">회색으로 표시된 시간은 예약·차단되었거나 지난 시간이에요.</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">

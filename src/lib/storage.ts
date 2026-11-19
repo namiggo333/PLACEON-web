@@ -7,8 +7,12 @@ export const MAX_PHOTO_BYTES = 12 * 1024 * 1024;
 /** 공간당 사진 수 */
 export const MAX_PHOTOS = 6;
 
-const COMPRESS_MAX_SIZE = 1600;
-const COMPRESS_QUALITY = 0.86;
+/**
+ * 업로드 전 압축 설정 — 무료 1GB 스토리지를 지키기 위해
+ * 브라우저(Canvas)에서 WebP 로 변환하고 긴 변을 1600px 로 줄인다.
+ */
+const MAIN_MAX_SIZE = 1600;
+const MAIN_QUALITY = 0.82;
 const FALLBACK_MAX_SIZE = 1280;
 const FALLBACK_QUALITY = 0.78;
 
@@ -37,20 +41,37 @@ function drawToCanvas(image: HTMLImageElement, maxSize: number): HTMLCanvasEleme
   canvas.height = Math.max(1, Math.round(height * scale));
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("이 브라우저에서는 사진을 처리하지 못했어요.");
+  // 투명 PNG 를 WebP 로 바꿀 때 검게 나오지 않도록 흰 배경을 깐다.
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
   return canvas;
 }
 
-async function compressToBlob(file: File): Promise<Blob> {
+function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number): Promise<Blob | null> {
+  return new Promise((resolve) => canvas.toBlob((result) => resolve(result), type, quality));
+}
+
+export interface CompressedPhoto {
+  blob: Blob;
+  extension: "webp" | "jpg";
+  contentType: string;
+}
+
+/**
+ * 업로드용 사진을 WebP 로 변환한다.
+ * (WebP 를 만들지 못하는 브라우저에서는 JPEG 로 대신한다.)
+ */
+export async function compressPhoto(file: File): Promise<CompressedPhoto> {
   const image = await loadImageElement(file);
-  const canvas = drawToCanvas(image, COMPRESS_MAX_SIZE);
-  const blob = await new Promise<Blob | null>((resolve) =>
-    canvas.toBlob((result) => resolve(result), "image/jpeg", COMPRESS_QUALITY)
-  );
-  if (!blob) throw new Error("사진을 압축하지 못했어요.");
-  return blob;
+  const canvas = drawToCanvas(image, MAIN_MAX_SIZE);
+  const webp = await canvasToBlob(canvas, "image/webp", MAIN_QUALITY);
+  if (webp) {
+    return { blob: webp, extension: "webp", contentType: "image/webp" };
+  }
+  const jpeg = await canvasToBlob(canvas, "image/jpeg", MAIN_QUALITY);
+  if (!jpeg) throw new Error("사진을 압축하지 못했어요.");
+  return { blob: jpeg, extension: "jpg", contentType: "image/jpeg" };
 }
 
 async function compressToDataUrl(file: File): Promise<string> {
@@ -69,16 +90,19 @@ export function validatePhoto(file: File): string | null {
   return null;
 }
 
-/** 선택한 사진을 Storage(또는 미리보기 모드의 브라우저 저장소)에 올리고 접근 가능한 URL 목록을 돌려준다. */
+/**
+ * 선택한 사진을 WebP 로 압축해 Storage(또는 미리보기 모드의 브라우저 저장소)에 올리고
+ * 접근 가능한 URL 목록을 돌려준다.
+ */
 export async function uploadSpacePhotos(files: File[], hostId: string): Promise<string[]> {
   const urls: string[] = [];
 
   for (const file of files) {
     if (supabase) {
-      const blob = await compressToBlob(file);
-      const path = `${hostId}/${crypto.randomUUID()}.jpg`;
-      const { error } = await supabase.storage.from(SPACE_IMAGE_BUCKET).upload(path, blob, {
-        contentType: "image/jpeg",
+      const compressed = await compressPhoto(file);
+      const path = `${hostId}/${crypto.randomUUID()}.${compressed.extension}`;
+      const { error } = await supabase.storage.from(SPACE_IMAGE_BUCKET).upload(path, compressed.blob, {
+        contentType: compressed.contentType,
         cacheControl: "31536000",
         upsert: false,
       });

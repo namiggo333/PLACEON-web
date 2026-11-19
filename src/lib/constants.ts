@@ -1,4 +1,4 @@
-import type { BookingStatus, Category, Role } from "./types";
+import type { ApprovalStatus, BookingStatus, Category, RefundStatus, Role } from "./types";
 
 export const CATEGORIES: {
   key: Category;
@@ -150,6 +150,54 @@ export function bookingStatusMeta(booking: {
 export const ROLE_LABEL: Record<Role, string> = {
   guest: "게스트",
   host: "사장님",
+};
+
+export const APPROVAL_LABEL: Record<ApprovalStatus, string> = {
+  pending_review: "승인 대기",
+  approved: "공개 중",
+  rejected: "반려",
+};
+
+export const APPROVAL_STYLE: Record<ApprovalStatus, string> = {
+  pending_review: "bg-amber-50 text-amber-600",
+  approved: "bg-emerald-50 text-emerald-600",
+  rejected: "bg-red-50 text-red-500",
+};
+
+export const REFUND_LABEL: Record<RefundStatus, string> = {
+  none: "환불 없음",
+  pending: "환불 필요",
+  completed: "환불 완료",
+};
+
+export const REFUND_STYLE: Record<RefundStatus, string> = {
+  none: "bg-slate-100 text-slate-500",
+  pending: "bg-amber-50 text-amber-600",
+  completed: "bg-emerald-50 text-emerald-600",
+};
+
+/** 예약 변경 이력(event_type)을 사람이 읽는 문구로 */
+export const EVENT_LABEL: Record<string, string> = {
+  created: "예약 신청",
+  confirmed: "입금 확인 · 예약 확정",
+  rejected: "사장님 거절",
+  expired: "입금 기한 만료",
+  cancelled: "예약 취소",
+  reopened: "대기 상태로 되돌림",
+  status_changed: "상태 변경",
+  blocked: "사장님 시간 차단",
+  unblocked: "시간 차단 해제",
+  refund_pending: "환불 필요",
+  refund_completed: "환불 완료",
+  refund_cancelled: "환불 취소",
+  refund_memo: "환불 메모",
+};
+
+export const ACTOR_LABEL: Record<string, string> = {
+  guest: "손님",
+  host: "사장님",
+  admin: "관리자",
+  system: "시스템",
 };
 
 export const DEMO_ACCOUNTS = {

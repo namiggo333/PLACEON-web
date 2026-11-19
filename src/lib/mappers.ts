@@ -1,4 +1,17 @@
-import type { Booking, BookingStatus, CancelReason, Profile, Role, Space } from "./types";
+import type {
+  ApprovalStatus,
+  Booking,
+  BookingChannel,
+  BookingEvent,
+  BookingSource,
+  BookingStatus,
+  CancelReason,
+  Profile,
+  RefundStatus,
+  Role,
+  Space,
+  SpacePrivate,
+} from "./types";
 
 export interface ProfileRow {
   id: string;
@@ -31,7 +44,17 @@ export interface SpaceRow {
   image_url: string | null;
   image_urls: string[] | null;
   is_hidden: boolean | null;
+  approval_status?: string | null;
+  rejection_reason?: string | null;
+  approved_at?: string | null;
   created_at: string | null;
+}
+
+export interface SpacePrivateRow {
+  space_id: string;
+  detail_address: string | null;
+  entry_guide: string | null;
+  parking_guide: string | null;
 }
 
 export interface SpaceAccountRow {
@@ -56,7 +79,10 @@ export interface BookingRow {
   total_amount: number;
   status: string;
   memo: string | null;
-  source: string;
+  channel?: string | null;
+  source?: string | null;
+  refund_status?: string | null;
+  access_token_hash?: string | null;
   start_at?: string | null;
   end_at?: string | null;
   expires_at?: string | null;
@@ -64,6 +90,17 @@ export interface BookingRow {
   pay_account_number?: string | null;
   pay_account_holder?: string | null;
   cancel_reason?: string | null;
+  created_at: string | null;
+}
+
+export interface BookingEventRow {
+  id: string;
+  booking_id: string;
+  event_type: string;
+  from_status: string | null;
+  to_status: string | null;
+  actor: string | null;
+  memo: string | null;
   created_at: string | null;
 }
 
@@ -77,6 +114,11 @@ export function mapProfile(row: ProfileRow): Profile {
     phone: row.phone ?? "",
     createdAt: row.created_at ?? new Date().toISOString(),
   };
+}
+
+function mapApproval(row: SpaceRow): ApprovalStatus {
+  if (row.approval_status === "approved" || row.approval_status === "rejected") return row.approval_status;
+  return "pending_review";
 }
 
 export function mapSpace(row: SpaceRow): Space {
@@ -104,7 +146,18 @@ export function mapSpace(row: SpaceRow): Space {
     imageUrl: imageUrls[0] ?? null,
     imageUrls,
     hidden: Boolean(row.is_hidden),
+    approvalStatus: mapApproval(row),
+    rejectionReason: row.rejection_reason ?? "",
+    approvedAt: row.approved_at ?? null,
     createdAt: row.created_at ?? new Date().toISOString(),
+  };
+}
+
+export function mapSpacePrivate(row: SpacePrivateRow): SpacePrivate {
+  return {
+    detailAddress: row.detail_address ?? "",
+    entryGuide: row.entry_guide ?? "",
+    parkingGuide: row.parking_guide ?? "",
   };
 }
 
@@ -115,6 +168,10 @@ export function mapBooking(row: BookingRow): Booking {
     row.cancel_reason === "expired" || row.cancel_reason === "host" || row.cancel_reason === "guest"
       ? row.cancel_reason
       : null;
+  const channel: BookingChannel = row.channel === "link" ? "link" : "web";
+  const source: BookingSource = row.source === "block" ? "block" : "guest";
+  const refundStatus: RefundStatus =
+    row.refund_status === "pending" || row.refund_status === "completed" ? row.refund_status : "none";
   return {
     id: row.id,
     spaceId: row.space_id,
@@ -130,12 +187,27 @@ export function mapBooking(row: BookingRow): Booking {
     totalAmount: Number(row.total_amount),
     status,
     memo: row.memo ?? "",
-    source: row.source === "link" ? "link" : "web",
+    channel,
+    source,
+    refundStatus,
     createdAt: row.created_at ?? new Date().toISOString(),
     expiresAt: row.expires_at ?? null,
     payBankName: row.pay_bank_name ?? "",
     payAccountNumber: row.pay_account_number ?? "",
     payAccountHolder: row.pay_account_holder ?? "",
     cancelReason,
+  };
+}
+
+export function mapBookingEvent(row: BookingEventRow): BookingEvent {
+  return {
+    id: row.id,
+    bookingId: row.booking_id,
+    eventType: row.event_type,
+    fromStatus: row.from_status ?? null,
+    toStatus: row.to_status ?? null,
+    actor: row.actor ?? "system",
+    memo: row.memo ?? "",
+    createdAt: row.created_at ?? new Date().toISOString(),
   };
 }

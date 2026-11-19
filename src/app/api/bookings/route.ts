@@ -1,3 +1,4 @@
+import { createHash, randomBytes } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import type { BookingRow } from "@/lib/mappers";
@@ -10,6 +11,7 @@ interface BookingRequestBody {
   spaceId?: string;
   paySlug?: string;
   source?: string;
+  channel?: string;
   date?: string;
   startTime?: string;
   hours?: number;
@@ -32,6 +34,9 @@ function toFriendlyError(raw: string): { status: number; error: string } {
       error: "방금 다른 분이 같은 시간을 예약했어요. 다른 시간대나 날짜로 다시 신청해 주세요.",
     };
   }
+  if (message.includes("SPACE_NOT_APPROVED")) {
+    return { status: 403, error: "아직 관리자 확인이 끝나지 않은 공간이에요. 사장님께 문의해 주세요." };
+  }
   if (message.includes("PAST_TIME")) {
     return { status: 400, error: "지난 시간은 예약할 수 없어요. 날짜와 시작 시간을 다시 확인해 주세요." };
   }
@@ -48,6 +53,10 @@ function toFriendlyError(raw: string): { status: number; error: string } {
     return { status: 400, error: "날짜나 시작 시간이 올바르지 않아요. 다시 선택해 주세요." };
   }
   return { status: 500, error: "예약을 접수하지 못했어요. 잠시 후 다시 시도해 주세요." };
+}
+
+function sha256(value: string): string {
+  return createHash("sha256").update(value).digest("hex");
 }
 
 export async function POST(request: Request) {
@@ -78,7 +87,7 @@ export async function POST(request: Request) {
   const guestName = (body.guestName ?? "").trim();
   const guestPhone = (body.guestPhone ?? "").trim();
   const memo = (body.memo ?? "").trim().slice(0, 500);
-  const source = body.source === "link" ? "link" : "web";
+  const channel = (body.channel ?? body.source) === "link" ? "link" : "web";
   const spaceId = (body.spaceId ?? "").trim();
   const paySlug = (body.paySlug ?? "").trim();
 
@@ -88,8 +97,8 @@ export async function POST(request: Request) {
   if (!Number.isInteger(guests) || guests < 1) return badRequest("인원을 1명 이상으로 선택해 주세요.");
   if (!guestName) return badRequest("예약자 이름을 입력해 주세요.");
   if (!guestPhone) return badRequest("연락처를 입력해 주세요.");
-  if (source === "link" && !paySlug) return badRequest("예약 링크를 다시 확인해 주세요.");
-  if (source !== "link" && !spaceId) return badRequest("공간 정보를 다시 확인해 주세요.");
+  if (channel === "link" && !paySlug) return badRequest("예약 링크를 다시 확인해 주세요.");
+  if (channel !== "link" && !spaceId) return badRequest("공간 정보를 다시 확인해 주세요.");
 
   // 로그인 사용자라면 서버에서 직접 토큰을 검증한다(클라이언트가 보낸 guestId 는 신뢰하지 않는다).
   let guestId: string | null = null;
@@ -110,35 +119,30 @@ export async function POST(request: Request) {
     }
   }
 
+  // 비로그인 예약 확인용 토큰 — 평문은 응답으로 한 번만 돌려주고 DB 에는 해시만 남긴다.
+  const accessToken = randomBytes(24).toString("base64url");
+  const accessTokenHash = sha256(accessToken);
+
   const admin = createClient(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
+  const common = {
+    p_date: date,
+    p_start_time: startTime,
+    p_hours: hours,
+    p_guests: guests,
+    p_guest_name: guestName,
+    p_guest_phone: guestPhone,
+    p_memo: memo,
+    p_guest_id: guestId,
+    p_access_token_hash: accessTokenHash,
+  };
+
   const { data, error } =
-    source === "link"
-      ? await admin.rpc("create_booking_by_slug", {
-          p_slug: paySlug,
-          p_date: date,
-          p_start_time: startTime,
-          p_hours: hours,
-          p_guests: guests,
-          p_guest_name: guestName,
-          p_guest_phone: guestPhone,
-          p_memo: memo,
-          p_guest_id: guestId,
-        })
-      : await admin.rpc("create_booking", {
-          p_space: spaceId,
-          p_date: date,
-          p_start_time: startTime,
-          p_hours: hours,
-          p_guests: guests,
-          p_guest_name: guestName,
-          p_guest_phone: guestPhone,
-          p_memo: memo,
-          p_guest_id: guestId,
-          p_source: "web",
-        });
+    channel === "link"
+      ? await admin.rpc("create_booking_by_slug", { p_slug: paySlug, ...common })
+      : await admin.rpc("create_booking", { p_space: spaceId, p_channel: "web", ...common });
 
   if (error) {
     const friendly = toFriendlyError(`${error.message ?? ""} ${error.code ?? ""}`);
@@ -162,5 +166,5 @@ export async function POST(request: Request) {
     console.error("[api/bookings] 사장님 알림 예외", mailError);
   }
 
-  return NextResponse.json({ booking }, { status: 201 });
+  return NextResponse.json({ booking, accessToken }, { status: 201 });
 }

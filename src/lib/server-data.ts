@@ -23,6 +23,7 @@ export async function fetchPublicSpaces(): Promise<Space[]> {
       .from("spaces")
       .select("*")
       .eq("is_hidden", false)
+      .eq("approval_status", "approved")
       .order("created_at", { ascending: false });
 
     if (error) throw error;

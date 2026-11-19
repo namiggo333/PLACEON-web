@@ -10,9 +10,16 @@ export type Category =
 
 export type Role = "guest" | "host";
 export type BookingStatus = "pending" | "confirmed" | "cancelled";
-export type BookingSource = "web" | "link";
+/** 예약 유입 채널: 사이트(web) / 전용 결제 링크(link) */
+export type BookingChannel = "web" | "link";
+/** 예약 종류: 손님 예약(guest) / 사장님 시간 차단(block) */
+export type BookingSource = "guest" | "block";
 /** 취소 사유: 15분 미입금 자동 만료 / 사장님 거절·취소 / 손님 취소 */
 export type CancelReason = "expired" | "host" | "guest";
+/** 환불 진행 상태 */
+export type RefundStatus = "none" | "pending" | "completed";
+/** 공간 공개 승인 상태 */
+export type ApprovalStatus = "pending_review" | "approved" | "rejected";
 
 export interface Profile {
   id: string;
@@ -54,6 +61,11 @@ export interface Space {
   imageUrls: string[];
   /* true 이면 손님 화면(홈·검색·상세)에서 숨김 */
   hidden: boolean;
+  /* 관리자 승인 상태 — approved 만 손님 화면·예약에 노출된다 */
+  approvalStatus: ApprovalStatus;
+  /* 반려 사유 (관리자가 반려한 경우) */
+  rejectionReason: string;
+  approvedAt: string | null;
   createdAt: string;
 }
 
@@ -76,6 +88,17 @@ export interface SpaceInput {
   bankName?: string;
   accountNumber?: string;
   accountHolder?: string;
+  /* 확정 후에만 공개되는 상세 정보 (spaces_private 테이블) */
+  detailAddress?: string;
+  entryGuide?: string;
+  parkingGuide?: string;
+}
+
+/** 확정된 예약자에게만 공개되는 상세주소·출입 안내 */
+export interface SpacePrivate {
+  detailAddress: string;
+  entryGuide: string;
+  parkingGuide: string;
 }
 
 export interface Booking {
@@ -93,7 +116,14 @@ export interface Booking {
   totalAmount: number;
   status: BookingStatus;
   memo: string;
+  /** 유입 채널 (웹/전용 링크) */
+  channel: BookingChannel;
+  /** 예약 종류 (손님 예약/사장님 시간 차단) */
   source: BookingSource;
+  /** 환불 진행 상태 */
+  refundStatus: RefundStatus;
+  /** 비로그인 예약 확인용 토큰 — 발급 직후 브라우저에만 보관한다 */
+  accessToken?: string | null;
   createdAt: string;
   /* 입금 기한 (pending 이면 now + 15분) */
   expiresAt: string | null;
@@ -102,6 +132,18 @@ export interface Booking {
   payAccountNumber: string;
   payAccountHolder: string;
   cancelReason: CancelReason | null;
+}
+
+/** 예약 상태 변경 이력 */
+export interface BookingEvent {
+  id: string;
+  bookingId: string;
+  eventType: string;
+  fromStatus: string | null;
+  toStatus: string | null;
+  actor: string;
+  memo: string;
+  createdAt: string;
 }
 
 export interface BookingInput {
@@ -113,7 +155,7 @@ export interface BookingInput {
   guestName: string;
   guestPhone: string;
   memo?: string;
-  source?: BookingSource;
+  channel?: BookingChannel;
 }
 
 /** 예약에 안내된 입금 계좌가 모두 채워져 있는지 */
@@ -128,4 +170,9 @@ export function hasDepositAccount(account: {
       (account.payAccountNumber ?? "").trim() &&
       (account.payAccountHolder ?? "").trim()
   );
+}
+
+/** 매출·정산 집계에 포함되는 예약인지 (취소·시간 차단 제외) */
+export function countsForRevenue(booking: Pick<Booking, "status" | "source">): boolean {
+  return booking.status !== "cancelled" && booking.source !== "block";
 }

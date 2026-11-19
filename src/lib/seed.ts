@@ -49,7 +49,16 @@ export function createSeedProfiles(): Profile[] {
 
 type SeedSpace = Omit<
   Space,
-  "createdAt" | "paySlug" | "rating" | "reviewCount" | "imageUrl" | "imageUrls" | "hidden"
+  | "createdAt"
+  | "paySlug"
+  | "rating"
+  | "reviewCount"
+  | "imageUrl"
+  | "imageUrls"
+  | "hidden"
+  | "approvalStatus"
+  | "rejectionReason"
+  | "approvedAt"
 > & {
   rating: number;
   reviewCount: number;
@@ -317,6 +326,9 @@ export function createSeedSpaces(): Space[] {
     imageUrl: null,
     imageUrls: [],
     hidden: false,
+    approvalStatus: "approved",
+    rejectionReason: "",
+    approvedAt: iso(300 + index * 12),
     createdAt: iso(300 + index * 12),
   }));
 }
@@ -333,7 +345,7 @@ export function createSeedBookings(): Booking[] {
 
   const base: Omit<
     Booking,
-    "expiresAt" | "payBankName" | "payAccountNumber" | "payAccountHolder" | "cancelReason"
+    "expiresAt" | "payBankName" | "payAccountNumber" | "payAccountHolder" | "cancelReason" | "source" | "refundStatus"
   >[] = [
     {
       id: "22222222-2222-4222-8222-000000000001",
@@ -350,7 +362,7 @@ export function createSeedBookings(): Booking[] {
       totalAmount: 165000,
       status: "confirmed",
       memo: "브랜드 룩북 촬영, 조명 2대 사용 희망",
-      source: "web",
+      channel: "web",
       createdAt: iso(50),
     },
     {
@@ -368,7 +380,7 @@ export function createSeedBookings(): Booking[] {
       totalAmount: 81600,
       status: "pending",
       memo: "인터뷰 영상 촬영",
-      source: "web",
+      channel: "web",
       createdAt: iso(20),
     },
     {
@@ -386,7 +398,7 @@ export function createSeedBookings(): Booking[] {
       totalAmount: 54000,
       status: "cancelled",
       memo: "팀 일정 변경",
-      source: "web",
+      channel: "web",
       createdAt: iso(180),
     },
     {
@@ -404,7 +416,7 @@ export function createSeedBookings(): Booking[] {
       totalAmount: 91200,
       status: "pending",
       memo: "생일 파티, 무드등 세팅 요청",
-      source: "link",
+      channel: "link",
       createdAt: iso(6),
     },
     {
@@ -422,7 +434,7 @@ export function createSeedBookings(): Booking[] {
       totalAmount: 60800,
       status: "confirmed",
       memo: "소규모 브랜드 팝업",
-      source: "link",
+      channel: "link",
       createdAt: iso(30),
     },
     {
@@ -440,7 +452,7 @@ export function createSeedBookings(): Booking[] {
       totalAmount: 180000,
       status: "confirmed",
       memo: "요리 클래스, 식기 10인분",
-      source: "web",
+      channel: "web",
       createdAt: iso(70),
     },
     {
@@ -458,7 +470,7 @@ export function createSeedBookings(): Booking[] {
       totalAmount: 108000,
       status: "pending",
       memo: "돌잔치, 하객 18명 예상",
-      source: "web",
+      channel: "web",
       createdAt: iso(12),
     },
   ];
@@ -467,6 +479,8 @@ export function createSeedBookings(): Booking[] {
   const deadline = new Date(Date.now() + 15 * 60 * 1000).toISOString();
   return base.map((booking) => ({
     ...booking,
+    source: "guest" as const,
+    refundStatus: "none" as const,
     expiresAt: booking.status === "pending" ? deadline : null,
     payBankName: "국민은행",
     payAccountNumber: "123-45-678901",

@@ -17,9 +17,25 @@ import {
   UsersIcon,
 } from "@/components/Icons";
 import { isAdminEmail } from "@/lib/admin";
-import { CATEGORY_MAP, bookingStatusMeta } from "@/lib/constants";
+import {
+  APPROVAL_LABEL,
+  APPROVAL_STYLE,
+  CATEGORY_MAP,
+  REFUND_LABEL,
+  REFUND_STYLE,
+  bookingStatusMeta,
+} from "@/lib/constants";
 import { DepositInfoRow } from "@/components/DepositInfoRow";
-import { fetchAdminData, patchSpace, removeSpace, updateBookingStatus, type AdminData } from "@/lib/db";
+import {
+  fetchAdminData,
+  patchSpace,
+  removeSpace,
+  setSpaceApproval,
+  updateBookingStatus,
+  updateRefundStatus,
+  type AdminData,
+} from "@/lib/db";
+import { BookingTimeline } from "@/components/BookingAccess";
 import { revalidateHomeCache } from "@/lib/revalidate";
 import {
   cn,
@@ -31,7 +47,7 @@ import {
   won,
   wonShort,
 } from "@/lib/format";
-import type { Booking, BookingStatus, Category, Space } from "@/lib/types";
+import { countsForRevenue, type ApprovalStatus, type Booking, type BookingStatus, type Category, type Space } from "@/lib/types";
 
 type TabKey = "spaces" | "bookings" | "members";
 
@@ -130,7 +146,7 @@ function StatCard({
 }
 
 export default function AdminPage() {
-  const { ready, mode, user, refresh } = useApp();
+  const { ready, mode, user, bookingEvents, refresh } = useApp();
   const admin = isAdminEmail(user?.email);
 
   const [data, setData] = useState<AdminData | null>(null);
@@ -145,6 +161,9 @@ export default function AdminPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [toast, setToast] = useState("");
+  const [approvalFilter, setApprovalFilter] = useState<ApprovalStatus | "all">("all");
+  const [rejectTarget, setRejectTarget] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -179,7 +198,7 @@ export default function AdminPage() {
     const confirmed = bookings.filter((booking) => booking.status === "confirmed").length;
     const cancelled = bookings.filter((booking) => booking.status === "cancelled").length;
     const revenue = bookings
-      .filter((booking) => booking.status !== "cancelled")
+      .filter((booking) => countsForRevenue(booking))
       .reduce((sum, booking) => sum + booking.totalAmount, 0);
     const hosts = profiles.filter((profile) => profile.role === "host").length;
     const guests = profiles.filter((profile) => profile.role === "guest").length;
@@ -194,6 +213,7 @@ export default function AdminPage() {
       confirmed,
       cancelled,
       revenue,
+      pendingApproval: spaces.filter((space) => space.approvalStatus !== "approved").length,
       profiles: profiles.length,
       hosts,
       guests,
@@ -228,6 +248,7 @@ export default function AdminPage() {
   const filteredSpaces = useMemo(() => {
     const query = spaceQuery.trim().toLowerCase();
     return (data?.spaces ?? []).filter((space) => {
+      if (approvalFilter !== "all" && space.approvalStatus !== approvalFilter) return false;
       if (category !== "all" && space.category !== category) return false;
       if (!query) return true;
       return [space.name, space.hostName, space.region, space.district, space.address]
@@ -235,7 +256,7 @@ export default function AdminPage() {
         .toLowerCase()
         .includes(query);
     });
-  }, [data, spaceQuery, category]);
+  }, [data, spaceQuery, category, approvalFilter]);
 
   const filteredBookings = useMemo(() => {
     const query = bookingQuery.trim().toLowerCase();
@@ -328,6 +349,45 @@ export default function AdminPage() {
       );
     } catch (err) {
       setToast(err instanceof Error ? err.message : "예약 상태를 바꾸지 못했어요.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function reviewSpace(space: Space, status: ApprovalStatus, reason = "") {
+    setBusyId(space.id);
+    try {
+      const updated = await setSpaceApproval(space.id, status, reason);
+      if (updated) {
+        setData((prev) =>
+          prev ? { ...prev, spaces: prev.spaces.map((item) => (item.id === updated.id ? updated : item)) } : prev
+        );
+      }
+      setRejectTarget(null);
+      setRejectReason("");
+      revalidateHomeCache();
+      setToast(
+        status === "approved" ? "공간을 승인했어요. 손님 화면에 공개됩니다." : status === "rejected" ? "공간을 반려했어요." : "승인 대기로 되돌렸어요."
+      );
+    } catch (err) {
+      setToast(err instanceof Error ? err.message : "승인 상태를 바꾸지 못했어요.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function changeRefund(booking: Booking, refundStatus: "pending" | "completed") {
+    setBusyId(booking.id);
+    try {
+      const updated = await updateRefundStatus(booking.id, refundStatus, refundStatus === "completed" ? "관리자 환불 처리" : "");
+      if (updated) {
+        setData((prev) =>
+          prev ? { ...prev, bookings: prev.bookings.map((item) => (item.id === updated.id ? updated : item)) } : prev
+        );
+      }
+      setToast(refundStatus === "completed" ? "환불 완료로 처리했어요." : "환불 필요로 표시했어요.");
+    } catch (err) {
+      setToast(err instanceof Error ? err.message : "환불 상태를 바꾸지 못했어요.");
     } finally {
       setBusyId(null);
     }
@@ -432,7 +492,7 @@ export default function AdminPage() {
         <StatCard
           label="전체 등록 공간"
           value={`${stats.spaces}개`}
-          hint={`공개 ${stats.visible} · 비공개 ${stats.hidden}`}
+          hint={`공개 ${stats.visible} · 비공개 ${stats.hidden} · 승인 대기 ${stats.pendingApproval}`}
           tone="brand"
         />
         <StatCard
@@ -515,6 +575,28 @@ export default function AdminPage() {
                 />
               </div>
             </div>
+            <div className="flex flex-wrap gap-1.5">
+              {([
+                { key: "all" as const, label: "승인 전체" },
+                { key: "pending_review" as const, label: `승인 대기 ${stats.pendingApproval}` },
+                { key: "approved" as const, label: "공개 중" },
+                { key: "rejected" as const, label: "반려" },
+              ]).map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setApprovalFilter(item.key)}
+                  className={cn(
+                    "rounded-full border px-3 py-1 text-[11px] font-bold transition",
+                    approvalFilter === item.key
+                      ? "border-brand bg-brand text-white"
+                      : "border-ink-line bg-white text-ink-soft hover:border-brand/40 hover:text-brand"
+                  )}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
             <CategoryChips active={category} onSelect={setCategory} size="sm" className="pb-0.5" />
           </div>
 
@@ -534,6 +616,9 @@ export default function AdminPage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-1">
+                        <span className={cn("badge", APPROVAL_STYLE[space.approvalStatus])}>
+                          {APPROVAL_LABEL[space.approvalStatus]}
+                        </span>
                         <span className={cn("badge", space.hidden ? "bg-slate-700 text-white" : "bg-emerald-50 text-emerald-600")}>
                           {space.hidden ? "비공개" : "공개"}
                         </span>
@@ -602,6 +687,76 @@ export default function AdminPage() {
                       }
                     />
                   </div>
+
+                  {space.approvalStatus === "rejected" && space.rejectionReason && (
+                    <p className="mt-2 rounded-lg bg-red-50 px-2.5 py-1.5 text-[10.5px] font-semibold text-red-600">
+                      반려 사유 · {space.rejectionReason}
+                    </p>
+                  )}
+
+                  <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-ink-line/20 px-2.5 py-2">
+                    <p className="text-[10.5px] font-bold text-ink-soft">
+                      {space.approvalStatus === "approved"
+                        ? "손님 화면에 공개 중이에요."
+                        : space.approvalStatus === "rejected"
+                          ? "반려된 상태 — 사장님이 수정 후 재요청할 수 있어요."
+                          : "승인 대기 — 공개·결제가 잠겨 있어요."}
+                    </p>
+                    <div className="flex gap-1.5">
+                      {space.approvalStatus !== "approved" && (
+                        <button
+                          type="button"
+                          disabled={busyId === space.id}
+                          onClick={() => void reviewSpace(space, "approved")}
+                          className="rounded-lg bg-brand px-3 py-1.5 text-[11px] font-bold text-white hover:bg-brand-dark disabled:opacity-60"
+                        >
+                          승인
+                        </button>
+                      )}
+                      {space.approvalStatus !== "rejected" && (
+                        <button
+                          type="button"
+                          disabled={busyId === space.id}
+                          onClick={() => {
+                            setRejectTarget(space.id);
+                            setRejectReason("");
+                          }}
+                          className="rounded-lg border border-ink-line bg-white px-3 py-1.5 text-[11px] font-bold text-ink-soft hover:border-red-200 hover:text-red-500 disabled:opacity-60"
+                        >
+                          반려
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {rejectTarget === space.id && (
+                    <div className="mt-2 rounded-lg bg-red-50 p-2.5">
+                      <p className="text-[10.5px] font-semibold text-red-700">반려 사유를 적어 주세요. 사장님 센터에 그대로 보여요.</p>
+                      <input
+                        value={rejectReason}
+                        onChange={(event) => setRejectReason(event.target.value)}
+                        placeholder="예: 상세주소가 확인되지 않아요. 정확한 주소를 입력해 주세요."
+                        className="input mt-1.5 text-[11px]"
+                      />
+                      <div className="mt-1.5 flex gap-1.5">
+                        <button
+                          type="button"
+                          disabled={busyId === space.id || !rejectReason.trim()}
+                          onClick={() => void reviewSpace(space, "rejected", rejectReason.trim())}
+                          className="rounded-md bg-red-500 px-2.5 py-1 text-[10px] font-bold text-white disabled:opacity-60"
+                        >
+                          반려 확정
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setRejectTarget(null)}
+                          className="rounded-md bg-white px-2.5 py-1 text-[10px] font-bold text-ink-soft"
+                        >
+                          취소
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="mt-2.5 flex items-center justify-end gap-2">
                     <Link href={`/spaces/${space.id}`} className="btn-ghost btn-sm">
@@ -715,7 +870,8 @@ export default function AdminPage() {
                         <td className="max-w-[180px] px-3 py-2.5">
                           <span className="block truncate font-bold text-ink">{booking.spaceName}</span>
                           <span className="text-[10px] text-ink-mute">
-                            {booking.source === "link" ? "결제 링크" : "웹"} · {formatRelativeDate(booking.createdAt)}
+                            {booking.source === "block" ? "시간 차단" : booking.channel === "link" ? "결제 링크" : "웹"} ·{" "}
+                            {formatRelativeDate(booking.createdAt)}
                           </span>
                         </td>
                         <td className="px-3 py-2.5">
@@ -734,6 +890,14 @@ export default function AdminPage() {
                           <span className={cn("badge", bookingStatusMeta(booking).style)}>
                             {bookingStatusMeta(booking).label}
                           </span>
+                          {booking.source === "block" && (
+                            <span className="ml-1 badge bg-slate-100 text-slate-500">시간 차단</span>
+                          )}
+                          {booking.status === "cancelled" && booking.refundStatus !== "none" && (
+                            <span className={cn("badge ml-1", REFUND_STYLE[booking.refundStatus])}>
+                              {REFUND_LABEL[booking.refundStatus]}
+                            </span>
+                          )}
                           {booking.status === "pending" && (
                             <DepositInfoRow booking={booking} className="mt-1.5 w-[210px]" />
                           )}
@@ -771,7 +935,20 @@ export default function AdminPage() {
                                 <BoltIcon size={11} /> 대기
                               </button>
                             )}
+                            {booking.status === "cancelled" && booking.refundStatus === "pending" && (
+                              <button
+                                type="button"
+                                disabled={busyId === booking.id}
+                                onClick={() => void changeRefund(booking, "completed")}
+                                className="inline-flex items-center gap-0.5 rounded-md bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-600 hover:bg-amber-100 disabled:opacity-50"
+                              >
+                                <CheckIcon size={11} /> 환불 완료
+                              </button>
+                            )}
                           </div>
+                          <BookingTimeline
+                            events={bookingEvents.filter((event) => event.bookingId === booking.id)}
+                          />
                         </td>
                       </tr>
                     ))}
@@ -788,7 +965,8 @@ export default function AdminPage() {
                       </span>
                       <span className="font-mono text-[10px] text-ink-mute">No. {shortId(booking.id)}</span>
                       <span className="text-[10px] text-ink-mute">
-                        · {booking.source === "link" ? "결제 링크" : "웹"} · {formatRelativeDate(booking.createdAt)}
+                        · {booking.source === "block" ? "시간 차단" : booking.channel === "link" ? "결제 링크" : "웹"} ·{" "}
+                            {formatRelativeDate(booking.createdAt)}
                       </span>
                     </div>
                     <h3 className="mt-1.5 truncate text-sm font-extrabold text-ink">{booking.spaceName}</h3>
@@ -813,6 +991,16 @@ export default function AdminPage() {
                             {booking.status === "pending" ? "입금 확인" : "확정"}
                           </button>
                         )}
+                        {booking.status === "cancelled" && booking.refundStatus === "pending" && (
+                          <button
+                            type="button"
+                            disabled={busyId === booking.id}
+                            onClick={() => void changeRefund(booking, "completed")}
+                            className="rounded-lg bg-amber-50 px-2.5 py-1.5 text-[11px] font-bold text-amber-600 disabled:opacity-50"
+                          >
+                            환불 완료
+                          </button>
+                        )}
                         {booking.status !== "cancelled" ? (
                           <button
                             type="button"
@@ -834,6 +1022,9 @@ export default function AdminPage() {
                         )}
                       </div>
                     </div>
+                    <BookingTimeline
+                      events={bookingEvents.filter((event) => event.bookingId === booking.id)}
+                    />
                   </article>
                 ))}
               </div>

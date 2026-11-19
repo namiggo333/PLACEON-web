@@ -228,6 +228,45 @@ curl -s https://igotjeogot.vercel.app/api/cron/expire-bookings   # 만료 정리
 - **정산 자동화**: 월별 정산 리포트, 수수료 정책(현재 무료 0% 단계)
 - **본인 인증**: 사장님 계좌·사업자 정보 확인
 
+
+---
+
+## 10. 핵심 안전·예약·운영 기능 (2026-11-19, 마이그레이션 004)
+
+운영 DB에 `supabase/migrations/004_space_safety_and_ops.sql` 을 적용했습니다.
+
+### 공간 승인 게이트 (`/admin`)
+- `spaces.approval_status` (`pending_review` / `approved` / `rejected`) + `rejection_reason`.
+- 신규 공간은 `pending_review` 로 시작하고, 관리자가 승인해야 홈·검색·상세·`/pay`·예약 API 에 노출됩니다.
+- 사장님이 **입금 계좌를 등록하거나 바꾸면** 해당 공간은 자동으로 `pending_review` 로 돌아가 재승인 전까지 공개·결제가 멈춥니다(계좌 바꿔치기 사기 방지).
+- 관리자는 `/admin` 에서 승인 대기/공개/반려로 필터하고 승인·반려(사유)할 수 있습니다.
+
+### 이미지 WebP 자동 압축
+- 업로드 전 브라우저 Canvas 에서 **WebP(긴 변 1600px, 품질 0.82)** 로 변환해 Storage 에 올립니다. WebP 를 만들지 못하는 브라우저는 JPEG 로 대체합니다.
+
+### 빈 시간표 + 사장님 시간 차단
+- `get_occupied_slots(p_space, p_from, p_to)` RPC 가 이름·연락처 없이 `start_at`, `end_at`, `source` 만 반환합니다(anon 호출 가능).
+- 공간 상세·전용 결제 페이지의 시작 시간 선택에서 예약·차단된 시간과 지난 시간은 선택할 수 없습니다.
+- 사장님 센터 **시간 관리** 탭에서 원하는 시간을 차단/해제할 수 있고, 차단 행(`bookings.source='block'`)은 `bookings_no_overlap` 제약에 함께 묶여 중복 예약을 원천 차단합니다.
+- 매출·정산 집계에서는 `source='block'` 을 제외합니다. (유입 채널은 `bookings.channel` 로 분리: `web`/`link`)
+
+### 확정 후 상세주소·입장가이드
+- `spaces_private`(RLS: 사장님·관리자만) 에 상세주소·출입 안내·주차 안내를 저장합니다. 공개 화면에는 동네까지만 보입니다.
+- 예약 접수 때 `access_token` 을 발급해 DB 에는 SHA-256 해시만 저장하고, 예약 완료 화면·확인 링크(`/bookings?booking=…&token=…`)로 전달합니다.
+- `/api/bookings/access` 는 로그인 본인 또는 토큰이 일치하고 예약이 `confirmed` 일 때만 상세 정보를 돌려줍니다.
+
+### 취소·환불 분리 + 변경 이력
+- `bookings.refund_status` (`none`/`pending`/`completed`): 확정 예약이 취소되면 `pending` 으로 바뀌고 사장님이 환불 완료 처리합니다.
+- `booking_events` 에 생성·입금 확인·거절·만료·취소·환불·시간 차단/해제 이력을 시각·행위자와 함께 기록하며, `/bookings`·`/host`·`/admin` 에서 확인할 수 있습니다.
+- 취소된 예약은 즉시 시간 점유가 풀려 같은 시간대를 다시 예약할 수 있습니다.
+
+### API
+- `POST /api/bookings` → `{ booking, accessToken }`
+- `POST /api/bookings/status` → `{ bookingId, status?, refundStatus?, reason?, memo? }`
+- `POST /api/bookings/access` → `{ bookingId, token? }`
+- `POST /api/host/blocks` → `{ action: "create" | "release", … }`
+- `POST /api/admin/spaces/approval` → `{ spaceId, status, reason? }`
+
 ---
 
 © 2026 이곳저곳. 공간대여 예약·결제·광고 통합 플랫폼.

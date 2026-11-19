@@ -21,7 +21,8 @@ import {
   StarIcon,
   UsersIcon,
 } from "@/components/Icons";
-import { CATEGORY_MAP, HOUR_OPTIONS, TIME_SLOTS } from "@/lib/constants";
+import { APPROVAL_LABEL, CATEGORY_MAP, HOUR_OPTIONS, TIME_SLOTS } from "@/lib/constants";
+import { buildSlotStatuses, fetchOccupiedSlots, type SlotStatus } from "@/lib/availability";
 import {
   addDays,
   calcTotal,
@@ -147,6 +148,29 @@ export default function PayPage() {
   const [agreed, setAgreed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState<Booking | null>(null);
+  const [occupied, setOccupied] = useState<SlotStatus[]>([]);
+  const [checkingSlots, setCheckingSlots] = useState(false);
+  const [origin, setOrigin] = useState("https://igotjeogot.vercel.app");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") setOrigin(window.location.origin);
+  }, []);
+
+  useEffect(() => {
+    if (!space) return;
+    let alive = true;
+    setCheckingSlots(true);
+    fetchOccupiedSlots(space.id, date, date)
+      .then((list) => {
+        if (alive) setOccupied(buildSlotStatuses(date, TIME_SLOTS, hours, list));
+      })
+      .finally(() => {
+        if (alive) setCheckingSlots(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [space?.id, date, hours]);
 
   useEffect(() => {
     if (user) {
@@ -194,7 +218,7 @@ export default function PayPage() {
 
   const category = CATEGORY_MAP[space.category] ?? CATEGORY_MAP.party;
   const discountedPrice = Math.round((space.pricePerHour * (100 - space.discountRate)) / 100);
-  const place = space.address?.trim() || `${space.region} ${space.district}`.trim();
+  const place = [space.region, space.district].filter(Boolean).join(" ").trim() || "위치는 예약 확정 후 안내";
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -203,6 +227,9 @@ export default function PayPage() {
     if (!name.trim()) return setError("예약자 이름을 입력해 주세요.");
     if (!phone.trim()) return setError("연락처를 입력해 주세요.");
     if (guests > space.capacity) return setError(`이 공간은 최대 ${space.capacity}명까지 이용할 수 있어요.`);
+    const picked = occupied.find((slot) => slot.start === startTime);
+    if (picked?.taken) return setError("선택한 시간대는 이미 예약(또는 사장님 차단)되어 있어요. 다른 시간을 골라 주세요.");
+    if (picked?.past) return setError("지난 시간은 예약할 수 없어요. 다른 시간을 골라 주세요.");
     if (!agreed) return setError("이용약관과 취소·환불 규정에 먼저 동의해 주세요.");
     setSubmitting(true);
     try {
@@ -215,7 +242,7 @@ export default function PayPage() {
         guestName: name.trim(),
         guestPhone: phone.trim(),
         memo,
-        source: "link",
+        channel: "link",
       });
       setDone(booking);
       if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
@@ -296,6 +323,19 @@ export default function PayPage() {
 
             <DepositGuide booking={done} className="mt-3" />
 
+            {done.accessToken && (
+              <div className="mt-3 rounded-2xl border border-ink-line bg-[#FFF8FB] p-3 text-[10.5px] leading-relaxed text-ink-soft">
+                <p className="font-bold text-ink">비로그인 예약 확인 링크</p>
+                <p className="mt-1 break-all">
+                  {origin}/bookings?booking={done.id}&amp;token={done.accessToken}
+                </p>
+                <p className="mt-1 text-ink-mute">
+                  이 링크로 예약 상태를 확인하고, 입금이 확인되면 상세주소·출입 안내를 볼 수 있어요. 링크를 꼭
+                  보관해 주세요.
+                </p>
+              </div>
+            )}
+
             <div className="mt-4 flex flex-col gap-2">
               {user && (
                 <Link href="/bookings" className="btn-primary w-full py-3">
@@ -344,6 +384,11 @@ export default function PayPage() {
                 </div>
 
                 <h1 className="mt-2.5 text-[24px] leading-snug text-ink sm:text-[28px]">{space.name}</h1>
+                {space.approvalStatus !== "approved" && (
+                  <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-[11px] font-semibold leading-relaxed text-amber-800">
+                    🛡️ {APPROVAL_LABEL[space.approvalStatus]} 상태의 공간이에요. 관리자 확인이 끝나면 손님에게 열려요.
+                  </p>
+                )}
 
                 <a
                   href={`https://map.naver.com/p/search/${encodeURIComponent(place)}`}
@@ -481,11 +526,22 @@ export default function PayPage() {
                       onChange={(event) => setStartTime(event.target.value)}
                       className="input"
                     >
-                      {TIME_SLOTS.map((slot) => (
-                        <option key={slot} value={slot}>
-                          {formatTime(slot)}
-                        </option>
-                      ))}
+                      {TIME_SLOTS.map((slot) => {
+                        const status = occupied.find((entry) => entry.start === slot);
+                        const label = status?.taken
+                          ? status.blockedBy === "block"
+                            ? " · 사장님 차단"
+                            : " · 예약됨"
+                          : status?.past
+                            ? " · 지난 시간"
+                            : "";
+                        return (
+                          <option key={slot} value={slot} disabled={Boolean(status?.taken || status?.past)}>
+                            {formatTime(slot)}
+                            {label}
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
                   <div>

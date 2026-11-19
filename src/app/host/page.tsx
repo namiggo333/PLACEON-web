@@ -20,8 +20,19 @@ import {
   SparkleIcon,
   StoreIcon,
   UsersIcon,
+  ClockIcon,
+  ShieldIcon,
 } from "@/components/Icons";
-import { CATEGORIES, CATEGORY_MAP, REGIONS, bookingStatusMeta } from "@/lib/constants";
+import {
+  APPROVAL_LABEL,
+  APPROVAL_STYLE,
+  CATEGORIES,
+  CATEGORY_MAP,
+  REFUND_LABEL,
+  REFUND_STYLE,
+  REGIONS,
+  bookingStatusMeta,
+} from "@/lib/constants";
 import { cn, endTime, formatDate, formatRelativeDate, formatTime, shortId, won, wonShort } from "@/lib/format";
 import {
   MAX_PHOTOS,
@@ -29,14 +40,16 @@ import {
   uploadSpacePhotos,
   validatePhoto,
 } from "@/lib/storage";
-import type { Category, Role, Space, SpaceInput } from "@/lib/types";
+import type { Category, Role, Space, SpaceInput, SpacePrivate } from "@/lib/types";
+import { BookingTimeline } from "@/components/BookingAccess";
 
-type TabKey = "dashboard" | "spaces" | "bookings" | "links";
+type TabKey = "dashboard" | "spaces" | "bookings" | "schedule" | "links";
 
 const TABS: { key: TabKey; label: string; icon: typeof StoreIcon }[] = [
   { key: "dashboard", label: "대시보드", icon: BoltIcon },
   { key: "spaces", label: "내 공간", icon: StoreIcon },
   { key: "bookings", label: "예약 관리", icon: CalendarIcon },
+  { key: "schedule", label: "시간 관리", icon: ClockIcon },
   { key: "links", label: "결제 링크", icon: LinkIcon },
 ];
 
@@ -58,6 +71,9 @@ interface FormState {
   bankName: string;
   accountNumber: string;
   accountHolder: string;
+  detailAddress: string;
+  entryGuide: string;
+  parkingGuide: string;
 }
 
 const EMPTY_FORM: FormState = {
@@ -78,6 +94,9 @@ const EMPTY_FORM: FormState = {
   bankName: "",
   accountNumber: "",
   accountHolder: "",
+  detailAddress: "",
+  entryGuide: "",
+  parkingGuide: "",
 };
 
 function Switch({
@@ -128,10 +147,15 @@ export default function HostPage() {
     spaces,
     spaceAccounts,
     bookings,
+    bookingEvents,
     createSpace,
     updateSpace,
     deleteSpace,
     setBookingStatus,
+    updateRefund,
+    createBlock,
+    releaseBlock,
+    loadSpacePrivate,
     demoSignIn,
     reset,
   } = useApp();
@@ -151,6 +175,9 @@ export default function HostPage() {
   const [origin, setOrigin] = useState("https://igotjeogot.vercel.app");
   const [linkSpaceId, setLinkSpaceId] = useState("");
   const [demoBusy, setDemoBusy] = useState<Role | null>(null);
+  const [blockForm, setBlockForm] = useState({ spaceId: "", date: "", startTime: "10:00", hours: 2, memo: "" });
+  const [blockBusy, setBlockBusy] = useState(false);
+  const [blockError, setBlockError] = useState("");
 
   useEffect(() => {
     if (typeof window !== "undefined") setOrigin(window.location.origin);
@@ -167,7 +194,11 @@ export default function HostPage() {
   const myBookings = useMemo(
     () =>
       bookings
-        .filter((booking) => booking.hostId === user?.id || mySpaceIds.has(booking.spaceId))
+        .filter(
+          (booking) =>
+            booking.source === "guest" &&
+            (booking.hostId === user?.id || mySpaceIds.has(booking.spaceId))
+        )
         .sort((a, b) => {
           if (a.status === "pending" && b.status !== "pending") return -1;
           if (a.status !== "pending" && b.status === "pending") return 1;
@@ -175,6 +206,25 @@ export default function HostPage() {
         }),
     [bookings, user?.id, mySpaceIds]
   );
+
+  const myBlocks = useMemo(
+    () =>
+      bookings
+        .filter(
+          (booking) =>
+            booking.source === "block" &&
+            booking.status !== "cancelled" &&
+            mySpaceIds.has(booking.spaceId)
+        )
+        .sort((a, b) => `${a.date}T${a.startTime}`.localeCompare(`${b.date}T${b.startTime}`)),
+    [bookings, mySpaceIds]
+  );
+
+  useEffect(() => {
+    if (!blockForm.spaceId && mySpaces.length > 0) {
+      setBlockForm((prev) => ({ ...prev, spaceId: mySpaces[0].id, date: prev.date }));
+    }
+  }, [mySpaces, blockForm.spaceId]);
 
   const thisMonth = new Date().toISOString().slice(0, 7);
   const stats = useMemo(() => {
@@ -246,10 +296,24 @@ export default function HostPage() {
       bankName: account?.bankName ?? "",
       accountNumber: account?.accountNumber ?? "",
       accountHolder: account?.accountHolder ?? "",
+      detailAddress: "",
+      entryGuide: "",
+      parkingGuide: "",
     });
     setFormError("");
     setPhotoError("");
     setModalOpen(true);
+    void loadSpacePrivate(space.id)
+      .then((info: SpacePrivate | null) => {
+        if (!info) return;
+        setForm((prev) => ({
+          ...prev,
+          detailAddress: info.detailAddress,
+          entryGuide: info.entryGuide,
+          parkingGuide: info.parkingGuide,
+        }));
+      })
+      .catch(() => {});
   }
 
   async function addPhotos(fileList: FileList | null) {
@@ -336,6 +400,9 @@ export default function HostPage() {
       bankName,
       accountNumber,
       accountHolder,
+      detailAddress: form.detailAddress.trim(),
+      entryGuide: form.entryGuide.trim(),
+      parkingGuide: form.parkingGuide.trim(),
     };
 
     setSaving(true);
@@ -347,7 +414,7 @@ export default function HostPage() {
         setToast("공간 정보를 수정했어요.");
       } else {
         await createSpace(payload);
-        setToast("공간을 등록했어요!");
+        setToast("공간을 등록했어요! 관리자 확인 후 손님에게 공개돼요.");
       }
       setModalOpen(false);
     } catch (err) {
@@ -522,7 +589,7 @@ export default function HostPage() {
             <div className="card p-4">
               <p className="text-[11px] font-semibold text-ink-mute">결제 링크로 들어온 예약</p>
               <p className="mt-1 text-2xl font-black text-ink">
-                {myBookings.filter((booking) => booking.source === "link").length}건
+                {myBookings.filter((booking) => booking.channel === "link").length}건
               </p>
               <p className="mt-0.5 text-[10px] text-ink-mute">자체 유입 손님</p>
             </div>
@@ -641,7 +708,11 @@ export default function HostPage() {
                 <article key={space.id} className="card overflow-hidden">
                   <div className="relative h-32">
                     <SpaceMedia space={space} />
-                    <div className="absolute left-2 top-2 flex gap-1">
+                    <div className="absolute left-2 top-2 flex flex-wrap gap-1">
+                      <span className={cn("badge", APPROVAL_STYLE[space.approvalStatus])}>
+                        {space.approvalStatus === "approved" ? <CheckIcon size={10} /> : <ShieldIcon size={10} />}
+                        {APPROVAL_LABEL[space.approvalStatus]}
+                      </span>
                       {space.hidden && (
                         <span className="badge bg-slate-700 text-white">
                           <EyeOffIcon size={11} />
@@ -699,6 +770,17 @@ export default function HostPage() {
                         복사
                       </button>
                     </div>
+
+                    {space.approvalStatus === "rejected" && (
+                      <p className="mt-1.5 rounded-lg bg-red-50 px-2.5 py-2 text-[10px] font-semibold leading-relaxed text-red-600">
+                        반려 사유 · {space.rejectionReason || "관리자 안내를 확인해 주세요."}
+                      </p>
+                    )}
+                    {space.approvalStatus === "pending_review" && (
+                      <p className="mt-1.5 rounded-lg bg-amber-50 px-2.5 py-2 text-[10px] font-semibold leading-relaxed text-amber-700">
+                        관리자 확인 중이에요. 승인되면 손님 화면에 공개되고 예약을 받을 수 있어요.
+                      </p>
+                    )}
 
                     {spaceAccounts[space.id] ? (
                       <div className="mt-1.5 flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-2 text-[10px] text-emerald-700">
@@ -793,10 +875,15 @@ export default function HostPage() {
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-1.5">
                         <span className={cn("badge", meta.style)}>{meta.label}</span>
-                        {booking.source === "link" && (
+                        {booking.channel === "link" && (
                           <span className="badge bg-brand-light text-brand">
                             <LinkIcon size={11} />
                             결제 링크
+                          </span>
+                        )}
+                        {booking.status === "cancelled" && booking.refundStatus !== "none" && (
+                          <span className={cn("badge", REFUND_STYLE[booking.refundStatus])}>
+                            {REFUND_LABEL[booking.refundStatus]}
                           </span>
                         )}
                         <span className="text-[10px] text-ink-mute">No. {shortId(booking.id)}</span>
@@ -822,6 +909,10 @@ export default function HostPage() {
                       </div>
 
                       <DepositInfoRow booking={booking} className="mt-2" />
+
+                      <BookingTimeline
+                        events={bookingEvents.filter((event) => event.bookingId === booking.id)}
+                      />
                     </div>
 
                     <div className="flex shrink-0 items-center justify-between gap-3 sm:flex-col sm:items-end">
@@ -857,10 +948,33 @@ export default function HostPage() {
                             예약 취소
                           </button>
                         )}
-                        {booking.status === "cancelled" && (
+                        {booking.status === "cancelled" && booking.refundStatus === "pending" && (
+                          <button
+                            type="button"
+                            disabled={busyBooking === booking.id}
+                            onClick={async () => {
+                              setBusyBooking(booking.id);
+                              try {
+                                await updateRefund(booking.id, "completed", "사장님 계좌 환불 완료");
+                                setToast("환불 완료로 처리했어요.");
+                              } catch (err) {
+                                setToast(err instanceof Error ? err.message : "환불 처리를 하지 못했어요.");
+                              } finally {
+                                setBusyBooking(null);
+                              }
+                            }}
+                            className="rounded-lg bg-amber-500 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-amber-600 disabled:opacity-60"
+                          >
+                            환불 완료 처리
+                          </button>
+                        )}
+                        {booking.status === "cancelled" && booking.refundStatus === "none" && (
                           <span className="text-[11px] text-ink-mute">
                             {booking.cancelReason === "expired" ? "입금 기한 만료로 자동 취소" : "종료된 예약"}
                           </span>
+                        )}
+                        {booking.status === "cancelled" && booking.refundStatus === "completed" && (
+                          <span className="text-[11px] font-semibold text-emerald-600">환불 완료</span>
                         )}
                       </div>
                     </div>
@@ -870,6 +984,162 @@ export default function HostPage() {
               })
             )}
           </div>
+        </div>
+      )}
+
+      {tab === "schedule" && (
+        <div className="mt-5 space-y-4">
+          <section className="card p-4 sm:p-5">
+            <div className="flex items-center gap-2">
+              <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand-light text-brand">
+                <ClockIcon size={18} />
+              </span>
+              <div>
+                <h2 className="text-sm font-extrabold text-ink">사장님 시간 차단</h2>
+                <p className="text-[10px] text-ink-mute">
+                  예약을 받고 싶지 않은 시간대를 막아 두면 손님 화면에서 선택할 수 없어요.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+              <div className="lg:col-span-2">
+                <label className="label" htmlFor="block-space">공간</label>
+                <select
+                  id="block-space"
+                  value={blockForm.spaceId}
+                  onChange={(event) => setBlockForm({ ...blockForm, spaceId: event.target.value })}
+                  className="input"
+                  disabled={mySpaces.length === 0}
+                >
+                  {mySpaces.map((space) => (
+                    <option key={space.id} value={space.id}>
+                      {space.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="label" htmlFor="block-date">날짜</label>
+                <input
+                  id="block-date"
+                  type="date"
+                  min={new Date().toISOString().slice(0, 10)}
+                  value={blockForm.date}
+                  onChange={(event) => setBlockForm({ ...blockForm, date: event.target.value })}
+                  className="input"
+                />
+              </div>
+              <div>
+                <label className="label" htmlFor="block-start">시작</label>
+                <select
+                  id="block-start"
+                  value={blockForm.startTime}
+                  onChange={(event) => setBlockForm({ ...blockForm, startTime: event.target.value })}
+                  className="input"
+                >
+                  {Array.from({ length: 15 }, (_, i) => String(8 + i).padStart(2, "0") + ":00").map((slot) => (
+                    <option key={slot} value={slot}>
+                      {formatTime(slot)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="label" htmlFor="block-hours">시간</label>
+                <select
+                  id="block-hours"
+                  value={blockForm.hours}
+                  onChange={(event) => setBlockForm({ ...blockForm, hours: Number(event.target.value) })}
+                  className="input"
+                >
+                  {[1, 2, 3, 4, 5, 6, 8].map((hour) => (
+                    <option key={hour} value={hour}>
+                      {hour}시간
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_auto]">
+              <input
+                value={blockForm.memo}
+                onChange={(event) => setBlockForm({ ...blockForm, memo: event.target.value })}
+                placeholder="메모 (선택) · 예: 정기 청소, 사장님 개인 일정"
+                className="input"
+              />
+              <button
+                type="button"
+                disabled={blockBusy || !blockForm.spaceId || !blockForm.date}
+                onClick={async () => {
+                  setBlockError("");
+                  setBlockBusy(true);
+                  try {
+                    await createBlock({
+                      spaceId: blockForm.spaceId,
+                      date: blockForm.date,
+                      startTime: blockForm.startTime,
+                      hours: blockForm.hours,
+                      memo: blockForm.memo,
+                    });
+                    setToast("그 시간대를 차단했어요. 손님 화면에서 선택할 수 없어요.");
+                    setBlockForm({ ...blockForm, memo: "" });
+                  } catch (err) {
+                    setBlockError(err instanceof Error ? err.message : "시간을 차단하지 못했어요.");
+                  } finally {
+                    setBlockBusy(false);
+                  }
+                }}
+                className="btn-primary px-4"
+              >
+                {blockBusy ? "차단 중…" : "시간 차단"}
+              </button>
+            </div>
+            {blockError && (
+              <p className="mt-2 rounded-lg bg-red-50 px-2.5 py-1.5 text-[10.5px] font-medium text-red-600">{blockError}</p>
+            )}
+          </section>
+
+          <section className="card p-4 sm:p-5">
+            <h2 className="text-sm font-extrabold text-ink">
+              차단 중인 시간 <span className="text-brand">{myBlocks.length}</span>
+            </h2>
+            <div className="mt-2 divide-y divide-ink-line">
+              {myBlocks.length === 0 ? (
+                <p className="py-6 text-center text-[11px] text-ink-mute">아직 차단한 시간이 없어요.</p>
+              ) : (
+                myBlocks.map((block) => (
+                  <div key={block.id} className="flex flex-wrap items-center gap-2 py-2.5">
+                    <span className="badge bg-slate-100 text-slate-600">차단</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-bold text-ink">{block.spaceName}</p>
+                      <p className="text-[10px] text-ink-mute">
+                        {formatDate(block.date)} {formatTime(block.startTime)} ~ {endTime(block.startTime, block.hours)}
+                        {block.memo ? ` · ${block.memo}` : ""}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await releaseBlock(block.id);
+                          setToast("차단을 해제했어요. 다시 예약을 받을 수 있어요.");
+                        } catch (err) {
+                          setToast(err instanceof Error ? err.message : "차단을 해제하지 못했어요.");
+                        }
+                      }}
+                      className="rounded-lg border border-ink-line px-3 py-1.5 text-[11px] font-bold text-ink-soft hover:border-brand hover:text-brand"
+                    >
+                      차단 해제
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+            <p className="mt-2 rounded-lg bg-ink-line/30 px-2.5 py-2 text-[10px] leading-relaxed text-ink-mute">
+              차단한 시간은 예약과 똑같이 중복 예약이 막히고, 매출·정산 집계에서는 제외돼요.
+            </p>
+          </section>
         </div>
       )}
 
@@ -1173,6 +1443,50 @@ export default function HostPage() {
                 </div>
               </div>
 
+              <div className="rounded-xl border border-ink-line bg-ink-line/20 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[11px] font-extrabold text-ink">확정 후에만 공개되는 정보</p>
+                  <span className="rounded-full bg-white px-2 py-0.5 text-[9px] font-bold text-ink-mute">🔒 예약 확정 손님만</span>
+                </div>
+                <p className="mt-0.5 text-[10px] leading-relaxed text-ink-mute">
+                  공개 화면에는 동네까지만 보여요. 입금이 확인돼 예약이 확정되면 아래 정보가 예약자에게 열립니다.
+                </p>
+                <div className="mt-2">
+                  <label className="label" htmlFor="space-detail-address">상세주소</label>
+                  <input
+                    id="space-detail-address"
+                    value={form.detailAddress}
+                    onChange={(event) => setForm({ ...form, detailAddress: event.target.value })}
+                    placeholder="서울 성동구 성수이로 118, 5층 502호"
+                    className="input"
+                  />
+                </div>
+                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                  <div>
+                    <label className="label" htmlFor="space-entry">출입 안내</label>
+                    <textarea
+                      id="space-entry"
+                      value={form.entryGuide}
+                      onChange={(event) => setForm({ ...form, entryGuide: event.target.value })}
+                      rows={2}
+                      placeholder="건물 1층 로비에서 502호 초인종을 눌러 주세요. 도어락 비밀번호는 1234*"
+                      className="input resize-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="label" htmlFor="space-parking">주차 안내</label>
+                    <textarea
+                      id="space-parking"
+                      value={form.parkingGuide}
+                      onChange={(event) => setForm({ ...form, parkingGuide: event.target.value })}
+                      rows={2}
+                      placeholder="건물 뒤편 기계식 주차장 2대 무료 (차량 번호 사전 등록)"
+                      className="input resize-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-3 gap-2">
                 <div>
                   <label className="label" htmlFor="space-price">시간당 가격 *</label>
@@ -1260,6 +1574,12 @@ export default function HostPage() {
                 {!form.bankName.trim() && !form.accountNumber.trim() && !form.accountHolder.trim() && (
                   <p className="mt-1.5 text-[10px] font-medium text-amber-700">
                     계좌를 비워 두면 손님 예약 화면에는 &ldquo;계좌 미등록&rdquo; 안내가 나가요.
+                  </p>
+                )}
+                {editing && (
+                  <p className="mt-1.5 rounded-lg bg-amber-50 px-2.5 py-1.5 text-[10px] font-medium leading-relaxed text-amber-700">
+                    🛡️ 입금 계좌를 바꾸면 계좌 바꿔치기 사기를 막기 위해 <b>관리자 재승인 전까지</b> 공개·새 예약이
+                    잠시 멈춰요.
                   </p>
                 )}
               </div>

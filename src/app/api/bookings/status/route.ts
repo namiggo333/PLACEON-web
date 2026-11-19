@@ -10,10 +10,9 @@ interface StatusRequestBody {
   bookingId?: string;
   status?: string;
   reason?: string | null;
+  refundStatus?: string | null;
+  memo?: string | null;
 }
-
-/** 새 pending 예약의 입금 기한(분) — DB 의 create_booking RPC 와 같은 값 */
-const DEPOSIT_WINDOW_MINUTES = 15;
 
 function fail(error: string, status = 400) {
   return NextResponse.json({ error }, { status });
@@ -41,10 +40,16 @@ export async function POST(request: Request) {
 
   const bookingId = (body.bookingId ?? "").trim();
   const status = (body.status ?? "").trim();
+  const refundStatus = (body.refundStatus ?? "").trim();
+  const memo = (body.memo ?? "").trim().slice(0, 500);
   if (!bookingId) return fail("예약 정보를 다시 확인해 주세요.");
-  if (status !== "pending" && status !== "confirmed" && status !== "cancelled") {
+  if (status && status !== "pending" && status !== "confirmed" && status !== "cancelled") {
     return fail("예약 상태를 다시 확인해 주세요.");
   }
+  if (refundStatus && refundStatus !== "none" && refundStatus !== "pending" && refundStatus !== "completed") {
+    return fail("환불 상태를 다시 확인해 주세요.");
+  }
+  if (!status && !refundStatus) return fail("변경할 내용이 없어요.");
 
   const authClient = createClient(url, anonKey, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data: userData, error: userError } = await authClient.auth.getUser(token);
@@ -77,36 +82,52 @@ export async function POST(request: Request) {
   }
 
   if (!isHost && !isGuest && !isAdmin) return fail("이 예약을 변경할 권한이 없어요.", 403);
+  if (booking.source === "block") {
+    return fail("사장님 시간 차단은 공간 관리의 ‘시간 차단’에서 해제해 주세요.", 400);
+  }
   if (isGuest && !isHost && !isAdmin && status !== "cancelled") {
     return fail("손님은 예약을 취소만 할 수 있어요.", 403);
   }
-
-  const previousStatus = booking.status;
-  const now = Date.now();
-
-  const update: Record<string, unknown> = { status };
-  if (status === "cancelled") {
-    update.cancel_reason = body.reason === "guest" || isGuest ? "guest" : "host";
-  } else if (status === "confirmed") {
-    update.cancel_reason = null;
-    // 만료 대상에서 빠지도록 기한을 비운다. (지난 pending 을 사장님이 확인한 경우)
-    update.expires_at = null;
-  } else {
-    // 대기 상태로 되돌리기 — 남은 점유 시간을 새로 준다.
-    update.cancel_reason = null;
-    update.expires_at = new Date(now + DEPOSIT_WINDOW_MINUTES * 60 * 1000).toISOString();
+  if (refundStatus && isGuest && !isHost && !isAdmin) {
+    return fail("환불 처리는 사장님만 할 수 있어요.", 403);
+  }
+  if (refundStatus && booking.status !== "cancelled") {
+    return fail("취소된 예약만 환불 상태를 바꿀 수 있어요.", 400);
   }
 
-  const { data: updated, error: updateError } = await admin
-    .from("bookings")
-    .update(update)
-    .eq("id", bookingId)
-    .select("*")
-    .single();
+  const actor = isAdmin ? "admin" : isGuest && !isHost ? "guest" : "host";
+  const previousStatus = booking.status;
+  let updated = booking;
 
-  if (updateError) {
-    console.error("[api/bookings/status] 예약 상태 변경 실패", updateError);
-    return fail("예약 상태를 바꾸지 못했어요. 잠시 후 다시 시도해 주세요.", 500);
+  if (status && status !== booking.status) {
+    const reason = status === "cancelled" ? (body.reason === "guest" || actor === "guest" ? "guest" : "host") : null;
+    const { data: changed, error: changeError } = await admin.rpc("set_booking_status", {
+      p_booking_id: bookingId,
+      p_status: status,
+      p_reason: reason,
+      p_actor: actor,
+      p_actor_id: user.id,
+    });
+    if (changeError) {
+      console.error("[api/bookings/status] 예약 상태 변경 실패", changeError);
+      return fail("예약 상태를 바꾸지 못했어요. 잠시 후 다시 시도해 주세요.", 500);
+    }
+    updated = changed as BookingRow;
+  }
+
+  if (refundStatus && refundStatus !== (updated.refund_status ?? "none")) {
+    const { data: changed, error: refundError } = await admin.rpc("set_refund_status", {
+      p_booking_id: bookingId,
+      p_refund_status: refundStatus,
+      p_actor: actor,
+      p_actor_id: user.id,
+      p_memo: memo,
+    });
+    if (refundError) {
+      console.error("[api/bookings/status] 환불 상태 변경 실패", refundError);
+      return fail("환불 상태를 바꾸지 못했어요. 잠시 후 다시 시도해 주세요.", 500);
+    }
+    updated = changed as BookingRow;
   }
 
   const updatedBooking = updated as BookingRow;
@@ -114,7 +135,7 @@ export async function POST(request: Request) {
   // 사장님이 직접 누른 것은 메일로 되돌리지 않는다. 손님·관리자의 변경만 사장님께 알린다.
   const notifyKind =
     status === "confirmed" ? "confirmed" : status === "cancelled" ? "cancelled" : null;
-  const shouldNotify = Boolean(notifyKind) && !isHost && previousStatus !== status;
+  const shouldNotify = Boolean(notifyKind) && !isHost && previousStatus !== updatedBooking.status;
   if (notifyKind && shouldNotify) {
     try {
       const mail = await notifyHostOfBooking(notifyKind, updatedBooking, {

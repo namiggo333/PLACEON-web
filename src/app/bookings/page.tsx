@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useApp } from "@/components/AppProvider";
 import { DemoAccountButtons } from "@/components/Bits";
 import { DepositGuide, isDepositExpired } from "@/components/DepositGuide";
@@ -9,7 +9,15 @@ import { InviteCardModal } from "@/components/InviteCard";
 import { SpaceMedia } from "@/components/SpaceCard";
 import { CalendarIcon, CheckIcon, ClockIcon, LinkIcon, UsersIcon } from "@/components/Icons";
 import { MascotAvatar } from "@/components/Logo";
-import { bookingStatusMeta } from "@/lib/constants";
+import { REFUND_LABEL, REFUND_STYLE, bookingStatusMeta } from "@/lib/constants";
+import {
+  BookingTimeline,
+  GuestBookingSummary,
+  PrivateInfoPanel,
+  requestBookingAccess,
+  type BookingAccessPayload,
+} from "@/components/BookingAccess";
+import { saveBookingToken } from "@/lib/db";
 import { cn, formatDate, formatRelativeDate, shortId, timeRange, won } from "@/lib/format";
 import type { BookingStatus, Role } from "@/lib/types";
 
@@ -21,12 +29,40 @@ const TABS: { key: BookingStatus | "all"; label: string }[] = [
 ];
 
 export default function BookingsPage() {
-  const { ready, user, bookings, spaces, setBookingStatus, demoSignIn, mode } = useApp();
+  const { ready, user, bookings, bookingEvents, spaces, setBookingStatus, demoSignIn, mode } = useApp();
   const [tab, setTab] = useState<BookingStatus | "all">("all");
   const [cancelling, setCancelling] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [demoBusy, setDemoBusy] = useState<Role | null>(null);
   const [inviteBooking, setInviteBooking] = useState<string | null>(null);
+  const [guestLink, setGuestLink] = useState<{ id: string; token: string } | null>(null);
+  const [guestData, setGuestData] = useState<BookingAccessPayload | null>(null);
+  const [guestError, setGuestError] = useState("");
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const bookingId = params.get("booking");
+    if (!bookingId) return;
+    const token = params.get("token") ?? "";
+    if (token) saveBookingToken(bookingId, token);
+    setGuestLink({ id: bookingId, token });
+  }, []);
+
+  useEffect(() => {
+    if (!guestLink || user) return;
+    let alive = true;
+    requestBookingAccess(guestLink.id)
+      .then((payload) => {
+        if (alive) setGuestData(payload);
+      })
+      .catch((err) => {
+        if (alive) setGuestError(err instanceof Error ? err.message : "예약을 확인하지 못했어요.");
+      });
+    return () => {
+      alive = false;
+    };
+  }, [guestLink, user]);
 
   const myBookings = useMemo(
     () =>
@@ -66,6 +102,58 @@ export default function BookingsPage() {
           <div className="skeleton h-32 w-full" />
           <div className="skeleton h-32 w-full" />
         </div>
+      </div>
+    );
+  }
+
+  if (!user && guestLink) {
+    return (
+      <div className="container-page max-w-md py-8 sm:py-12">
+        <h1 className="text-xl font-black text-ink">예약 확인</h1>
+        <p className="mt-1 text-xs text-ink-mute">
+          예약 완료 때 받은 링크로 확인하는 중이에요. 입금이 확인되면 상세주소·출입 안내가 열려요.
+        </p>
+
+        {guestError && (
+          <div className="mt-4 rounded-xl bg-red-50 px-3 py-2.5 text-[11px] font-medium text-red-600">{guestError}</div>
+        )}
+        {guestData && (
+          <div className="mt-4 space-y-3">
+            <GuestBookingSummary payload={guestData} />
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-[11.5px] leading-relaxed text-emerald-900">
+              {guestData.access ? (
+                <>
+                  <p className="font-extrabold">예약이 확정됐어요 · 상세 안내</p>
+                  {guestData.access.detailAddress ? (
+                    <p className="mt-1">
+                      <b>상세주소</b> · {guestData.access.detailAddress}
+                    </p>
+                  ) : (
+                    <p className="mt-1">사장님이 아직 상세주소를 등록하지 않았어요.</p>
+                  )}
+                  {guestData.access.entryGuide && (
+                    <p className="mt-1 whitespace-pre-line">
+                      <b>출입 안내</b> · {guestData.access.entryGuide}
+                    </p>
+                  )}
+                  {guestData.access.parkingGuide && (
+                    <p className="mt-1 whitespace-pre-line">
+                      <b>주차</b> · {guestData.access.parkingGuide}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p>🔒 {guestData.message ?? "예약이 확정된 뒤에 상세주소를 확인할 수 있어요."}</p>
+              )}
+            </div>
+            <Link href="/" className="btn-primary w-full py-3">
+              이곳저곳 둘러보기
+            </Link>
+          </div>
+        )}
+        {!guestData && !guestError && (
+          <div className="mt-4 skeleton h-40 w-full" />
+        )}
       </div>
     );
   }
@@ -180,10 +268,15 @@ export default function BookingsPage() {
                             {booking.status === "pending" && <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />}
                             {statusMeta.label}
                           </span>
-                          {booking.source === "link" && (
+                          {booking.channel === "link" && (
                             <span className="badge bg-brand-light text-brand">
                               <LinkIcon size={11} />
                               결제 링크 예약
+                            </span>
+                          )}
+                          {booking.status === "cancelled" && booking.refundStatus !== "none" && (
+                            <span className={cn("badge", REFUND_STYLE[booking.refundStatus])}>
+                              {REFUND_LABEL[booking.refundStatus]}
                             </span>
                           )}
                           <span className="text-[10px] font-medium text-ink-mute">
@@ -220,6 +313,12 @@ export default function BookingsPage() {
                       </p>
                     )}
 
+                    <PrivateInfoPanel booking={booking} compact />
+
+                    <BookingTimeline
+                      events={bookingEvents.filter((event) => event.bookingId === booking.id)}
+                    />
+
                     {booking.status === "pending" && <DepositGuide booking={booking} className="mt-2.5" compact />}
                     {booking.status === "confirmed" && (
                       <div className="mt-2.5 rounded-xl border border-emerald-200 bg-emerald-50 p-3">
@@ -231,6 +330,12 @@ export default function BookingsPage() {
                           💌 모임 초대 카드로 친구들에게 바로 공유해 보세요.
                         </p>
                       </div>
+                    )}
+                    {booking.status === "cancelled" && booking.refundStatus !== "none" && (
+                      <p className="mt-2 rounded-lg bg-amber-50 px-2.5 py-1.5 text-[10.5px] font-semibold text-amber-700">
+                        환불 상태 · {REFUND_LABEL[booking.refundStatus]}
+                        {booking.refundStatus === "pending" ? " (사장님 확인 후 환불돼요)" : ""}
+                      </p>
                     )}
                     {booking.status === "cancelled" && booking.cancelReason === "expired" && (
                       <div className="mt-2.5 rounded-xl border border-ink-line bg-ink-line/30 p-3">

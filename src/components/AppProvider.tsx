@@ -2,34 +2,46 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import {
+  createSpaceBlock,
+  fetchBookingEvents,
   fetchBookings,
   fetchSpaces,
   fetchSpaceAccounts,
+  fetchSpacePrivate,
   getSessionProfile,
   insertBooking,
   insertSpace,
   patchSpace,
+  releaseSpaceBlock,
   removeSpace,
   saveSpaceAccount,
+  saveSpacePrivate,
+  setSpaceApproval,
   signInWithEmail,
   signOutUser,
   signUpWithEmail,
   updateBookingStatus,
+  updateRefundStatus,
   resetDemoData,
+  type BlockInput,
 } from "@/lib/db";
 import { dataMode } from "@/lib/supabase";
 import { revalidateHomeCache } from "@/lib/revalidate";
 import { DEMO_ACCOUNTS } from "@/lib/constants";
 import type {
+  ApprovalStatus,
   BankAccount,
   Booking,
+  BookingEvent,
   BookingInput,
   BookingStatus,
   CancelReason,
   Profile,
+  RefundStatus,
   Role,
   Space,
   SpaceInput,
+  SpacePrivate,
 } from "@/lib/types";
 
 interface AppContextValue {
@@ -40,6 +52,8 @@ interface AppContextValue {
   /** 손님에게 보여지는 공간 목록 (비공개 처리한 공간은 사장님 본인에게만 남는다) */
   visibleSpaces: Space[];
   bookings: Booking[];
+  /** 내가 볼 수 있는 예약의 상태 변경 이력 */
+  bookingEvents: BookingEvent[];
   /** 공간별 사장님 입금 계좌 (spaceId → 계좌), 권한이 있는 공간만 내려온다 */
   spaceAccounts: Record<string, BankAccount>;
   accountFor: (spaceId: string) => BankAccount | null;
@@ -57,6 +71,13 @@ interface AppContextValue {
   createBooking: (input: BookingInput) => Promise<Booking>;
   setBookingStatus: (id: string, status: BookingStatus, reason?: CancelReason | null) => Promise<void>;
   saveAccount: (spaceId: string, account: BankAccount) => Promise<void>;
+  /** 확정 후 공개되는 상세주소·출입 안내 (사장님·관리자만 조회) */
+  loadSpacePrivate: (spaceId: string) => Promise<SpacePrivate | null>;
+  savePrivate: (spaceId: string, info: SpacePrivate) => Promise<void>;
+  updateRefund: (id: string, refundStatus: RefundStatus, memo?: string) => Promise<void>;
+  approveSpace: (spaceId: string, status: ApprovalStatus, reason?: string) => Promise<void>;
+  createBlock: (input: BlockInput) => Promise<void>;
+  releaseBlock: (bookingId: string) => Promise<void>;
   findSpace: (idOrSlug: string) => Space | undefined;
   reset: () => void;
 }
@@ -68,6 +89,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<Profile | null>(null);
   const [spaces, setSpaces] = useState<Space[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bookingEvents, setBookingEvents] = useState<BookingEvent[]>([]);
   const [spaceAccounts, setSpaceAccounts] = useState<Record<string, BankAccount>>({});
 
   const bootstrap = useCallback(async () => {
@@ -77,6 +99,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setSpaces(spaceList);
       setUser(profile);
       setBookings(profile ? await fetchBookings(profile) : []);
+      setBookingEvents(profile ? await fetchBookingEvents() : []);
       setSpaceAccounts(profile ? await fetchSpaceAccounts() : {});
     } catch (error) {
       console.error(error);
@@ -90,7 +113,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [bootstrap]);
 
   const visibleSpaces = useMemo(
-    () => spaces.filter((space) => !space.hidden || space.hostId === user?.id),
+    () =>
+      spaces.filter(
+        (space) =>
+          (space.approvalStatus === "approved" || space.hostId === user?.id) &&
+          (!space.hidden || space.hostId === user?.id)
+      ),
     [spaces, user?.id]
   );
 
@@ -98,6 +126,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const profile = await signInWithEmail(email, password);
     setUser(profile);
     setBookings(await fetchBookings(profile));
+    setBookingEvents(await fetchBookingEvents());
     setSpaceAccounts(await fetchSpaceAccounts());
     return profile;
   }, []);
@@ -107,6 +136,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const profile = await signUpWithEmail(input);
       setUser(profile);
       setBookings(await fetchBookings(profile));
+      setBookingEvents(await fetchBookingEvents());
       setSpaceAccounts(await fetchSpaceAccounts());
       return profile;
     },
@@ -134,6 +164,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await signOutUser();
     setUser(null);
     setBookings([]);
+    setBookingEvents([]);
     setSpaceAccounts({});
   }, []);
 
@@ -141,7 +172,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const spaceList = await fetchSpaces();
     setSpaces(spaceList);
     setSpaceAccounts(await fetchSpaceAccounts());
-    if (user) setBookings(await fetchBookings(user));
+    if (user) {
+      setBookings(await fetchBookings(user));
+      setBookingEvents(await fetchBookingEvents());
+    }
   }, [user]);
 
   const createSpace = useCallback(
@@ -184,6 +218,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     async (input: BookingInput) => {
       const booking = await insertBooking(input, user);
       setBookings((prev) => [booking, ...prev]);
+      fetchBookingEvents().then(setBookingEvents).catch(() => {});
       return booking;
     },
     [user]
@@ -200,6 +235,48 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
 
   const accountFor = useCallback((spaceId: string) => spaceAccounts[spaceId] ?? null, [spaceAccounts]);
+
+  const loadSpacePrivate = useCallback(async (spaceId: string) => {
+    if (!spaceId) return null;
+    return fetchSpacePrivate(spaceId);
+  }, []);
+
+  const savePrivate = useCallback(async (spaceId: string, info: SpacePrivate) => {
+    await saveSpacePrivate(spaceId, info);
+  }, []);
+
+  const updateRefund = useCallback(async (id: string, refundStatus: RefundStatus, memo = "") => {
+    const updated = await updateRefundStatus(id, refundStatus, memo);
+    if (updated) {
+      setBookings((prev) => prev.map((booking) => (booking.id === id ? updated : booking)));
+      fetchBookingEvents().then(setBookingEvents).catch(() => {});
+    }
+  }, []);
+
+  const approveSpace = useCallback(async (spaceId: string, status: ApprovalStatus, reason = "") => {
+    const updated = await setSpaceApproval(spaceId, status, reason);
+    if (updated) {
+      setSpaces((prev) => prev.map((space) => (space.id === spaceId ? updated : space)));
+      revalidateHomeCache();
+    }
+  }, []);
+
+  const createBlock = useCallback(
+    async (input: BlockInput) => {
+      const booking = await createSpaceBlock(input);
+      setBookings((prev) => [booking, ...prev]);
+      fetchBookingEvents().then(setBookingEvents).catch(() => {});
+    },
+    []
+  );
+
+  const releaseBlock = useCallback(async (bookingId: string) => {
+    const updated = await releaseSpaceBlock(bookingId);
+    if (updated) {
+      setBookings((prev) => prev.map((booking) => (booking.id === bookingId ? updated : booking)));
+      fetchBookingEvents().then(setBookingEvents).catch(() => {});
+    }
+  }, []);
 
   const findSpace = useCallback(
     (idOrSlug: string) => spaces.find((space) => space.id === idOrSlug || space.paySlug === idOrSlug),
@@ -223,6 +300,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       spaces,
       visibleSpaces,
       bookings,
+      bookingEvents,
       spaceAccounts,
       accountFor,
       signIn,
@@ -236,6 +314,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       createBooking,
       setBookingStatus,
       saveAccount,
+      loadSpacePrivate,
+      savePrivate,
+      updateRefund,
+      approveSpace,
+      createBlock,
+      releaseBlock,
       findSpace,
       reset,
     }),
@@ -245,6 +329,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       spaces,
       visibleSpaces,
       bookings,
+      bookingEvents,
       spaceAccounts,
       accountFor,
       signIn,
@@ -258,6 +343,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       createBooking,
       setBookingStatus,
       saveAccount,
+      loadSpacePrivate,
+      savePrivate,
+      updateRefund,
+      approveSpace,
+      createBlock,
+      releaseBlock,
       findSpace,
       reset,
     ]
