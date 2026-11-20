@@ -1,4 +1,5 @@
 import type { Booking } from "./types";
+import { SITE_URL } from "./site-url";
 
 /**
  * 월간 절감 리포트 (6~10단계 9번).
@@ -121,7 +122,6 @@ function escapeHtml(value: string): string {
     .replace(/"/g, "&quot;");
 }
 
-const SITE_URL = (process.env.SITE_URL ?? "https://igotjeogot.vercel.app").replace(/\/$/, "");
 
 /** 월간 자동 메일 HTML — 예약 알림 메일과 같은 브랜드 톤 */
 export function renderMonthlyReportHtml(args: {

@@ -35,6 +35,7 @@ import {
   todayISO,
   won,
 } from "@/lib/format";
+import { SITE_URL } from "@/lib/site-url";
 import type { Booking, Space } from "@/lib/types";
 
 /** 공간 사진 갤러리 — 대표 사진 + 썸네일 (여러 장이면 넘겨 보기) */
@@ -150,7 +151,7 @@ export default function PayView() {
   const [done, setDone] = useState<Booking | null>(null);
   const [occupied, setOccupied] = useState<SlotStatus[]>([]);
   const [checkingSlots, setCheckingSlots] = useState(false);
-  const [origin, setOrigin] = useState("https://igotjeogot.vercel.app");
+  const [origin, setOrigin] = useState(SITE_URL);
 
   useEffect(() => {
     if (typeof window !== "undefined") setOrigin(window.location.origin);

@@ -212,7 +212,7 @@ PG 계약 전에도 실제 거래가 끝까지 돌아가도록 만든 1단계 �
 ### 수동 점검
 
 ```bash
-curl -s https://igotjeogot.vercel.app/api/cron/expire-bookings   # 만료 정리 1회 실행
+curl -s https://igotjeogot.com/api/cron/expire-bookings   # 만료 정리 1회 실행
 ```
 
 `CRON_SECRET` 을 설정하면 `Authorization: Bearer <secret>` 또는 `?key=<secret>` 이 필요합니다.

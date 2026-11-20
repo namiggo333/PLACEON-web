@@ -5,6 +5,7 @@ import "./globals.css";
 import { AppProvider } from "@/components/AppProvider";
 import { Chrome } from "@/components/Chrome";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { SITE_URL } from "@/lib/site-url";
 
 /** 폰트 로딩
  *  - 본문·제목·버튼: Pretendard Variable(dynamic subset, pretendard-fontface.css).
@@ -18,6 +19,8 @@ const SITE_DESCRIPTION =
   "시간 단위로 빌리는 모든 공간. 파티룸·키즈룸·연습실·촬영스튜디오·회의실·공유주방·루프탑·스터디룸을 한 번에 찾고, 1초 만에 예약하고 결제하세요.";
 
 export const metadata: Metadata = {
+  // 상대 경로 canonical·OG 이미지가 대표 도메인(https://igotjeogot.com) 기준으로 만들어진다.
+  metadataBase: new URL(SITE_URL),
   title: SITE_TITLE,
   description: SITE_DESCRIPTION,
   applicationName: "이곳저곳",

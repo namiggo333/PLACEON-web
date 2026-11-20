@@ -23,6 +23,7 @@ import {
 import { APPROVAL_LABEL, CATEGORY_MAP, HOUR_OPTIONS, TIME_SLOTS } from "@/lib/constants";
 import { buildSlotStatuses, fetchOccupiedSlots, type SlotStatus } from "@/lib/availability";
 import { calcTotal, cn, formatDate, formatTime, shortId, timeRange, todayISO, won } from "@/lib/format";
+import { SITE_URL } from "@/lib/site-url";
 import type { Booking } from "@/lib/types";
 
 export default function SpaceDetailView() {
@@ -45,7 +46,7 @@ export default function SpaceDetailView() {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [occupied, setOccupied] = useState<SlotStatus[]>([]);
   const [checkingSlots, setCheckingSlots] = useState(false);
-  const [origin, setOrigin] = useState("https://igotjeogot.vercel.app");
+  const [origin, setOrigin] = useState(SITE_URL);
 
   useEffect(() => {
     if (typeof window !== "undefined") setOrigin(window.location.origin);

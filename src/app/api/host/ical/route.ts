@@ -74,7 +74,7 @@ export async function GET(request: Request) {
   }
 
   const origin = new URL(request.url).origin;
-  const site = (process.env.SITE_URL ?? origin).replace(/\/$/, "");
+  const site = (process.env.NEXT_PUBLIC_SITE_URL ?? process.env.SITE_URL ?? origin).replace(/\/$/, "");
 
   return NextResponse.json({
     spaces: (spaces ?? []).map((space) => {

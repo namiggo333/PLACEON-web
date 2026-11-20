@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { BookingRow } from "./mappers";
+import { SITE_URL } from "./site-url";
 
 /**
  * 사장님 예약 알림 메일.
@@ -21,7 +22,6 @@ export interface MailResult {
   error?: string;
 }
 
-const SITE_URL = (process.env.SITE_URL ?? "https://igotjeogot.vercel.app").replace(/\/$/, "");
 const HOST_PAGE_URL = `${SITE_URL}/host`;
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CalendarIcon, CheckIcon, ClockIcon, CloseIcon, CopyIcon, PinIcon, UsersIcon } from "./Icons";
 import { LogoMark } from "./Logo";
 import { cn, formatDate, timeRange } from "@/lib/format";
+import { SITE_HOST } from "@/lib/site-url";
 import type { Booking, Space } from "@/lib/types";
 
 const BRAND = "#FF2E7E";
@@ -25,7 +26,7 @@ export function inviteMessage(booking: Booking, space?: Space | null): string {
   lines.push(
     "",
     `${booking.guestName} 님이 이곳저곳에서 예약한 모임이에요.`,
-    "이곳저곳에서 예약한 모임 · igotjeogot.vercel.app"
+    `이곳저곳에서 예약한 모임 · ${SITE_HOST}`
   );
   return lines.join("\n");
 }
@@ -312,7 +313,7 @@ async function drawInviteCard(booking: Booking, space: Space | null | undefined)
   ctx.font = `400 30px ${jua}`;
   const brandW = ctx.measureText("이곳저곳").width;
   ctx.font = `400 22px ${round}`;
-  const domainW = ctx.measureText("igotjeogot.vercel.app").width;
+  const domainW = ctx.measureText(SITE_HOST).width;
   const gap1 = 10;
   const gap2 = 16;
   const totalW = markSize + gap1 + brandW + gap2 + domainW;
@@ -331,7 +332,7 @@ async function drawInviteCard(booking: Booking, space: Space | null | undefined)
   ctx.fillText("이곳저곳", startX + markSize + gap1, footY);
   ctx.font = `400 22px ${round}`;
   ctx.fillStyle = INK_MUTE;
-  ctx.fillText("igotjeogot.vercel.app", startX + markSize + gap1 + brandW + gap2, footY);
+  ctx.fillText(SITE_HOST, startX + markSize + gap1 + brandW + gap2, footY);
 
   return canvas;
 }
@@ -551,7 +552,7 @@ export function InviteCardModal({
             <div className="relative mt-3 flex w-full items-center justify-center gap-1.5 border-t border-dashed border-ink-line pt-2.5">
               <LogoMark size={18} shadow={false} decorative />
               <span className="text-[12px] text-ink">이곳저곳</span>
-              <span className="text-[9px] text-ink-mute">igotjeogot.vercel.app</span>
+              <span className="text-[9px] text-ink-mute">{SITE_HOST}</span>
             </div>
           </div>
         </div>

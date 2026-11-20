@@ -4,6 +4,7 @@ import path from "node:path";
 import { CATEGORY_MAP } from "./constants";
 import { won } from "./format";
 import type { Space } from "./types";
+import { SITE_HOST, SITE_URL } from "./site-url";
 
 /**
  * 카톡·인스타 공유 카드(1200×630) 렌더러.
@@ -24,7 +25,7 @@ function toArrayBuffer(buffer: Buffer): ArrayBuffer {
   return copy;
 }
 
-const SITE_ORIGIN = (process.env.SITE_URL ?? "https://igotjeogot.vercel.app").replace(/\/$/, "");
+const SITE_ORIGIN = SITE_URL;
 
 /** 폰트 파일을 읽는다. 서버리스 번들에 파일이 빠졌을 때를 대비해 공개 URL 로 한 번 더 시도한다. */
 async function readFont(fileName: string): Promise<ArrayBuffer> {
@@ -283,7 +284,7 @@ export async function renderShareCard(input: ShareCardInput): Promise<ImageRespo
             >
               이곳
             </div>
-            <div style={{ display: "flex", fontSize: "22px", fontWeight: 800 }}>igotjeogot.vercel.app</div>
+            <div style={{ display: "flex", fontSize: "22px", fontWeight: 800 }}>{SITE_HOST}</div>
           </div>
           <div style={{ display: "flex", fontSize: "20px", color: "#A899A1" }}>
             카톡·인스타로 공유하면 사진과 가격이 그대로 보여요

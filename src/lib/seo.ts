@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import { SITE_URL } from "./site-url";
 import { CATEGORY_MAP, REGIONS } from "./constants";
 import { won } from "./format";
 import type { Category, Space } from "./types";
 
-export const SITE_URL = (process.env.SITE_URL ?? "https://igotjeogot.vercel.app").replace(/\/$/, "");
+export { SITE_URL };
 export const SITE_NAME = "이곳저곳";
 
 /**

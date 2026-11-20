@@ -41,6 +41,7 @@ import {
   uploadSpacePhotos,
   validatePhoto,
 } from "@/lib/storage";
+import { SITE_URL } from "@/lib/site-url";
 import type { Category, Role, Space, SpaceInput, SpacePrivate } from "@/lib/types";
 import { BookingTimeline } from "@/components/BookingAccess";
 import { IcalPanel } from "@/components/host/IcalPanel";
@@ -176,7 +177,7 @@ export default function HostPage() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [busyBooking, setBusyBooking] = useState<string | null>(null);
   const [toast, setToast] = useState("");
-  const [origin, setOrigin] = useState("https://igotjeogot.vercel.app");
+  const [origin, setOrigin] = useState(SITE_URL);
   const [linkSpaceId, setLinkSpaceId] = useState("");
   const [demoBusy, setDemoBusy] = useState<Role | null>(null);
   const [blockForm, setBlockForm] = useState({ spaceId: "", date: "", startTime: "10:00", hours: 2, memo: "" });
