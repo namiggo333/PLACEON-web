@@ -139,7 +139,7 @@ export function ItemWaitlistForm({ defaultSource = "item" }: { defaultSource?: "
               <>방금 전 같은 연락처로 접수된 신청이 있어요. 중복으로 저장하지 않았습니다.</>
             ) : (
               <>
-                기남 님이 직접 확인하고, 가장 많이 신청된 품목부터 검수·입고를 준비할게요.
+                이곳저곳에서 직접 확인하고, 가장 많이 신청된 품목부터 검수·입고를 준비할게요.
                 <br className="hidden sm:block" /> 오픈 소식은 남겨 주신 연락처로 가장 먼저 알려 드립니다.
               </>
             )}
