@@ -12,6 +12,7 @@ import {
   CloseIcon,
   SearchIcon,
   ShieldIcon,
+  SparkleIcon,
   StoreIcon,
   TrashIcon,
   UsersIcon,
@@ -21,14 +22,18 @@ import {
   APPROVAL_LABEL,
   APPROVAL_STYLE,
   CATEGORY_MAP,
+  ITEM_CATEGORIES,
   REFUND_LABEL,
   REFUND_STYLE,
   bookingStatusMeta,
+  itemCategoryLabel,
+  itemSpaceTypeLabel,
 } from "@/lib/constants";
 import { DepositInfoRow } from "@/components/DepositInfoRow";
 import {
   fetchAdminData,
   patchSpace,
+  removeItemWaitlist,
   removeSpace,
   setSpaceApproval,
   updateBookingStatus,
@@ -47,14 +52,15 @@ import {
   won,
   wonShort,
 } from "@/lib/format";
-import { countsForRevenue, type ApprovalStatus, type Booking, type BookingStatus, type Category, type Space } from "@/lib/types";
+import { countsForRevenue, type ApprovalStatus, type Booking, type BookingStatus, type Category, type ItemWaitlistEntry, type Space } from "@/lib/types";
 
-type TabKey = "spaces" | "bookings" | "members";
+type TabKey = "spaces" | "bookings" | "members" | "item";
 
 const TABS: { key: TabKey; label: string; icon: typeof StoreIcon }[] = [
   { key: "spaces", label: "입점 공간 관리", icon: StoreIcon },
   { key: "bookings", label: "예약 현황", icon: CalendarIcon },
   { key: "members", label: "사장님·회원", icon: UsersIcon },
+  { key: "item", label: "Item 수요조사", icon: SparkleIcon },
 ];
 
 const STATUS_FILTERS: { key: BookingStatus | "all"; label: string }[] = [
@@ -70,6 +76,20 @@ function joinedAt(iso: string): string {
   return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, "0")}.${String(
     date.getDate()
   ).padStart(2, "0")}`;
+}
+
+/** Item 수요조사 접수 시각 (월.일 시:분) */
+function receivedAt(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return `${String(date.getMonth() + 1).padStart(2, "0")}.${String(date.getDate()).padStart(2, "0")} ${String(
+    date.getHours()
+  ).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+}
+
+function prettyContact(entry: ItemWaitlistEntry): string {
+  if (entry.contactType === "email") return entry.contact;
+  return entry.contact.replace(/^(\d{3})(\d{3,4})(\d{4})$/, "$1-$2-$3");
 }
 
 function Switch({
@@ -158,6 +178,7 @@ export default function AdminPage() {
   const [bookingQuery, setBookingQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<BookingStatus | "all">("all");
   const [memberQuery, setMemberQuery] = useState("");
+  const [itemQuery, setItemQuery] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [toast, setToast] = useState("");
@@ -202,6 +223,7 @@ export default function AdminPage() {
       .reduce((sum, booking) => sum + booking.totalAmount, 0);
     const hosts = profiles.filter((profile) => profile.role === "host").length;
     const guests = profiles.filter((profile) => profile.role === "guest").length;
+    const itemWaitlist = data?.itemWaitlist ?? [];
     return {
       spaces: spaces.length,
       hidden,
@@ -217,6 +239,7 @@ export default function AdminPage() {
       profiles: profiles.length,
       hosts,
       guests,
+      itemWaitlist: itemWaitlist.length,
     };
   }, [data]);
 
@@ -277,6 +300,56 @@ export default function AdminPage() {
       return [profile.name, profile.email].join(" ").toLowerCase().includes(query);
     });
   }, [data, memberQuery]);
+
+  const filteredWaitlist = useMemo(() => {
+    const query = itemQuery.trim().toLowerCase();
+    return (data?.itemWaitlist ?? []).filter((entry) => {
+      if (!query) return true;
+      return [
+        entry.contact,
+        entry.customItem,
+        entry.note,
+        entry.budgetOrQty,
+        itemSpaceTypeLabel(entry.spaceType),
+        ...entry.categories.map(itemCategoryLabel),
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(query);
+    });
+  }, [data, itemQuery]);
+
+  /** Item 수요조사 카테고리별 신청 수 — 어떤 품목부터 입고할지 판단하는 데 쓴다. */
+  const itemDemand = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const entry of data?.itemWaitlist ?? []) {
+      for (const key of entry.categories) counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    return ITEM_CATEGORIES.map((item) => ({ ...item, count: counts.get(item.key) ?? 0 })).sort(
+      (a, b) => b.count - a.count
+    );
+  }, [data]);
+
+  const itemNoticeCount = useMemo(
+    () => (data?.itemWaitlist ?? []).filter((entry) => entry.wantsNotice).length,
+    [data]
+  );
+
+  async function deleteWaitlist(entry: ItemWaitlistEntry) {
+    setBusyId(entry.id);
+    try {
+      await removeItemWaitlist(entry.id);
+      setData((prev) =>
+        prev ? { ...prev, itemWaitlist: prev.itemWaitlist.filter((item) => item.id !== entry.id) } : prev
+      );
+      setConfirmDelete(null);
+      setToast("수요조사 신청을 삭제했어요.");
+    } catch (err) {
+      setToast(err instanceof Error ? err.message : "삭제에 실패했어요.");
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   async function toggleSpace(
     space: Space,
@@ -462,7 +535,8 @@ export default function AdminPage() {
             </p>
             <h1 className="mt-2.5 text-2xl font-extrabold tracking-tight sm:text-3xl">이곳저곳 총괄 관리자</h1>
             <p className="mt-1 text-xs text-white/75">
-              {user.name} 님 · 전체 공간 {stats.spaces}개 · 예약 {stats.bookings}건 · 회원 {stats.profiles}명을 관리합니다.
+              {user.name} 님 · 전체 공간 {stats.spaces}개 · 예약 {stats.bookings}건 · 회원 {stats.profiles}명 · Item 수요조사{" "}
+              {stats.itemWaitlist}건을 관리합니다.
             </p>
             {mode === "demo" && (
               <p className="mt-2 rounded-lg bg-white/10 px-2.5 py-1.5 text-[10px] text-white/80">
@@ -513,7 +587,13 @@ export default function AdminPage() {
           const Icon = item.icon;
           const active = tab === item.key;
           const count =
-            item.key === "spaces" ? stats.spaces : item.key === "bookings" ? stats.bookings : stats.profiles;
+            item.key === "spaces"
+              ? stats.spaces
+              : item.key === "bookings"
+                ? stats.bookings
+                : item.key === "item"
+                  ? stats.itemWaitlist
+                  : stats.profiles;
           return (
             <button
               key={item.key}
@@ -1134,6 +1214,211 @@ export default function AdminPage() {
                       <span>등록 공간 {spaceCountByHost.get(profile.id) ?? 0}개</span>
                       <span>예약 {bookingCountByGuest.get(profile.id) ?? 0}건</span>
                     </div>
+                  </article>
+                ))}
+              </div>
+            </>
+          )}
+        </section>
+      )}
+
+      {!loading && data && tab === "item" && (
+        <section className="mt-5">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-base font-extrabold text-ink">
+                이곳저곳 Item 사전 수요조사 <span className="text-brand-dark">{filteredWaitlist.length}</span>
+                <span className="ml-1 text-xs font-semibold text-ink-mute">/ 전체 {stats.itemWaitlist}건</span>
+              </h2>
+              <p className="mt-0.5 text-xs text-ink-mute">
+                오픈 알림 신청 {itemNoticeCount}건 · 공개 페이지 <Link href="/item" className="font-semibold text-brand-dark underline">/item</Link>
+              </p>
+            </div>
+            <div className="relative w-full sm:max-w-xs">
+              <SearchIcon size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-mute" />
+              <input
+                value={itemQuery}
+                onChange={(event) => setItemQuery(event.target.value)}
+                placeholder="연락처·품목·공간 유형 검색"
+                className="input py-2 pl-9 text-xs"
+                aria-label="수요조사 검색"
+              />
+            </div>
+          </div>
+
+          {stats.itemWaitlist > 0 && (
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+              {itemDemand.map((item) => (
+                <div key={item.key} className="card px-3 py-2.5">
+                  <p className="flex items-center gap-1.5 text-[11px] font-bold text-ink-soft">
+                    <span aria-hidden>{item.emoji}</span>
+                    <span className="truncate">{item.label}</span>
+                  </p>
+                  <p className="mt-1 text-lg font-extrabold tabular-nums text-ink">
+                    {item.count}
+                    <span className="ml-0.5 text-[11px] font-semibold text-ink-mute">건</span>
+                  </p>
+                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-ink-line/70">
+                    <div
+                      className="h-full rounded-full bg-brand"
+                      style={{ width: `${Math.round((item.count / Math.max(1, stats.itemWaitlist)) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {filteredWaitlist.length === 0 ? (
+            <div className="card mt-4 flex flex-col items-center gap-2 px-6 py-14 text-center">
+              <SparkleIcon size={30} className="text-brand-dark/60" />
+              <p className="text-sm font-bold text-ink">
+                {stats.itemWaitlist === 0 ? "아직 접수된 수요조사가 없어요" : "조건에 맞는 신청이 없어요"}
+              </p>
+              <p className="text-xs text-ink-mute">
+                {stats.itemWaitlist === 0 ? (
+                  <>
+                    <Link href="/item" className="font-semibold text-brand-dark underline">/item</Link> 페이지에서 신청이 들어오면 여기에 쌓입니다.
+                  </>
+                ) : (
+                  "검색어를 바꿔 보세요."
+                )}
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="card mt-4 hidden overflow-x-auto md:block">
+                <table className="w-full min-w-[980px] border-collapse text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-ink-line bg-ink-line/25 text-[11px] text-ink-mute">
+                      <th className="px-3 py-2.5 font-bold">접수</th>
+                      <th className="px-3 py-2.5 font-bold">공간 유형</th>
+                      <th className="px-3 py-2.5 font-bold">희망 카테고리</th>
+                      <th className="px-3 py-2.5 font-bold">희망 품목·모델</th>
+                      <th className="px-3 py-2.5 font-bold">예산·수량</th>
+                      <th className="px-3 py-2.5 font-bold">연락처</th>
+                      <th className="px-3 py-2.5 font-bold">요청사항</th>
+                      <th className="px-3 py-2.5 text-right font-bold">관리</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredWaitlist.map((entry) => (
+                      <tr key={entry.id} className="border-b border-ink-line/70 align-top last:border-0">
+                        <td className="whitespace-nowrap px-3 py-2.5 text-ink-soft">{receivedAt(entry.createdAt)}</td>
+                        <td className="whitespace-nowrap px-3 py-2.5">
+                          <span className="badge bg-brand-light text-brand-dark">{itemSpaceTypeLabel(entry.spaceType)}</span>
+                        </td>
+                        <td className="px-3 py-2.5">
+                          {entry.categories.length === 0 ? (
+                            <span className="text-ink-mute">—</span>
+                          ) : (
+                            <div className="flex max-w-[190px] flex-wrap gap-1">
+                              {entry.categories.map((key) => (
+                                <span key={key} className="badge bg-ink-line/60 text-ink-soft">
+                                  {itemCategoryLabel(key)}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </td>
+                        <td className="max-w-[210px] px-3 py-2.5 text-ink-soft">
+                          <span className="line-clamp-3">{entry.customItem || <span className="text-ink-mute">—</span>}</span>
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-2.5 text-ink-soft">
+                          {entry.budgetOrQty || <span className="text-ink-mute">—</span>}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-2.5">
+                          <span className="font-semibold text-ink">{prettyContact(entry)}</span>
+                          <span className="ml-1 text-[10px] text-ink-mute">{entry.contactType === "email" ? "메일" : "문자"}</span>
+                          {entry.wantsNotice && (
+                            <span className="badge ml-1 bg-emerald-50 text-emerald-600">알림</span>
+                          )}
+                        </td>
+                        <td className="max-w-[200px] px-3 py-2.5 text-ink-mute">
+                          <span className="line-clamp-3">{entry.note || "—"}</span>
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-2.5 text-right">
+                          {confirmDelete === entry.id ? (
+                            <span className="inline-flex gap-1">
+                              <button
+                                type="button"
+                                disabled={busyId === entry.id}
+                                onClick={() => void deleteWaitlist(entry)}
+                                className="rounded-md bg-red-500 px-2 py-1 text-[10px] font-bold text-white disabled:opacity-60"
+                              >
+                                삭제
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmDelete(null)}
+                                className="rounded-md bg-ink-line/70 px-2 py-1 text-[10px] font-bold text-ink-soft"
+                              >
+                                취소
+                              </button>
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDelete(entry.id)}
+                              className="grid h-7 w-7 place-items-center rounded-md text-ink-mute transition hover:bg-red-50 hover:text-red-500"
+                              aria-label="수요조사 삭제"
+                            >
+                              <TrashIcon size={14} />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="mt-4 space-y-2.5 md:hidden">
+                {filteredWaitlist.map((entry) => (
+                  <article key={entry.id} className="card p-3.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="flex items-center gap-1.5 text-sm font-extrabold text-ink">
+                          {prettyContact(entry)}
+                          <span className="badge bg-brand-light text-brand-dark">{itemSpaceTypeLabel(entry.spaceType)}</span>
+                        </p>
+                        <p className="mt-0.5 text-[11px] text-ink-mute">
+                          접수 {receivedAt(entry.createdAt)} · {entry.contactType === "email" ? "메일" : "문자"}
+                          {entry.wantsNotice ? " · 오픈 알림 신청" : ""}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => (confirmDelete === entry.id ? void deleteWaitlist(entry) : setConfirmDelete(entry.id))}
+                        disabled={busyId === entry.id}
+                        className={cn(
+                          "shrink-0 rounded-md px-2 py-1 text-[10px] font-bold transition disabled:opacity-60",
+                          confirmDelete === entry.id ? "bg-red-500 text-white" : "bg-ink-line/70 text-ink-mute"
+                        )}
+                      >
+                        {confirmDelete === entry.id ? "삭제" : "정리"}
+                      </button>
+                    </div>
+                    {entry.categories.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {entry.categories.map((key) => (
+                          <span key={key} className="badge bg-brand-light text-brand-dark">
+                            {itemCategoryLabel(key)}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {entry.customItem && (
+                      <p className="mt-2 text-[12px] leading-relaxed text-ink-soft">
+                        <b className="text-ink">희망 품목</b> {entry.customItem}
+                      </p>
+                    )}
+                    {entry.budgetOrQty && (
+                      <p className="mt-1 text-[12px] text-ink-soft">
+                        <b className="text-ink">예산·수량</b> {entry.budgetOrQty}
+                      </p>
+                    )}
+                    {entry.note && <p className="mt-1 text-[12px] leading-relaxed text-ink-mute">{entry.note}</p>}
                   </article>
                 ))}
               </div>

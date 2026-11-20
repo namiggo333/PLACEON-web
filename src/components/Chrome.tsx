@@ -63,6 +63,20 @@ function SiteHeader() {
                 </Link>
               );
             })}
+            <Link
+              href="/item"
+              className={cn(
+                "ml-0.5 inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-[13.5px] font-semibold transition",
+                isActive(pathname, "/item")
+                  ? "bg-brand-light text-brand-dark"
+                  : "text-ink-soft hover:bg-ink-line/60 hover:text-ink"
+              )}
+            >
+              이곳저곳 Item
+              <span className="rounded-full bg-brand-light px-1.5 py-0.5 text-[10px] font-extrabold leading-none text-brand-dark">
+                오픈예정
+              </span>
+            </Link>
           </nav>
         </div>
 
@@ -82,11 +96,15 @@ function SiteHeader() {
             </Link>
           )}
           <Link
-            href="/search"
-            className="grid h-9 w-9 place-items-center rounded-full text-ink-soft transition hover:bg-ink-line/60 hover:text-ink md:hidden"
-            aria-label="공간 검색"
+            href="/item"
+            className={cn(
+              "inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[11.5px] font-extrabold transition md:hidden",
+              pathname.startsWith("/item") ? "bg-brand-dark text-white" : "bg-brand-light text-brand-dark hover:bg-brand-soft"
+            )}
+            aria-label="이곳저곳 Item 오픈 예정"
           >
-            <SearchIcon size={20} />
+            Item
+            <span className="h-1.5 w-1.5 rounded-full bg-brand" aria-hidden />
           </Link>
           {ready && user ? (
             <>
@@ -176,6 +194,10 @@ function SiteFooter() {
           <div className="flex flex-col gap-2">
             <span className="font-bold text-ink">사장님</span>
             <Link href="/host" className="hover:text-brand-dark">사장님 센터</Link>
+            <Link href="/item" className="inline-flex items-center gap-1 hover:text-brand-dark">
+              이곳저곳 Item
+              <span className="rounded bg-brand-light px-1 py-0.5 text-[10px] font-bold text-brand-dark">오픈예정</span>
+            </Link>
             <Link href="/host" className="hover:text-brand-dark">공간 등록</Link>
             <Link href="/host" className="hover:text-brand-dark">결제 링크 만들기</Link>
           </div>

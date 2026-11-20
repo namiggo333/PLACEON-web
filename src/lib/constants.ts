@@ -200,6 +200,101 @@ export const ACTOR_LABEL: Record<string, string> = {
   system: "시스템",
 };
 
+/* ------------------------------------------------------------------ */
+/* 이곳저곳 Item — 오픈 예정 카테고리·공간 유형                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * 아직 판매 전인 '이곳저곳 Item'의 오픈 예정 카테고리.
+ * 실제 재고·가격이 아니므로 금액은 두지 않고, 이름과 설명만 보여 준다.
+ */
+export const ITEM_CATEGORIES: {
+  key: string;
+  label: string;
+  emoji: string;
+  desc: string;
+  pastel: string;
+  tone: string;
+}[] = [
+  {
+    key: "projector",
+    label: "빔프로젝터·음향",
+    emoji: "📽️",
+    desc: "프로젝터·스크린·스피커·무선 마이크",
+    pastel: "bg-[#EEE9FF]",
+    tone: "text-[#7B61FF]",
+  },
+  {
+    key: "furniture",
+    label: "테이블·소파·가구",
+    emoji: "🛋️",
+    desc: "테이블·의자·소파·파티션·진열",
+    pastel: "bg-[#FFECE6]",
+    tone: "text-[#E2624A]",
+  },
+  {
+    key: "climate",
+    label: "냉난방·공기청정기",
+    emoji: "❄️",
+    desc: "에어컨·히터·제습기·공기청정기",
+    pastel: "bg-[#E4F2FF]",
+    tone: "text-[#3B8FD9]",
+  },
+  {
+    key: "lighting",
+    label: "조명·네온·소품",
+    emoji: "💡",
+    desc: "무드등·네온사인·촬영 조명·소품",
+    pastel: "bg-[#FFF2CC]",
+    tone: "text-[#D99B00]",
+  },
+  {
+    key: "cleaning",
+    label: "청소·위생가전",
+    emoji: "🧹",
+    desc: "청소기·건조기·정수기·음식물 처리",
+    pastel: "bg-[#E4F6EE]",
+    tone: "text-[#2FA37A]",
+  },
+  {
+    key: "supplies",
+    label: "소모품·어메니티",
+    emoji: "📦",
+    desc: "컵·수건·슬리퍼·일회용품·비품",
+    pastel: "bg-[#FFE7EE]",
+    tone: "text-[#F0578A]",
+  },
+];
+
+export const ITEM_CATEGORY_KEYS = ITEM_CATEGORIES.map((item) => item.key);
+
+export const ITEM_CATEGORY_MAP = Object.fromEntries(
+  ITEM_CATEGORIES.map((item) => [item.key, item])
+) as Record<string, (typeof ITEM_CATEGORIES)[number]>;
+
+export function itemCategoryLabel(key: string): string {
+  return ITEM_CATEGORY_MAP[key]?.label ?? key;
+}
+
+/** 사전 수요조사에서 고르는 공간 유형 (공간 카테고리 + 그 외) */
+export const ITEM_SPACE_TYPES: { key: string; label: string; emoji: string }[] = [
+  { key: "party", label: "파티룸", emoji: "🎉" },
+  { key: "studio", label: "촬영스튜디오", emoji: "📸" },
+  { key: "practice", label: "연습실", emoji: "🎧" },
+  { key: "meeting", label: "회의실", emoji: "💼" },
+  { key: "kidsroom", label: "키즈룸", emoji: "🧸" },
+  { key: "kitchen", label: "공유주방", emoji: "🍳" },
+  { key: "rooftop", label: "루프탑", emoji: "🌇" },
+  { key: "study", label: "스터디룸", emoji: "📚" },
+  { key: "other", label: "그 외 · 준비 중", emoji: "✨" },
+];
+
+export const ITEM_SPACE_TYPE_KEYS = ITEM_SPACE_TYPES.map((item) => item.key);
+
+export function itemSpaceTypeLabel(key: string): string {
+  return ITEM_SPACE_TYPES.find((item) => item.key === key)?.label ?? key;
+}
+
 export const DEMO_ACCOUNTS = {
   guest: { email: "guest@placeon.kr", password: "placeon1234", name: "박기남", role: "guest" as Role },
   host: { email: "host@placeon.kr", password: "placeon1234", name: "김사장", role: "host" as Role },

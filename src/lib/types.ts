@@ -158,6 +158,22 @@ export interface BookingInput {
   channel?: BookingChannel;
 }
 
+/** 이곳저곳 Item 사전 수요조사·오픈 알림 신청 */
+export interface ItemWaitlistEntry {
+  id: string;
+  /** 희망 비품 카테고리 키 (projector, furniture, climate, lighting, cleaning, supplies) */
+  categories: string[];
+  customItem: string;
+  spaceType: string;
+  budgetOrQty: string;
+  contactType: "phone" | "email";
+  contact: string;
+  note: string;
+  wantsNotice: boolean;
+  source: string;
+  createdAt: string;
+}
+
 /** 예약에 안내된 입금 계좌가 모두 채워져 있는지 */
 export function hasDepositAccount(account: {
   payBankName?: string | null;

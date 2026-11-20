@@ -2,11 +2,13 @@ import { makeSlug } from "./format";
 import {
   mapBooking,
   mapBookingEvent,
+  mapItemWaitlist,
   mapProfile,
   mapSpace,
   mapSpacePrivate,
   type BookingEventRow,
   type BookingRow,
+  type ItemWaitlistRow,
   type ProfileRow,
   type SpacePrivateRow,
   type SpaceRow,
@@ -22,6 +24,7 @@ import type {
   BookingStatus,
   RefundStatus,
   CancelReason,
+  ItemWaitlistEntry,
   Profile,
   Role,
   Space,
@@ -750,6 +753,8 @@ export interface AdminData {
   spaces: Space[];
   bookings: Booking[];
   profiles: Profile[];
+  /** 이곳저곳 Item 사전 수요조사 (관리자만 조회) */
+  itemWaitlist: ItemWaitlistEntry[];
 }
 
 /**
@@ -766,10 +771,25 @@ export async function fetchAdminData(): Promise<AdminData> {
     ]);
     const error = spaceRes.error ?? bookingRes.error ?? profileRes.error;
     if (error) throw new Error(`관리자 데이터를 불러오지 못했어요. (${error.message})`);
+
+    // Item 수요조사는 아직 테이블이 없거나 RLS 로 막힌 경우에도 관리자 화면 전체가 죽지 않게 따로 읽는다.
+    let itemWaitlist: ItemWaitlistEntry[] = [];
+    try {
+      const { data: waitlistRows, error: waitlistError } = await supabase
+        .from("item_waitlist")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (waitlistError) throw waitlistError;
+      itemWaitlist = ((waitlistRows ?? []) as ItemWaitlistRow[]).map(mapItemWaitlist);
+    } catch (waitlistError) {
+      console.warn("[db] Item 수요조사를 불러오지 못했어요.", waitlistError);
+    }
+
     return {
       spaces: ((spaceRes.data ?? []) as SpaceRow[]).map(mapSpace),
       bookings: ((bookingRes.data ?? []) as BookingRow[]).map(mapBooking),
       profiles: ((profileRes.data ?? []) as ProfileRow[]).map(mapProfile),
+      itemWaitlist,
     };
   }
 
@@ -780,7 +800,26 @@ export async function fetchAdminData(): Promise<AdminData> {
       .slice()
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     profiles: db.profiles.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    itemWaitlist: [],
   };
+}
+
+/** 관리자 화면에서 Item 수요조사 한 건을 삭제한다. */
+export async function removeItemWaitlist(id: string): Promise<void> {
+  if (!supabase) return;
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+  if (!token) throw new Error("로그인이 끝났어요. 다시 로그인해 주세요.");
+
+  const response = await fetch("/api/admin/item-waitlist", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ id }),
+  });
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(payload?.error ?? "수요조사를 삭제하지 못했어요.");
+  }
 }
 
 export async function updateBookingStatus(

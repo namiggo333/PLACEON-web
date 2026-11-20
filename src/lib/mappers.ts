@@ -6,6 +6,7 @@ import type {
   BookingSource,
   BookingStatus,
   CancelReason,
+  ItemWaitlistEntry,
   Profile,
   RefundStatus,
   Role,
@@ -208,6 +209,36 @@ export function mapBookingEvent(row: BookingEventRow): BookingEvent {
     toStatus: row.to_status ?? null,
     actor: row.actor ?? "system",
     memo: row.memo ?? "",
+    createdAt: row.created_at ?? new Date().toISOString(),
+  };
+}
+
+export interface ItemWaitlistRow {
+  id: string;
+  categories: string[] | null;
+  custom_item: string | null;
+  space_type: string | null;
+  budget_or_qty: string | null;
+  contact_type: string | null;
+  contact: string;
+  note: string | null;
+  wants_notice: boolean | null;
+  source: string | null;
+  created_at: string | null;
+}
+
+export function mapItemWaitlist(row: ItemWaitlistRow): ItemWaitlistEntry {
+  return {
+    id: row.id,
+    categories: row.categories ?? [],
+    customItem: row.custom_item ?? "",
+    spaceType: row.space_type ?? "",
+    budgetOrQty: row.budget_or_qty ?? "",
+    contactType: row.contact_type === "email" ? "email" : "phone",
+    contact: row.contact ?? "",
+    note: row.note ?? "",
+    wantsNotice: row.wants_notice ?? true,
+    source: row.source ?? "item",
     createdAt: row.created_at ?? new Date().toISOString(),
   };
 }

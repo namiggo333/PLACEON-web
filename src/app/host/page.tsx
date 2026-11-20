@@ -11,6 +11,7 @@ import {
   BoltIcon,
   CalendarIcon,
   CheckIcon,
+  ChevronRightIcon,
   CloseIcon,
   CopyIcon,
   EyeOffIcon,
@@ -544,6 +545,28 @@ export default function HostPage() {
           </Link>
         </div>
       </div>
+
+      <Link
+        href="/item#apply"
+        className="group mt-4 flex items-center gap-3.5 rounded-xl2 border border-brand/20 bg-[linear-gradient(120deg,#FFF0F6_0%,#FFFFFF_70%)] px-4 py-3.5 transition hover:border-brand/40 hover:shadow-card"
+      >
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white text-xl shadow-card" aria-hidden>
+          🛍️
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="flex flex-wrap items-center gap-1.5">
+            <b className="text-[13.5px] font-extrabold text-ink">이곳저곳 Item이 곧 오픈해요</b>
+            <span className="badge bg-brand-dark text-white">오픈예정</span>
+          </span>
+          <span className="mt-0.5 block text-[12px] leading-relaxed text-ink-soft">
+            공간에 필요한 리퍼·비품 특가 몰. 필요한 품목을 미리 신청하면 많이 찾은 것부터 준비해 드려요.
+          </span>
+        </span>
+        <span className="hidden shrink-0 items-center gap-1 text-[12px] font-bold text-brand-dark sm:inline-flex">
+          품목 신청
+          <ChevronRightIcon size={14} />
+        </span>
+      </Link>
 
       <div className="no-scrollbar mt-5 flex gap-1 overflow-x-auto rounded-xl bg-ink-line/40 p-1">
         {TABS.map((item) => {
