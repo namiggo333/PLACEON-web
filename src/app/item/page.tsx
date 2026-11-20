@@ -95,7 +95,7 @@ export default function ItemPage() {
               </h1>
 
               <p className="mt-4 max-w-xl text-sm leading-relaxed text-ink-soft sm:text-base">
-                전시·리퍼 가전과 비품을 검수해서, 공간 사장님께 맞춘 특가로 준비해요.
+                전시·리퍼 가전과 비품을 검수해서, 공간 사장님께 맞춘 특가로 준비해요.{" "}
                 <br className="hidden sm:block" />
                 지금 필요한 품목을 알려 주시면 <b className="text-ink">가장 많이 찾은 것부터</b> 채워서 오픈할게요.
               </p>
