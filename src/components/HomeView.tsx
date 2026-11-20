@@ -90,22 +90,16 @@ export default function HomeView({ initialSpaces }: { initialSpaces: Space[] }) 
 
               <div className="mt-6 flex max-w-md divide-x divide-brand/15 sm:max-w-lg">
                 {[
-                  { icon: "⚡", label: "실시간 공실" },
-                  { icon: "⏱️", label: "예약 3초" },
-                  { icon: "🩷", label: "사장님 수수료 0%" },
+                  { icon: "⚡", label: "실시간 공실", hint: "비어 있는 시간만 노출" },
+                  { icon: "⏱️", label: "예약 3초", hint: "날짜·시간만 고르면 끝" },
+                  { icon: "🩷", label: "투명한 이용 안내", hint: "결제 전 금액 그대로" },
                 ].map((item) => (
                   <div key={item.label} className="px-4 first:pl-0 last:pr-0 sm:px-6">
                     <p className="text-[13px] font-extrabold text-ink sm:text-sm">
                       <span aria-hidden className="mr-1">{item.icon}</span>
                       {item.label}
                     </p>
-                    <p className="mt-1 text-[12px] text-ink-mute">
-                      {item.label === "실시간 공실"
-                        ? "비어 있는 시간만 노출"
-                        : item.label === "예약 3초"
-                          ? "날짜·시간만 고르면 끝"
-                          : "전용 링크로 받은 손님"}
-                    </p>
+                    <p className="mt-1 text-[12px] text-ink-mute">{item.hint}</p>
                   </div>
                 ))}
               </div>
@@ -114,7 +108,7 @@ export default function HomeView({ initialSpaces }: { initialSpaces: Space[] }) 
             <div className="hidden lg:block">
               <MascotBanner />
               <p className="mt-3 text-center text-[12px] font-semibold text-ink-mute">
-                사장님은 수수료 0%로, 손님은 3초 만에 예약해요
+                마음에 드는 공간을 고르고, 예약·입금 안내까지 한 번에!
               </p>
             </div>
           </div>
@@ -212,12 +206,12 @@ export default function HomeView({ initialSpaces }: { initialSpaces: Space[] }) 
                 <StoreIcon size={13} /> 사장님을 위한 이곳저곳
               </span>
               <h2 className="mt-3 text-xl font-extrabold leading-snug sm:text-2xl">
-                인스타·블로그로 데려온 손님은
+                공간을 운영하고 계신가요?
                 <br />
-                수수료 부담 없이 전용 링크로 받으세요
+                예약·입금 관리를 한곳에서 받아 보세요
               </h2>
               <p className="mt-2 text-xs leading-relaxed text-white/70 sm:text-sm">
-                공간 등록 3분이면 끝. 예약 승인·공실 광고·타임특가·간편 결제 링크까지 사장님 센터에서 한 번에.
+                공간 등록 3분이면 끝. 예약 승인·공실 관리·타임특가·전용 예약 링크까지 사장님 센터에서 한 번에.
               </p>
               <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                 <Link href="/host" className="btn bg-brand text-white hover:bg-brand-dark sm:w-auto">
