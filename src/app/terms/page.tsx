@@ -101,7 +101,7 @@ export default function TermsPage() {
           body: (
             <p>
               예약 취소와 환불은{" "}
-              <a href="/refund" className="font-semibold text-brand hover:underline">
+              <a href="/refund" className="font-semibold text-brand-dark hover:underline">
                 취소·환불 규정
               </a>
               에 따릅니다. 이용일 기준 표준 환불 비율이 적용되며, 공간의 하자나 중복 예약 등 회사·사장님의 귀책 사유가

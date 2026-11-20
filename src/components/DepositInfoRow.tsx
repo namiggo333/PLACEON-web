@@ -31,7 +31,7 @@ export function DepositInfoRow({
 
   if (booking.status === "cancelled" && booking.cancelReason === "expired") {
     return (
-      <div className={cn("rounded-lg bg-slate-100 px-2.5 py-2 text-[10px] font-semibold text-slate-500", className)}>
+      <div className={cn("rounded-lg bg-slate-100 px-2.5 py-2 text-[11.5px] font-semibold text-slate-500", className)}>
         입금 기한 만료 · 자동 취소됨 (그 시간대는 다시 예약 가능)
       </div>
     );
@@ -49,17 +49,17 @@ export function DepositInfoRow({
   return (
     <div
       className={cn(
-        "rounded-lg border px-2.5 py-2 text-[10px] leading-relaxed",
+        "rounded-lg border px-2.5 py-2 text-[11.5px] leading-relaxed",
         expired ? "border-red-200 bg-red-50" : "border-brand/20 bg-brand-light/60",
         className
       )}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className={cn("inline-flex items-center gap-1 font-extrabold", expired ? "text-red-500" : "text-brand")}>
+        <span className={cn("inline-flex items-center gap-1 font-extrabold", expired ? "text-red-500" : "text-brand-dark")}>
           <ClockIcon size={11} />
           입금 대기
         </span>
-        <span className={cn("font-black tabular-nums", expired ? "text-red-500" : "text-brand")}>
+        <span className={cn("font-extrabold tabular-nums", expired ? "text-red-500" : "text-brand-dark")}>
           {expired ? "기한 지남" : remaining !== null ? `남은 ${formatRemaining(remaining)}` : "15분"}
         </span>
       </div>

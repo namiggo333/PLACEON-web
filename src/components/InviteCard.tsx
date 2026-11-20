@@ -494,7 +494,7 @@ export function InviteCardModal({
       <div className="animate-pop-in max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-xl3 bg-white p-4 shadow-float sm:rounded-xl3 sm:p-5">
         <div className="mb-3 flex items-center justify-between">
           <p className="text-sm font-bold text-ink">
-            <span className="font-display text-base text-brand">모임 초대 카드</span>
+            <span className="font-display text-base text-brand-dark">모임 초대 카드</span>
           </p>
           <button
             type="button"
@@ -516,7 +516,7 @@ export function InviteCardModal({
 
           <div className="relative flex flex-col items-center rounded-[20px] bg-white px-4 pb-4 pt-4 shadow-sm">
             <span className="pointer-events-none absolute inset-x-0 top-0 h-24 rounded-t-[20px] bg-gradient-to-b from-[#FFF4F9] to-white" aria-hidden />
-            <span className="relative inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-3 py-1 text-[11.5px] font-bold text-brand">
+            <span className="relative inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-3 py-1 text-[11.5px] font-bold text-brand-dark">
               <span aria-hidden>💌</span> 모임 초대장
             </span>
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -545,7 +545,7 @@ export function InviteCardModal({
               ))}
             </dl>
 
-            <p className="relative mt-3 text-center text-[13px] text-brand">{booking.guestName} 님이 초대합니다</p>
+            <p className="relative mt-3 text-center text-[13px] text-brand-dark">{booking.guestName} 님이 초대합니다</p>
             <p className="relative mt-0.5 text-center text-[10px] text-ink-mute">함께 모이는 날, 즐거운 시간 보내세요!</p>
 
             <div className="relative mt-3 flex w-full items-center justify-center gap-1.5 border-t border-dashed border-ink-line pt-2.5">
@@ -570,7 +570,7 @@ export function InviteCardModal({
         )}
 
         <div className="mt-3 grid grid-cols-2 gap-2">
-          <button type="button" onClick={copyText} className={cn("btn-ghost btn-sm py-2.5", copied && "border-brand text-brand")}>
+          <button type="button" onClick={copyText} className={cn("btn-ghost btn-sm py-2.5", copied && "border-brand text-brand-dark")}>
             {copied ? <CheckIcon size={14} /> : <CopyIcon size={14} />}
             {copied ? "복사했어요" : "초대 문구 복사"}
           </button>

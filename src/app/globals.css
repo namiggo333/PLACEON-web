@@ -2,8 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 나눔스퀘어라운드 — 본문 기본 폰트 (둥글고 말랑한 인상, 작은 글씨 가독성 유지)
-   웹폰트 파일은 public/fonts 에 두고 직접 서빙한다. */
+/* =========================================================================
+   이곳저곳 타이포그래피 시스템 (2026-11-20 리뉴얼)
+   - 본문·제목·버튼·배지: Pretendard Variable (가독성 우선, 굵기 4단계 800/700/600/400)
+   - 브랜드 포인트(로고 워드마크, 모임 초대 카드): 주아체(Jua)
+   - 나눔스퀘어라운드: 공유 카드(OG)·초대 카드 캔버스용으로만 남긴다
+   ========================================================================= */
+
+/* 나눔스퀘어라운드 — 공유 카드·초대 카드 캔버스용.
+   본문에는 쓰지 않는다. 웹폰트 파일은 public/fonts 에 두고 직접 서빙한다. */
 @font-face {
   font-family: "NanumSquareRound";
   font-style: normal;
@@ -29,37 +36,119 @@
 }
 
 :root {
-  --font-round: "NanumSquareRound", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
-  --font-round-display: "Jua", "NanumSquareRound", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
-  --brand: #ff2e7e;
-  --brand-hot: #f01d71;
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui,
+    "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  /* 로고·감성 포인트 전용 (제목·버튼에는 쓰지 않는다) */
+  --font-display: "Jua", "Pretendard Variable", "Apple SD Gothic Neo", system-ui, sans-serif;
+
+  /* 텍스트 색 — 대비(흰 배경 기준) */
+  --ink: #1b1624; /* ≈17.7:1 제목·본문 */
+  --ink-soft: #4f4757; /* ≈8.9:1 보조 문장 */
+  --ink-mute: #6f6879; /* ≈5.3:1 캡션·메타·placeholder */
+  --ink-faint: #8e8798; /* ≈3.5:1 글자에 쓰지 않는다. 아이콘·구분선·비활성 전용 */
+
+  /* 브랜드 핑크 */
+  --brand: #ff2e7e; /* 큰 면·일러스트·로고·큰 글씨 */
+  --brand-ink: #e01867; /* 흰 글자를 올리는 버튼·배지 배경 (≈4.7:1) */
+  --brand-strong: #c4105a; /* 눌림 상태·연핑크 배경 위 글자 (≈5.0:1) */
   --brand-dark: #e01867;
   --brand-deep: #b80d54;
   --brand-light: #fff0f6;
   --brand-soft: #ffe4ef;
   --navy: #1b1624;
+
+  /* 위계 스케일 — 모바일 */
+  --fs-h1: 28px;
+  --lh-h1: 1.25;
+  --fs-h2: 22px;
+  --lh-h2: 1.3;
+  --fs-h3: 17px;
+  --lh-h3: 1.4;
+  --fs-body: 15px;
+  --lh-body: 1.65;
+  --fs-caption: 13px;
+  --fs-price: 18px;
+  --fs-total: 24px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --fs-h1: 44px;
+    --lh-h1: 1.2;
+    --fs-h2: 30px;
+    --fs-h3: 19px;
+    --fs-body: 16px;
+    --lh-body: 1.7;
+    --fs-price: 20px;
+    --fs-total: 28px;
+  }
 }
 
 html {
   -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--ink);
   word-break: keep-all;
-  font-family: var(--font-round);
-  /* 둥근 폰트의 실제 굵기만 사용한다 (없는 굵기를 인위적으로 늘리지 않음) */
-  font-synthesis-weight: none;
+  overflow-wrap: break-word;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* 제목은 어디서든 둥글고 귀여운 주아체로 — 플랫폼 전체 톤 통일 */
+/* 제목 위계: 800 → 700 → 600 → 400 네 단계만 쓴다 */
 h1,
 h2,
 h3,
+h4 {
+  font-family: var(--font-sans);
+  font-synthesis-weight: none;
+}
+
+h1 {
+  font-size: var(--fs-h1);
+  line-height: var(--lh-h1);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+h2 {
+  font-size: var(--fs-h2);
+  line-height: var(--lh-h2);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+h3 {
+  font-size: var(--fs-h3);
+  line-height: var(--lh-h3);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+h4 {
+  font-size: var(--fs-caption);
+  line-height: 1.5;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+/* 로고 워드마크·감성 포인트 전용 */
 .font-display {
-  font-family: var(--font-round-display);
+  font-family: var(--font-display);
   font-weight: 400;
-  letter-spacing: -0.012em;
-  line-height: 1.32;
+  letter-spacing: -0.01em;
 }
 
 @layer base {
@@ -75,6 +164,19 @@ h3,
     font: inherit;
   }
 
+  /* iOS는 16px 미만 입력칸에서 포커스 시 화면을 확대한다 */
+  input,
+  select,
+  textarea {
+    font-family: inherit;
+    font-size: 16px;
+  }
+
+  ::placeholder {
+    color: var(--ink-mute);
+    opacity: 1;
+  }
+
   input[type="date"]::-webkit-calendar-picker-indicator {
     opacity: 0.55;
   }
@@ -85,36 +187,39 @@ h3,
     @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
   }
 
+  /* ---- 버튼 ---- */
   .btn {
-    @apply inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-[14.5px] font-semibold transition
+    @apply inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-[15px] font-bold transition
       focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 disabled:cursor-not-allowed disabled:opacity-50;
-    font-family: var(--font-round-display);
-    letter-spacing: -0.005em;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
   }
 
+  /* 흰 글자 대비를 위해 배경은 한 단계 진한 핑크(#E01867)를 쓴다 */
   .btn-primary {
-    @apply btn bg-brand text-white shadow-sm hover:bg-brand-dark active:scale-[0.99];
+    @apply btn bg-brand-dark text-white shadow-sm hover:bg-brand-deep active:scale-[0.99];
   }
 
   .btn-ghost {
-    @apply btn border border-ink-line bg-white text-ink hover:border-brand/40 hover:text-brand;
+    @apply btn border border-ink-line bg-white text-ink hover:border-brand/40 hover:text-brand-dark;
   }
 
   .btn-soft {
-    @apply btn bg-brand-light text-brand hover:bg-brand-soft;
+    @apply btn bg-brand-light text-brand-deep hover:bg-brand-soft;
   }
 
   .btn-sm {
-    @apply rounded-lg px-3 py-1.5 text-xs;
+    @apply rounded-lg px-3 py-1.5 text-[13px];
   }
 
   .input {
-    @apply w-full rounded-xl border border-ink-line bg-white px-3.5 py-2.5 text-sm text-ink
+    @apply w-full rounded-xl border border-ink-line bg-white px-3.5 py-2.5 text-[16px] text-ink
       placeholder:text-ink-mute focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/15;
+    line-height: 1.45;
   }
 
   .label {
-    @apply mb-1.5 block text-xs font-semibold text-ink-soft;
+    @apply mb-1.5 block text-[13px] font-semibold text-ink-soft;
   }
 
   .card {
@@ -122,28 +227,93 @@ h3,
   }
 
   .badge {
-    @apply inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold leading-4;
-    font-family: var(--font-round-display);
-    letter-spacing: -0.005em;
+    @apply inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[12px] font-bold leading-4;
+    letter-spacing: 0;
   }
 
   .chip {
-    @apply inline-flex shrink-0 items-center gap-1.5 rounded-full border border-ink-line bg-white px-3.5 py-2 text-sm
-      font-medium text-ink-soft transition hover:border-brand/40 hover:text-brand;
+    @apply inline-flex shrink-0 items-center gap-1.5 rounded-full border border-ink-line bg-white px-3.5 py-2 text-[14px]
+      font-semibold text-ink-soft transition hover:border-brand/40 hover:text-brand-dark;
   }
 
   .chip-active {
-    @apply border-brand bg-brand text-white hover:border-brand hover:text-white;
+    @apply border-brand-dark bg-brand-dark text-white hover:border-brand-dark hover:text-white;
   }
 
+  /* ---- 제목 위계(클래스 버전) ---- */
+  .heading-1 {
+    font-size: var(--fs-h1);
+    line-height: var(--lh-h1);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+  }
+
+  .heading-2,
   .section-title {
-    @apply text-[19px] text-ink sm:text-[22px];
-    font-family: var(--font-round-display);
-    letter-spacing: -0.015em;
+    font-size: var(--fs-h2);
+    line-height: var(--lh-h2);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+
+  .heading-3 {
+    font-size: var(--fs-h3);
+    line-height: var(--lh-h3);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  .caption {
+    font-size: var(--fs-caption);
+    line-height: 1.5;
+    color: var(--ink-mute);
+    letter-spacing: 0;
   }
 
   .muted {
-    @apply text-sm text-ink-mute;
+    @apply text-[13.5px] text-ink-mute;
+    letter-spacing: 0;
+  }
+
+  /* ---- 숫자·가격: 자리수가 흔들리지 않게 고정폭 숫자 ---- */
+  .num,
+  .price,
+  .price-sm,
+  .total,
+  .time-range,
+  .countdown {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+
+  .price {
+    font-size: var(--fs-price);
+    line-height: 1.2;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  /* 카드·목록처럼 좁은 자리의 가격 */
+  .price-sm {
+    font-size: 16px;
+    line-height: 1.2;
+    font-weight: 800;
+    letter-spacing: -0.015em;
+  }
+
+  @media (min-width: 640px) {
+    .price-sm {
+      font-size: 17px;
+    }
+  }
+
+  .total {
+    font-size: var(--fs-total);
+    line-height: 1.2;
+    font-weight: 800;
+    letter-spacing: -0.025em;
   }
 
   .no-scrollbar {

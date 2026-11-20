@@ -163,7 +163,7 @@ export default function SpaceDetailView() {
       <button
         type="button"
         onClick={() => router.back()}
-        className="mb-4 inline-flex items-center gap-1 text-xs font-semibold text-ink-mute hover:text-brand"
+        className="mb-4 inline-flex items-center gap-1 text-xs font-semibold text-ink-mute hover:text-brand-dark"
       >
         <ArrowLeftIcon size={15} />
         돌아가기
@@ -206,7 +206,7 @@ export default function SpaceDetailView() {
           </div>
 
           {space.approvalStatus !== "approved" && (
-            <p className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-[11px] font-medium leading-relaxed text-amber-800">
+            <p className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-[12px] font-medium leading-relaxed text-amber-800">
               <span className="shrink-0">🛡️</span>
               <span>
                 {APPROVAL_LABEL[space.approvalStatus]} 상태예요. 관리자 확인이 끝나기 전에는 손님 화면에 노출되지
@@ -217,7 +217,7 @@ export default function SpaceDetailView() {
           )}
 
           {space.hidden && (
-            <p className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-[11px] font-medium leading-relaxed text-amber-800">
+            <p className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-[12px] font-medium leading-relaxed text-amber-800">
               <span className="shrink-0">🔒</span>
               지금은 비공개로 설정된 공간이에요. 사장님에게만 보이고, 손님 화면(홈·검색)에는 노출되지 않아요.
             </p>
@@ -225,14 +225,14 @@ export default function SpaceDetailView() {
 
           <div className="mt-5">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="badge bg-brand-light text-brand">{category.label}</span>
+              <span className="badge bg-brand-light text-brand-dark">{category.label}</span>
               {space.featured && <span className="badge bg-ink text-white">지역 상단 노출 AD</span>}
               {space.timeDeal && space.discountRate > 0 && (
                 <span className="badge bg-brand text-white">타임특가 {space.discountRate}%</span>
               )}
               <span className="badge bg-emerald-50 text-emerald-600">실시간 예약 가능</span>
             </div>
-            <h1 className="mt-3 text-2xl font-black leading-snug tracking-tight text-ink sm:text-3xl">
+            <h1 className="mt-3 text-2xl font-extrabold leading-snug tracking-tight text-ink sm:text-3xl">
               {space.name}
             </h1>
             <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-ink-soft">
@@ -252,19 +252,19 @@ export default function SpaceDetailView() {
           </div>
 
           <section className="mt-7 border-t border-ink-line pt-6">
-            <h2 className="text-base font-extrabold text-ink">공간 소개</h2>
+            <h2 className="text-[17px] font-bold text-ink sm:text-[19px]">공간 소개</h2>
             <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-ink-soft">{space.description}</p>
           </section>
 
           <section className="mt-7 border-t border-ink-line pt-6">
-            <h2 className="text-base font-extrabold text-ink">제공 시설</h2>
+            <h2 className="text-[17px] font-bold text-ink sm:text-[19px]">제공 시설</h2>
             <div className="mt-3 flex flex-wrap gap-2">
               {space.amenities.map((amenity) => (
                 <span
                   key={amenity}
                   className="inline-flex items-center gap-1 rounded-lg bg-brand-light/70 px-2.5 py-1.5 text-xs font-medium text-ink-soft"
                 >
-                  <CheckIcon size={13} className="text-brand" />
+                  <CheckIcon size={13} className="text-brand-dark" />
                   {amenity}
                 </span>
               ))}
@@ -272,7 +272,7 @@ export default function SpaceDetailView() {
           </section>
 
           <section className="mt-7 border-t border-ink-line pt-6">
-            <h2 className="text-base font-extrabold text-ink">이용 안내</h2>
+            <h2 className="text-[17px] font-bold text-ink sm:text-[19px]">이용 안내</h2>
             <ul className="mt-2 space-y-1.5 text-sm leading-relaxed text-ink-soft">
               <li>· 예약 신청 후 15분 안에 사장님 계좌로 입금해 주세요. 확인되면 예약이 확정돼요.</li>
               <li>· 15분 안에 입금이 확인되지 않으면 예약은 자동으로 풀려 다른 손님이 예약할 수 있어요.</li>
@@ -283,18 +283,18 @@ export default function SpaceDetailView() {
           </section>
 
           <section className="mt-7 border-t border-ink-line pt-6">
-            <h2 className="text-base font-extrabold text-ink">호스트</h2>
+            <h2 className="text-[17px] font-bold text-ink sm:text-[19px]">호스트</h2>
             <div className="mt-3 flex items-center justify-between rounded-xl2 border border-ink-line bg-white p-4">
               <div className="flex items-center gap-3">
-                <span className="grid h-11 w-11 place-items-center rounded-full bg-brand-light text-base font-extrabold text-brand">
+                <span className="grid h-11 w-11 place-items-center rounded-full bg-brand-light text-base font-extrabold text-brand-dark">
                   {space.hostName.slice(0, 1)}
                 </span>
                 <div>
                   <p className="text-sm font-bold text-ink">{space.hostName}</p>
-                  <p className="text-[11px] text-ink-mute">이곳저곳 호스트</p>
+                  <p className="text-[12px] text-ink-mute">이곳저곳 호스트</p>
                 </div>
               </div>
-              <span className="badge bg-brand-light text-brand">
+              <span className="badge bg-brand-light text-brand-dark">
                 <SparkleIcon size={12} />
                 전용 예약 링크 운영
               </span>
@@ -303,7 +303,7 @@ export default function SpaceDetailView() {
 
           {similar.length > 0 && (
             <section className="mt-8 border-t border-ink-line pt-6">
-              <h2 className="text-base font-extrabold text-ink">비슷한 공간</h2>
+              <h2 className="text-[17px] font-bold text-ink sm:text-[19px]">비슷한 공간</h2>
               <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {similar.slice(0, 3).map((item) => (
                   <SpaceCard key={item.id} space={item} />
@@ -323,7 +323,7 @@ export default function SpaceDetailView() {
                     <CheckIcon size={14} />
                   </span>
                 </span>
-                <h2 className="mt-3 text-lg font-black text-ink">예약 신청 완료!</h2>
+                <h2 className="mt-3 text-lg font-extrabold text-ink">예약 신청 완료!</h2>
                 <p className="mt-1 text-xs text-ink-mute">
                   사장님이 확인하면 예약이 확정돼요.
                   <br />
@@ -348,14 +348,14 @@ export default function SpaceDetailView() {
                 </div>
                 <div className="flex justify-between gap-3 border-t border-ink-line pt-2">
                   <dt className="font-semibold text-ink">이용 요금</dt>
-                  <dd className="text-right text-sm font-extrabold text-brand">{won(done.totalAmount)}</dd>
+                  <dd className="text-right text-sm font-extrabold text-brand-dark">{won(done.totalAmount)}</dd>
                 </div>
               </dl>
 
               <DepositGuide booking={done} className="mt-3" />
 
               {done.accessToken && (
-                <div className="mt-3 rounded-xl border border-ink-line bg-ink-line/20 p-3 text-[10.5px] leading-relaxed text-ink-soft">
+                <div className="mt-3 rounded-xl border border-ink-line bg-ink-line/20 p-3 text-[11.5px] leading-relaxed text-ink-soft">
                   <p className="font-bold text-ink">비로그인 예약 확인 링크</p>
                   <p className="mt-1 break-all">
                     {origin}/bookings?booking={done.id}&amp;token={done.accessToken}
@@ -380,11 +380,11 @@ export default function SpaceDetailView() {
                   호스트 결제 링크 안내
                 </button>
                 {showPayGuide && (
-                  <div className="rounded-xl bg-brand-light p-3 text-[11px] leading-relaxed text-ink-soft">
+                  <div className="rounded-xl bg-brand-light p-3 text-[12px] leading-relaxed text-ink-soft">
                     이 공간의 전용 결제 링크로 이동하면 카드로 바로 결제할 수 있어요.
                     <Link
                       href={`/pay/${space.paySlug}`}
-                      className="mt-2 flex items-center justify-center gap-1 rounded-lg bg-white px-3 py-2 font-bold text-brand"
+                      className="mt-2 flex items-center justify-center gap-1 rounded-lg bg-white px-3 py-2 font-bold text-brand-dark"
                     >
                       <LinkIcon size={13} />
                       /pay/{space.paySlug}
@@ -397,7 +397,7 @@ export default function SpaceDetailView() {
                     setDone(null);
                     setShowPayGuide(false);
                   }}
-                  className="text-xs font-semibold text-ink-mute hover:text-brand"
+                  className="text-xs font-semibold text-ink-mute hover:text-brand-dark"
                 >
                   다른 시간으로 예약하기
                 </button>
@@ -408,16 +408,16 @@ export default function SpaceDetailView() {
               <div className="flex items-baseline justify-between">
                 <div>
                   {space.discountRate > 0 && (
-                    <span className="mr-1.5 text-sm font-extrabold text-brand">{space.discountRate}%</span>
+                    <span className="mr-1.5 text-sm font-extrabold text-brand-dark">{space.discountRate}%</span>
                   )}
-                  <span className="text-2xl font-black text-ink">{won(total)}</span>
+                  <span className="text-2xl font-extrabold text-ink">{won(total)}</span>
                   <span className="ml-1 text-xs text-ink-mute">/ {hours}시간</span>
                 </div>
                 {space.discountRate > 0 && (
                   <span className="text-xs text-ink-mute line-through">{won(subtotal)}</span>
                 )}
               </div>
-              <p className="mt-1 text-[11px] text-ink-mute">시간당 {won(space.pricePerHour)} · 최대 {space.capacity}명</p>
+              <p className="mt-1 text-[12px] text-ink-mute">시간당 {won(space.pricePerHour)} · 최대 {space.capacity}명</p>
 
               <div className="mt-4 space-y-3">
                 <div>
@@ -508,7 +508,7 @@ export default function SpaceDetailView() {
                   </div>
                 </div>
 
-                <div className="rounded-xl bg-ink-line/30 p-3 text-[11px]">
+                <div className="rounded-xl bg-ink-line/30 p-3 text-[12px]">
                   <div className="flex justify-between text-ink-soft">
                     <span>
                       {won(space.pricePerHour)} × {hours}시간
@@ -516,7 +516,7 @@ export default function SpaceDetailView() {
                     <span>{won(subtotal)}</span>
                   </div>
                   {discount > 0 && (
-                    <div className="mt-1 flex justify-between text-brand">
+                    <div className="mt-1 flex justify-between text-brand-dark">
                       <span>타임특가 {space.discountRate}% 할인</span>
                       <span>−{won(discount)}</span>
                     </div>
@@ -525,12 +525,12 @@ export default function SpaceDetailView() {
                     <span>총 결제 금액</span>
                     <span>{won(total)}</span>
                   </div>
-                  <p className="mt-1 text-[10px] text-ink-mute">
+                  <p className="mt-1 text-[11.5px] text-ink-mute">
                     {formatDate(date)} {timeRange(startTime, hours)}
                   </p>
-                  {checkingSlots && <p className="mt-1 text-[10px] text-ink-mute">예약 가능한 시간을 확인하고 있어요…</p>}
+                  {checkingSlots && <p className="mt-1 text-[11.5px] text-ink-mute">예약 가능한 시간을 확인하고 있어요…</p>}
                   {!checkingSlots && occupied.some((slot) => slot.taken || slot.past) && (
-                    <p className="mt-1 text-[10px] text-brand">회색으로 표시된 시간은 예약·차단되었거나 지난 시간이에요.</p>
+                    <p className="mt-1 text-[11.5px] text-brand-dark">회색으로 표시된 시간은 예약·차단되었거나 지난 시간이에요.</p>
                   )}
                 </div>
 
@@ -579,21 +579,21 @@ export default function SpaceDetailView() {
                 <BookingConsent checked={agreed} onChange={setAgreed} id="space-booking-consent" />
 
                 {error && (
-                  <p className="rounded-lg bg-red-50 px-3 py-2 text-[11px] font-medium text-red-600">{error}</p>
+                  <p className="rounded-lg bg-red-50 px-3 py-2 text-[12px] font-medium text-red-600">{error}</p>
                 )}
 
                 <button type="submit" disabled={submitting} className="btn-primary w-full py-3">
                   <BoltIcon size={16} />
                   {submitting ? "예약 신청 중…" : user ? "예약 신청하기" : "로그인하고 예약하기"}
                 </button>
-                <p className="text-center text-[10px] leading-relaxed text-ink-mute">
+                <p className="text-center text-[11.5px] leading-relaxed text-ink-mute">
                   예약 신청 후 15분 안에 안내된 계좌로 입금하면 사장님 확인을 거쳐 확정돼요.
                 </p>
               </div>
             </form>
           )}
 
-          <div className="mt-3 flex items-center justify-center gap-4 text-[10px] text-ink-mute">
+          <div className="mt-3 flex items-center justify-center gap-4 text-[11.5px] text-ink-mute">
             <span className="inline-flex items-center gap-1">
               <CalendarIcon size={12} />
               즉시 신청
@@ -616,12 +616,12 @@ export default function SpaceDetailView() {
             <div className="min-w-0">
               <p className="flex items-baseline gap-1">
                 {space.discountRate > 0 && (
-                  <span className="text-[11px] font-extrabold text-brand">{space.discountRate}%</span>
+                  <span className="text-[12px] font-extrabold text-brand-dark">{space.discountRate}%</span>
                 )}
-                <span className="text-lg font-black text-ink">{won(total)}</span>
-                <span className="text-[10px] text-ink-mute">/ {hours}시간</span>
+                <span className="text-lg font-extrabold text-ink">{won(total)}</span>
+                <span className="text-[11.5px] text-ink-mute">/ {hours}시간</span>
               </p>
-              <p className="truncate text-[10px] text-ink-mute">
+              <p className="truncate text-[11.5px] text-ink-mute">
                 {formatDate(date)} {timeRange(startTime, hours)}
               </p>
             </div>

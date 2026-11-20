@@ -34,13 +34,13 @@ export default function RefundPage() {
               {ROWS.map((row) => (
                 <tr key={row.when}>
                   <td className="border border-brand/15 px-3 py-2 font-semibold text-ink">{row.when}</td>
-                  <td className="border border-brand/15 px-3 py-2 font-extrabold text-brand">{row.rate}</td>
+                  <td className="border border-brand/15 px-3 py-2 font-extrabold text-brand-dark">{row.rate}</td>
                   <td className="border border-brand/15 px-3 py-2">{row.note}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <p className="mt-2 text-[11px] text-ink-mute">
+          <p className="mt-2 text-[12px] text-ink-mute">
             예시: 11월 20일 18시 이용 예약을 11월 17일 18시 이전에 취소하면 100%, 11월 18일에는 70%, 11월 19일에는
             50%가 환불됩니다.
           </p>

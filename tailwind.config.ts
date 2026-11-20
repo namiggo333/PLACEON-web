@@ -18,7 +18,10 @@ const config: Config = {
           DEFAULT: "#1B1624",
           deep: "#14192D",
           soft: "#4F4757",
-          mute: "#8E8798",
+          // 캡션·메타 정보용(흰 배경 5.3:1) — 예전 #8E8798 은 faint 로 옮겼다
+          mute: "#6F6879",
+          // 글자에 쓰지 않는다. 아이콘·구분선·비활성 전용(3.5:1)
+          faint: "#8E8798",
           line: "#F2ECF1",
         },
         blush: "#FFD9E9",
@@ -37,16 +40,19 @@ const config: Config = {
       },
       fontFamily: {
         sans: [
-          "NanumSquareRound",
-          "Jua",
-          "Apple SD Gothic Neo",
-          "Malgun Gothic",
+          "Pretendard Variable",
+          "Pretendard",
+          "-apple-system",
+          "BlinkMacSystemFont",
           "system-ui",
+          "Apple SD Gothic Neo",
+          "Noto Sans KR",
+          "Malgun Gothic",
           "sans-serif",
         ],
         display: [
           "Jua",
-          "NanumSquareRound",
+          "Pretendard Variable",
           "Apple SD Gothic Neo",
           "Malgun Gothic",
           "system-ui",

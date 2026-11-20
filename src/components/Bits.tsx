@@ -40,8 +40,8 @@ export function CategoryChips({
             </span>
             <span
               className={cn(
-                "text-center font-display text-[12.5px] leading-tight tracking-tight transition",
-                isActive ? "text-brand" : "text-ink-soft group-hover:text-ink"
+                "text-center text-[12.5px] font-semibold leading-tight tracking-[-0.01em] transition",
+                isActive ? "text-brand-dark" : "text-ink-soft group-hover:text-ink"
               )}
             >
               {item.label}
@@ -81,7 +81,7 @@ export function DemoAccountButtons({
               <span className="block text-xs font-bold text-ink">
                 {busy === role ? "로그인 중…" : `${account.name} ${role === "guest" ? "게스트" : "사장님"}`}
               </span>
-              <span className="block truncate text-[10px] text-ink-mute">
+              <span className="block truncate text-[11.5px] text-ink-mute">
                 {account.email} · 바로 로그인
               </span>
             </span>

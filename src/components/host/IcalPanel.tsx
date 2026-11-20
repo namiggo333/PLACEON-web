@@ -245,7 +245,7 @@ export function IcalPanel({
   return (
     <section className="card p-4 sm:p-5">
       <div className="flex items-center gap-2">
-        <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand-light text-brand">
+        <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand-light text-brand-dark">
           <LinkIcon size={18} />
         </span>
         <div>
@@ -260,7 +260,7 @@ export function IcalPanel({
       <div className="mt-3 rounded-xl bg-ink-line/25 p-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-[11px] font-bold text-ink">
-            <ClockIcon size={12} className="mr-1 inline text-brand" />
+            <ClockIcon size={12} className="mr-1 inline text-brand-dark" />
             내 공간 일정 구독 주소
           </p>
           <select
@@ -314,7 +314,7 @@ export function IcalPanel({
                 onClick={() => setImportMode(item)}
                 className={cn(
                   "rounded-md px-2.5 py-1 text-[10.5px] font-bold transition",
-                  importMode === item ? "bg-white text-brand shadow-sm" : "text-ink-mute"
+                  importMode === item ? "bg-white text-brand-dark shadow-sm" : "text-ink-mute"
                 )}
               >
                 {item === "url" ? "주소로" : "내용 붙여넣기"}
@@ -415,7 +415,7 @@ export function IcalPanel({
         {importRows && (
           <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
             <p className="text-[11px] text-ink-mute">
-              등록 가능 <b className="text-brand">{readyCount}</b>건 / 전체 {importRows.length}건
+              등록 가능 <b className="text-brand-dark">{readyCount}</b>건 / 전체 {importRows.length}건
               {hiddenCount > 0 ? ` · 표시는 50건까지` : ""}
             </p>
             <button

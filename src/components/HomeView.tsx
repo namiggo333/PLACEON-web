@@ -60,17 +60,17 @@ export default function HomeView({ initialSpaces }: { initialSpaces: Space[] }) 
         <div className="container-page relative pb-8 pt-9 sm:pb-12 sm:pt-14">
           <div className="grid gap-6 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:gap-10">
             <div className="min-w-0">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/20 bg-white/80 px-3 py-1 text-[11px] font-bold text-brand">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/20 bg-white/80 px-3 py-1 text-[12px] font-bold text-brand-dark">
                 <SparkleIcon size={13} />
                 찾고, 예약하고, 결제까지 — 한 번에!
               </span>
 
-              <h1 className="mt-4 text-[31px] font-black leading-[1.2] tracking-[-0.045em] text-ink sm:text-[42px] lg:text-[46px]">
+              <h1 className="mt-4 heading-1 text-ink sm:text-[40px] lg:text-[44px]">
                 <span className="block">원하는 공간,</span>
                 <span className="block">
-                  <span className="relative inline-block text-brand">
+                  <span className="relative inline-block text-brand-dark">
                     지금 바로
-                    <SloganUnderline className="-bottom-1.5 text-brand sm:-bottom-2" />
+                    <SloganUnderline className="-bottom-1.5 text-brand-dark sm:-bottom-2" />
                   </span>{" "}
                   찾아보세요!
                 </span>
@@ -99,7 +99,7 @@ export default function HomeView({ initialSpaces }: { initialSpaces: Space[] }) 
                       <span aria-hidden className="mr-1">{item.icon}</span>
                       {item.label}
                     </p>
-                    <p className="mt-1 text-[11px] text-ink-mute">
+                    <p className="mt-1 text-[12px] text-ink-mute">
                       {item.label === "실시간 공실"
                         ? "비어 있는 시간만 노출"
                         : item.label === "예약 3초"
@@ -113,7 +113,7 @@ export default function HomeView({ initialSpaces }: { initialSpaces: Space[] }) 
 
             <div className="hidden lg:block">
               <MascotBanner />
-              <p className="mt-3 text-center text-[11px] font-semibold text-ink-mute">
+              <p className="mt-3 text-center text-[12px] font-semibold text-ink-mute">
                 사장님은 수수료 0%로, 손님은 3초 만에 예약해요
               </p>
             </div>
@@ -125,7 +125,7 @@ export default function HomeView({ initialSpaces }: { initialSpaces: Space[] }) 
         <section>
           <div className="mb-2.5 flex items-center justify-between">
             <h2 className="section-title">어떤 공간이 필요하세요?</h2>
-            <Link href="/search" className="flex items-center gap-0.5 text-xs font-semibold text-ink-mute hover:text-brand">
+            <Link href="/search" className="flex items-center gap-0.5 text-xs font-semibold text-ink-mute hover:text-brand-dark">
               전체 보기
               <ChevronRightIcon size={14} />
             </Link>
@@ -208,10 +208,10 @@ export default function HomeView({ initialSpaces }: { initialSpaces: Space[] }) 
           />
           <div className="relative flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
             <div className="max-w-md">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-brand/25 px-2.5 py-1 text-[11px] font-bold text-[#FFB0CE]">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-brand/25 px-2.5 py-1 text-[12px] font-bold text-[#FFB0CE]">
                 <StoreIcon size={13} /> 사장님을 위한 이곳저곳
               </span>
-              <h2 className="mt-3 text-xl font-black leading-snug sm:text-2xl">
+              <h2 className="mt-3 text-xl font-extrabold leading-snug sm:text-2xl">
                 인스타·블로그로 데려온 손님은
                 <br />
                 수수료 부담 없이 전용 링크로 받으세요

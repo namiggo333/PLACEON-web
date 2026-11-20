@@ -105,14 +105,14 @@ export function Slogan({ className, size = "sm" }: { className?: string; size?: 
   return (
     <span
       className={cn(
-        "inline-flex flex-wrap items-center gap-x-1 font-display leading-[1.45] tracking-tight text-ink-soft",
-        size === "sm" ? "text-[11.5px]" : "text-sm",
+        "inline-flex flex-wrap items-center gap-x-1 font-semibold tracking-[-0.01em] text-ink-soft",
+        size === "sm" ? "text-[12px]" : "text-sm",
         className
       )}
     >
       <span className="whitespace-nowrap">찾고, 예약하고, 결제까지</span>
-      <span className="text-ink-mute">—</span>
-      <span className="relative inline-block whitespace-nowrap font-display text-brand">
+      <span className="text-ink-faint">—</span>
+      <span className="relative inline-block whitespace-nowrap font-bold text-brand-dark">
         한 번에!
         <SloganUnderline className="-bottom-[3px] text-brand" />
       </span>

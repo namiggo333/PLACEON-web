@@ -56,7 +56,7 @@ function SiteHeader() {
                   href={item.href}
                   className={cn(
                     "rounded-full px-3 py-2 text-[13.5px] font-semibold transition",
-                    active ? "bg-brand-light text-brand" : "text-ink-soft hover:bg-ink-line/60 hover:text-ink"
+                    active ? "bg-brand-light text-brand-dark" : "text-ink-soft hover:bg-ink-line/60 hover:text-ink"
                   )}
                 >
                   {item.label}
@@ -74,7 +74,7 @@ function SiteHeader() {
                 "inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-bold transition",
                 pathname.startsWith("/admin")
                   ? "bg-brand text-white"
-                  : "bg-brand-light text-brand hover:bg-brand-soft"
+                  : "bg-brand-light text-brand-dark hover:bg-brand-soft"
               )}
             >
               <ShieldIcon size={14} />
@@ -91,11 +91,11 @@ function SiteHeader() {
           {ready && user ? (
             <>
               <div className="hidden items-center gap-2 sm:flex">
-                <span className="grid h-8 w-8 place-items-center rounded-full bg-brand-light text-xs font-bold text-brand">
+                <span className="grid h-8 w-8 place-items-center rounded-full bg-brand-light text-xs font-bold text-brand-dark">
                   {user.name.slice(0, 1)}
                 </span>
                 <span className="text-sm font-semibold text-ink">{user.name}</span>
-                <span className="rounded-md bg-ink-line/70 px-1.5 py-0.5 text-[10px] font-bold text-ink-soft">
+                <span className="rounded-md bg-ink-line/70 px-1.5 py-0.5 text-[11.5px] font-bold text-ink-soft">
                   {ROLE_LABEL[user.role]}
                 </span>
               </div>
@@ -135,8 +135,8 @@ function BottomNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center gap-1 py-2.5 text-[11px] font-semibold transition",
-                active ? "text-brand" : "text-ink-mute"
+                "flex flex-col items-center gap-1 py-2.5 text-[12px] font-semibold transition",
+                active ? "text-brand-dark" : "text-ink-mute"
               )}
             >
               <Icon size={22} />
@@ -158,7 +158,7 @@ function SiteFooter() {
             <LogoMark size={34} shadow={false} decorative />
             <div className="flex flex-col gap-2.5 pt-1.5">
               <Wordmark size="md" />
-              <Slogan className="text-[11.5px]" />
+              <Slogan className="text-[12.5px]" />
             </div>
           </div>
           <p className="mt-3.5 max-w-sm text-xs leading-relaxed text-ink-mute">
@@ -169,32 +169,32 @@ function SiteFooter() {
         <div className="flex gap-10 text-xs text-ink-soft">
           <div className="flex flex-col gap-2">
             <span className="font-bold text-ink">이용하기</span>
-            <Link href="/search" className="hover:text-brand">공간 찾기</Link>
-            <Link href="/areas" className="hover:text-brand">지역별 찾기</Link>
-            <Link href="/bookings" className="hover:text-brand">예약 내역</Link>
+            <Link href="/search" className="hover:text-brand-dark">공간 찾기</Link>
+            <Link href="/areas" className="hover:text-brand-dark">지역별 찾기</Link>
+            <Link href="/bookings" className="hover:text-brand-dark">예약 내역</Link>
           </div>
           <div className="flex flex-col gap-2">
             <span className="font-bold text-ink">사장님</span>
-            <Link href="/host" className="hover:text-brand">사장님 센터</Link>
-            <Link href="/host" className="hover:text-brand">공간 등록</Link>
-            <Link href="/host" className="hover:text-brand">결제 링크 만들기</Link>
+            <Link href="/host" className="hover:text-brand-dark">사장님 센터</Link>
+            <Link href="/host" className="hover:text-brand-dark">공간 등록</Link>
+            <Link href="/host" className="hover:text-brand-dark">결제 링크 만들기</Link>
           </div>
           <div className="flex flex-col gap-2">
             <span className="font-bold text-ink">약관·정책</span>
-            <Link href="/terms" className="hover:text-brand">이용약관</Link>
-            <Link href="/privacy" className="font-semibold hover:text-brand">개인정보처리방침</Link>
-            <Link href="/refund" className="hover:text-brand">취소·환불 규정</Link>
+            <Link href="/terms" className="hover:text-brand-dark">이용약관</Link>
+            <Link href="/privacy" className="font-semibold hover:text-brand-dark">개인정보처리방침</Link>
+            <Link href="/refund" className="hover:text-brand-dark">취소·환불 규정</Link>
           </div>
         </div>
       </div>
       <div className="border-t border-ink-line/70">
-        <div className="container-page py-4 text-[11px] leading-relaxed text-ink-mute">
+        <div className="container-page py-4 text-[12px] leading-relaxed text-ink-mute">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <Link href="/terms" className="font-semibold text-ink-soft hover:text-brand">이용약관</Link>
+            <Link href="/terms" className="font-semibold text-ink-soft hover:text-brand-dark">이용약관</Link>
             <span className="text-ink-line">|</span>
-            <Link href="/privacy" className="font-semibold text-ink-soft hover:text-brand">개인정보처리방침</Link>
+            <Link href="/privacy" className="font-semibold text-ink-soft hover:text-brand-dark">개인정보처리방침</Link>
             <span className="text-ink-line">|</span>
-            <Link href="/refund" className="font-semibold text-ink-soft hover:text-brand">취소·환불 규정</Link>
+            <Link href="/refund" className="font-semibold text-ink-soft hover:text-brand-dark">취소·환불 규정</Link>
           </div>
           <p className="mt-2">
             상호 이곳저곳 · 대표자 박기남 · 사업자등록번호: 사업자 등록 후 기재 · 통신판매업 신고: 신고 후 기재

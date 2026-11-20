@@ -30,7 +30,7 @@ export function LegalDoc({
     <div className="container-page py-8 sm:py-12">
       <div className="grid gap-8 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-12">
         <aside className="lg:sticky lg:top-24 lg:self-start">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-ink-mute">이곳저곳 정책</p>
+          <p className="text-[12px] font-bold uppercase tracking-wider text-ink-mute">이곳저곳 정책</p>
           <nav className="mt-3 flex flex-wrap gap-1.5 lg:flex-col">
             {LEGAL_NAV.map((item) => (
               <Link
@@ -38,7 +38,7 @@ export function LegalDoc({
                 href={item.href}
                 className={
                   item.label === title
-                    ? "rounded-lg bg-brand-light px-3 py-2 text-[13px] font-bold text-brand"
+                    ? "rounded-lg bg-brand-light px-3 py-2 text-[13px] font-bold text-brand-dark"
                     : "rounded-lg px-3 py-2 text-[13px] font-semibold text-ink-soft transition hover:bg-ink-line/50 hover:text-ink"
                 }
               >
@@ -48,13 +48,13 @@ export function LegalDoc({
           </nav>
 
           <div className="mt-5 hidden rounded-xl2 border border-ink-line bg-white/70 p-3.5 lg:block">
-            <p className="text-[11px] font-bold text-ink">목차</p>
+            <p className="text-[12px] font-bold text-ink">목차</p>
             <ol className="mt-2 space-y-1.5">
               {sections.map((section, index) => (
                 <li key={section.id}>
                   <a
                     href={`#${section.id}`}
-                    className="text-[11.5px] leading-snug text-ink-mute transition hover:text-brand"
+                    className="text-[12.5px] leading-snug text-ink-mute transition hover:text-brand-dark"
                   >
                     {index + 1}. {section.title}
                   </a>
@@ -66,9 +66,9 @@ export function LegalDoc({
 
         <article className="min-w-0">
           <header className="border-b border-ink-line pb-5">
-            <h1 className="text-2xl font-black tracking-tight text-ink sm:text-3xl">{title}</h1>
+            <h1 className="text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">{title}</h1>
             <p className="mt-2 text-sm leading-relaxed text-ink-soft">{lead}</p>
-            <p className="mt-3 text-[11px] font-medium text-ink-mute">시행일 {effectiveDate}</p>
+            <p className="mt-3 text-[12px] font-medium text-ink-mute">시행일 {effectiveDate}</p>
           </header>
 
           {notice && (
@@ -80,8 +80,8 @@ export function LegalDoc({
           <div className="mt-6 space-y-7">
             {sections.map((section, index) => (
               <section key={section.id} id={section.id} className="scroll-mt-24">
-                <h2 className="text-[15px] font-extrabold text-ink">
-                  <span className="mr-1.5 text-brand">제{index + 1}조</span>
+                <h2 className="text-[16px] font-bold text-ink">
+                  <span className="mr-1.5 text-brand-dark">제{index + 1}조</span>
                   {section.title}
                 </h2>
                 <div className="mt-2 space-y-2 text-[13px] leading-[1.75] text-ink-soft">{section.body}</div>
@@ -101,7 +101,7 @@ export function LegalDoc({
             <p className="mt-2">
               본 문서는 표준 서비스 운영을 기준으로 작성되었으며, 사업자등록·통신판매업 신고 완료 후 해당 정보가
               갱신됩니다. 결제·환불에 관한 자세한 기준은{" "}
-              <Link href="/refund" className="font-semibold text-brand hover:underline">
+              <Link href="/refund" className="font-semibold text-brand-dark hover:underline">
                 취소·환불 규정
               </Link>
               을 참고해 주세요.

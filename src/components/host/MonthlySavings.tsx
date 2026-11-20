@@ -40,7 +40,7 @@ export function MonthlySavings({ bookings }: { bookings: Booking[] }) {
     <section className="card p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand-light text-brand">
+          <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand-light text-brand-dark">
             <BoltIcon size={18} />
           </span>
           <div>
@@ -66,23 +66,23 @@ export function MonthlySavings({ bookings }: { bookings: Booking[] }) {
 
       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <div className="rounded-xl bg-brand-light p-3">
-          <p className="text-[10px] font-bold text-brand/80">확정 매출</p>
-          <p className="mt-0.5 text-xl font-black text-brand">{wonShort(report.totalRevenue)}</p>
-          <p className="text-[9.5px] text-brand/70">{report.bookingCount}건 · 취소·차단 제외</p>
+          <p className="text-[10px] font-bold text-brand-dark/80">확정 매출</p>
+          <p className="mt-0.5 text-xl font-extrabold text-brand-dark">{wonShort(report.totalRevenue)}</p>
+          <p className="text-[9.5px] text-brand-dark/70">{report.bookingCount}건 · 취소·차단 제외</p>
         </div>
         <div className="rounded-xl bg-emerald-50 p-3">
           <p className="text-[10px] font-bold text-emerald-700/80">아낀 수수료</p>
-          <p className="mt-0.5 text-xl font-black text-emerald-600">{wonShort(report.savedFee)}</p>
+          <p className="mt-0.5 text-xl font-extrabold text-emerald-600">{wonShort(report.savedFee)}</p>
           <p className="text-[9.5px] text-emerald-700/70">{Math.round(PLATFORM_COMMISSION_RATE * 100)}% 기준</p>
         </div>
         <div className="rounded-xl bg-ink-line/30 p-3">
           <p className="text-[10px] font-bold text-ink-mute">전용 링크 매출</p>
-          <p className="mt-0.5 text-xl font-black text-ink">{wonShort(report.linkRevenue)}</p>
+          <p className="mt-0.5 text-xl font-extrabold text-ink">{wonShort(report.linkRevenue)}</p>
           <p className="text-[9.5px] text-ink-mute">{report.linkCount}건 · 전체 {linkShare}%</p>
         </div>
         <div className="rounded-xl bg-ink-line/30 p-3">
           <p className="text-[10px] font-bold text-ink-mute">사이트 유입 매출</p>
-          <p className="mt-0.5 text-xl font-black text-ink">{wonShort(report.webRevenue)}</p>
+          <p className="mt-0.5 text-xl font-extrabold text-ink">{wonShort(report.webRevenue)}</p>
           <p className="text-[9.5px] text-ink-mute">{report.bookingCount - report.linkCount}건</p>
         </div>
       </div>
@@ -119,7 +119,7 @@ export function MonthlySavings({ bookings }: { bookings: Booking[] }) {
       )}
 
       <p className={cn("mt-3 flex items-start gap-1.5 rounded-lg bg-ink-line/25 px-2.5 py-2 text-[10px] leading-relaxed text-ink-mute")}>
-        <SparkleIcon size={12} className="mt-0.5 shrink-0 text-brand" />
+        <SparkleIcon size={12} className="mt-0.5 shrink-0 text-brand-dark" />
         <span>
           매월 1일에 지난달 리포트를 사장님 메일로도 보내 드려요. 수수료 비교는 타 공간대여 플랫폼의 일반적인 중개 수수료
           10% 를 가정한 값이고, 이곳저곳 수수료는 지금 0% 입니다.

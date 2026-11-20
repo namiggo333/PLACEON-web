@@ -81,7 +81,7 @@ export function PrivateInfoPanel({ booking, compact = false }: { booking: Bookin
 
   if (booking.status !== "confirmed") {
     return (
-      <div className={cn("rounded-xl border border-ink-line bg-ink-line/25 px-3 py-2.5 text-[10.5px] leading-relaxed text-ink-mute", compact && "text-[10px]")}>
+      <div className={cn("rounded-xl border border-ink-line bg-ink-line/25 px-3 py-2.5 text-[11.5px] leading-relaxed text-ink-mute", compact && "text-[11.5px]")}>
         🔒 상세주소·출입 안내는 <b className="text-ink-soft">입금 확인으로 예약이 확정된 뒤</b>에 공개돼요.
       </div>
     );
@@ -91,21 +91,21 @@ export function PrivateInfoPanel({ booking, compact = false }: { booking: Bookin
   const hasAccess = Boolean(access && (access.detailAddress || access.entryGuide || access.parkingGuide));
 
   return (
-    <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-2.5 text-[11px] leading-relaxed text-emerald-800">
+    <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-2.5 text-[12px] leading-relaxed text-emerald-800">
       <div className="flex items-center justify-between gap-2">
         <p className="flex items-center gap-1 font-extrabold">
           <CheckIcon size={12} /> 예약 확정 · 상세 안내
         </p>
-        <button type="button" onClick={() => setOpen((value) => !value)} className="text-[10px] font-bold underline">
+        <button type="button" onClick={() => setOpen((value) => !value)} className="text-[11.5px] font-bold underline">
           {open ? "접기" : "보기"}
         </button>
       </div>
 
-      {error && <p className="mt-1 text-[10.5px] text-red-500">{error}</p>}
-      {loading && <p className="mt-1 text-[10.5px] text-emerald-700">불러오는 중…</p>}
+      {error && <p className="mt-1 text-[11.5px] text-red-500">{error}</p>}
+      {loading && <p className="mt-1 text-[11.5px] text-emerald-700">불러오는 중…</p>}
 
       {open && !loading && !error && (
-        <div className="mt-2 space-y-1.5 text-[11px] text-emerald-900">
+        <div className="mt-2 space-y-1.5 text-[12px] text-emerald-900">
           {!hasAccess && <p>사장님이 아직 상세주소·출입 안내를 등록하지 않았어요. 사장님께 문의해 주세요.</p>}
           {access?.detailAddress && (
             <p>
@@ -125,7 +125,7 @@ export function PrivateInfoPanel({ booking, compact = false }: { booking: Bookin
         </div>
       )}
       {!open && (
-        <p className="mt-0.5 text-[10px] text-emerald-700/80">
+        <p className="mt-0.5 text-[11.5px] text-emerald-700/80">
           {state?.space?.area ? `${state.space.area} · ` : ""}정확한 위치와 출입 방법을 확인하세요. 본인과 예약자만 볼 수 있어요.
         </p>
       )}
@@ -143,7 +143,7 @@ export function BookingTimeline({ events, defaultOpen = false }: { events: Booki
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="flex w-full items-center justify-between gap-2 text-[10px] font-bold text-ink-soft"
+        className="flex w-full items-center justify-between gap-2 text-[11.5px] font-bold text-ink-soft"
       >
         <span className="inline-flex items-center gap-1">
           <ClockIcon size={11} /> 변경 이력 {events.length}건
@@ -153,7 +153,7 @@ export function BookingTimeline({ events, defaultOpen = false }: { events: Booki
       {open && (
         <ol className="mt-1.5 space-y-1 border-l border-ink-line pl-2.5">
           {events.map((event) => (
-            <li key={event.id} className="text-[10px] leading-relaxed text-ink-soft">
+            <li key={event.id} className="text-[11.5px] leading-relaxed text-ink-soft">
               <span className="font-bold text-ink">{EVENT_LABEL[event.eventType] ?? event.eventType}</span>
               <span className="text-ink-mute">
                 {" "}
@@ -182,11 +182,11 @@ export function GuestBookingSummary({ payload }: { payload: BookingAccessPayload
   if (!booking) return null;
   return (
     <div className="rounded-2xl bg-white p-4 text-xs shadow-card">
-      <p className="text-[11px] font-bold text-brand">{payload.space?.name ?? "예약"}</p>
+      <p className="text-[12px] font-bold text-brand-dark">{payload.space?.name ?? "예약"}</p>
       <p className="mt-1 text-sm font-extrabold text-ink">
         {formatDate(booking.date)} {formatTime(booking.startTime)} · {booking.hours}시간
       </p>
-      <p className="mt-0.5 text-[11px] text-ink-mute">
+      <p className="mt-0.5 text-[12px] text-ink-mute">
         {booking.status === "confirmed" ? "예약 확정" : booking.status === "cancelled" ? "취소됨" : "입금 대기"}
         {payload.space?.area ? ` · ${payload.space.area}` : ""}
       </p>

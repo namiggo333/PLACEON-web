@@ -75,7 +75,7 @@ function AuthContent() {
               </span>
               <span className="text-base font-extrabold">이곳저곳</span>
             </div>
-            <h1 className="mt-8 text-2xl font-black leading-snug">
+            <h1 className="mt-8 text-2xl font-extrabold leading-snug">
               공간이 필요한 순간,
               <br />
               1초 만에 예약하고
@@ -97,19 +97,19 @@ function AuthContent() {
           </div>
           <div className="mt-8 flex items-end gap-3">
             <MascotAvatar size={84} className="ring-white/50" />
-            <p className="mb-1 text-[11px] font-semibold leading-relaxed text-white/85">
+            <p className="mb-1 text-[12px] font-semibold leading-relaxed text-white/85">
               로그인 한 번이면,
               <br />
               예약부터 결제까지 이어져요.
             </p>
           </div>
-          <p className="mt-5 text-[10px] text-white/60">© 2026 이곳저곳 · 공간대여 예약·결제·광고 통합 플랫폼</p>
+          <p className="mt-5 text-[11.5px] text-white/60">© 2026 이곳저곳 · 공간대여 예약·결제·광고 통합 플랫폼</p>
         </div>
 
         <div className="p-6 sm:p-8">
           {user ? (
             <div className="flex h-full flex-col justify-center gap-4 text-center">
-              <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-brand-light text-xl font-black text-brand">
+              <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-brand-light text-xl font-extrabold text-brand-dark">
                 {user.name.slice(0, 1)}
               </span>
               <div>
@@ -154,7 +154,7 @@ function AuthContent() {
                 ))}
               </div>
 
-              <h2 className="mt-5 flex items-center gap-2 text-xl font-black tracking-tight text-ink">
+              <h2 className="mt-5 flex items-center gap-2 text-xl font-extrabold tracking-tight text-ink">
                 <MascotAvatar size={32} ring={false} className="lg:hidden" />
                 {tab === "login" ? "다시 오셨네요!" : "이곳저곳 시작하기"}
               </h2>
@@ -181,7 +181,7 @@ function AuthContent() {
                       <span className="block text-xs font-bold text-ink">
                         {item === "guest" ? "🙋 게스트" : "🧑‍💼 사장님"}
                       </span>
-                      <span className="mt-0.5 block text-[10px] text-ink-mute">
+                      <span className="mt-0.5 block text-[11.5px] text-ink-mute">
                         {item === "guest" ? "공간을 예약해요" : "공간을 등록·운영해요"}
                       </span>
                     </button>
@@ -254,7 +254,7 @@ function AuthContent() {
                 )}
 
                 {error && (
-                  <p className="rounded-lg bg-red-50 px-3 py-2 text-[11px] font-medium text-red-600">{error}</p>
+                  <p className="rounded-lg bg-red-50 px-3 py-2 text-[12px] font-medium text-red-600">{error}</p>
                 )}
 
                 <button type="submit" disabled={busy} className="btn-primary w-full py-3">
@@ -262,13 +262,13 @@ function AuthContent() {
                 </button>
 
                 {tab === "signup" && (
-                  <p className="text-center text-[10.5px] leading-relaxed text-ink-mute">
+                  <p className="text-center text-[11.5px] leading-relaxed text-ink-mute">
                     가입하면{" "}
-                    <Link href="/terms" target="_blank" className="font-semibold text-brand hover:underline">
+                    <Link href="/terms" target="_blank" className="font-semibold text-brand-dark hover:underline">
                       이용약관
                     </Link>
                     과{" "}
-                    <Link href="/privacy" target="_blank" className="font-semibold text-brand hover:underline">
+                    <Link href="/privacy" target="_blank" className="font-semibold text-brand-dark hover:underline">
                       개인정보처리방침
                     </Link>
                     에 동의하는 것으로 봅니다.
@@ -280,7 +280,7 @@ function AuthContent() {
                 <>
                   <div className="my-4 flex items-center gap-3">
                     <span className="h-px flex-1 bg-ink-line" />
-                    <span className="text-[10px] font-semibold text-ink-mute">미리보기 계정으로 바로 보기</span>
+                    <span className="text-[11.5px] font-semibold text-ink-mute">미리보기 계정으로 바로 보기</span>
                     <span className="h-px flex-1 bg-ink-line" />
                   </div>
 
@@ -288,7 +288,7 @@ function AuthContent() {
                 </>
               )}
 
-              <p className="mt-3 text-[10px] leading-relaxed text-ink-mute">
+              <p className="mt-3 text-[11.5px] leading-relaxed text-ink-mute">
                 {mode === "demo"
                   ? "미리보기 모드예요. 입력한 계정·공간·예약이 이 브라우저에만 저장돼요."
                   : "가입한 계정과 예약 정보는 이곳저곳 서버에 저장되고, 다른 기기에서도 그대로 이어져요."}

@@ -122,7 +122,7 @@ export function PasteImporter({
     <section className="card p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand-light text-brand">
+          <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand-light text-brand-dark">
             <CalendarIcon size={18} />
           </span>
           <div>
@@ -246,7 +246,7 @@ export function PasteImporter({
       {rows && (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
           <p className="text-[11px] text-ink-mute">
-            등록 가능 <b className="text-brand">{readyCount}</b>건 / 전체 {rows.length}건 ·{" "}
+            등록 가능 <b className="text-brand-dark">{readyCount}</b>건 / 전체 {rows.length}건 ·{" "}
             {space ? `${space.name} · 시간당 ${won(space.pricePerHour)}` : "공간을 선택해 주세요"}
           </p>
           <button

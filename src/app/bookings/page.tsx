@@ -109,18 +109,18 @@ export default function BookingsPage() {
   if (!user && guestLink) {
     return (
       <div className="container-page max-w-md py-8 sm:py-12">
-        <h1 className="text-xl font-black text-ink">예약 확인</h1>
+        <h1 className="text-xl font-extrabold text-ink">예약 확인</h1>
         <p className="mt-1 text-xs text-ink-mute">
           예약 완료 때 받은 링크로 확인하는 중이에요. 입금이 확인되면 상세주소·출입 안내가 열려요.
         </p>
 
         {guestError && (
-          <div className="mt-4 rounded-xl bg-red-50 px-3 py-2.5 text-[11px] font-medium text-red-600">{guestError}</div>
+          <div className="mt-4 rounded-xl bg-red-50 px-3 py-2.5 text-[12px] font-medium text-red-600">{guestError}</div>
         )}
         {guestData && (
           <div className="mt-4 space-y-3">
             <GuestBookingSummary payload={guestData} />
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-[11.5px] leading-relaxed text-emerald-900">
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-[12.5px] leading-relaxed text-emerald-900">
               {guestData.access ? (
                 <>
                   <p className="font-extrabold">예약이 확정됐어요 · 상세 안내</p>
@@ -163,7 +163,7 @@ export default function BookingsPage() {
       <div className="container-page py-12 sm:py-16">
         <div className="mx-auto max-w-md text-center">
           <MascotAvatar size={88} className="mx-auto" />
-          <h1 className="mt-4 text-xl font-black text-ink">로그인하면 예약 내역을 볼 수 있어요</h1>
+          <h1 className="mt-4 text-xl font-extrabold text-ink">로그인하면 예약 내역을 볼 수 있어요</h1>
           <p className="mt-1.5 text-sm text-ink-mute">
             예약 상태 확인과 취소를 한 곳에서 관리해 보세요.
           </p>
@@ -194,7 +194,7 @@ export default function BookingsPage() {
     <div className="container-page py-6 sm:py-10">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-ink sm:text-3xl">내 예약</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">내 예약</h1>
           <p className="mt-1 text-xs text-ink-mute">{user.name} 님의 예약 현황이에요.</p>
         </div>
         <Link href="/search" className="btn-ghost btn-sm">
@@ -209,8 +209,8 @@ export default function BookingsPage() {
           { label: "취소", value: counts.cancelled, tone: "text-slate-500 bg-slate-100" },
         ].map((item) => (
           <div key={item.label} className={cn("rounded-xl2 p-4", item.tone)}>
-            <p className="text-[11px] font-semibold opacity-80">{item.label}</p>
-            <p className="mt-0.5 text-2xl font-black">{item.value}</p>
+            <p className="text-[12px] font-semibold opacity-80">{item.label}</p>
+            <p className="mt-0.5 text-2xl font-extrabold">{item.value}</p>
           </div>
         ))}
       </div>
@@ -224,7 +224,7 @@ export default function BookingsPage() {
             className={cn(
               "shrink-0 border-b-2 px-3 pb-2.5 pt-1 text-sm font-bold transition",
               tab === item.key
-                ? "border-brand text-brand"
+                ? "border-brand text-brand-dark"
                 : "border-transparent text-ink-mute hover:text-ink"
             )}
           >
@@ -269,7 +269,7 @@ export default function BookingsPage() {
                             {statusMeta.label}
                           </span>
                           {booking.channel === "link" && (
-                            <span className="badge bg-brand-light text-brand">
+                            <span className="badge bg-brand-light text-brand-dark">
                               <LinkIcon size={11} />
                               결제 링크 예약
                             </span>
@@ -279,7 +279,7 @@ export default function BookingsPage() {
                               {REFUND_LABEL[booking.refundStatus]}
                             </span>
                           )}
-                          <span className="text-[10px] font-medium text-ink-mute">
+                          <span className="text-[11.5px] font-medium text-ink-mute">
                             No. {shortId(booking.id)}
                           </span>
                         </div>
@@ -287,11 +287,11 @@ export default function BookingsPage() {
                       </div>
                       <div className="shrink-0 text-right">
                         <p className="text-sm font-extrabold text-ink">{won(booking.totalAmount)}</p>
-                        <p className="text-[10px] text-ink-mute">{booking.hours}시간 기준</p>
+                        <p className="text-[11.5px] text-ink-mute">{booking.hours}시간 기준</p>
                       </div>
                     </div>
 
-                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-ink-soft">
+                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-ink-soft">
                       <span className="inline-flex items-center gap-1">
                         <CalendarIcon size={13} className="text-ink-mute" />
                         {formatDate(booking.date)}
@@ -308,7 +308,7 @@ export default function BookingsPage() {
                     </div>
 
                     {booking.memo && (
-                      <p className="mt-2 line-clamp-1 rounded-lg bg-ink-line/30 px-2.5 py-1.5 text-[11px] text-ink-soft">
+                      <p className="mt-2 line-clamp-1 rounded-lg bg-ink-line/30 px-2.5 py-1.5 text-[12px] text-ink-soft">
                         요청: {booking.memo}
                       </p>
                     )}
@@ -322,24 +322,24 @@ export default function BookingsPage() {
                     {booking.status === "pending" && <DepositGuide booking={booking} className="mt-2.5" compact />}
                     {booking.status === "confirmed" && (
                       <div className="mt-2.5 rounded-xl border border-emerald-200 bg-emerald-50 p-3">
-                        <p className="flex items-start gap-1 text-[11px] font-semibold leading-relaxed text-emerald-700">
+                        <p className="flex items-start gap-1 text-[12px] font-semibold leading-relaxed text-emerald-700">
                           <CheckIcon size={13} className="mt-0.5 shrink-0" />
                           입금이 확인되어 예약이 확정됐어요. 이용 당일 20분 전까지 도착해 주세요.
                         </p>
-                        <p className="mt-1 pl-4 text-[10.5px] leading-relaxed text-emerald-600/90">
+                        <p className="mt-1 pl-4 text-[11.5px] leading-relaxed text-emerald-600/90">
                           💌 모임 초대 카드로 친구들에게 바로 공유해 보세요.
                         </p>
                       </div>
                     )}
                     {booking.status === "cancelled" && booking.refundStatus !== "none" && (
-                      <p className="mt-2 rounded-lg bg-amber-50 px-2.5 py-1.5 text-[10.5px] font-semibold text-amber-700">
+                      <p className="mt-2 rounded-lg bg-amber-50 px-2.5 py-1.5 text-[11.5px] font-semibold text-amber-700">
                         환불 상태 · {REFUND_LABEL[booking.refundStatus]}
                         {booking.refundStatus === "pending" ? " (사장님 확인 후 환불돼요)" : ""}
                       </p>
                     )}
                     {booking.status === "cancelled" && booking.cancelReason === "expired" && (
                       <div className="mt-2.5 rounded-xl border border-ink-line bg-ink-line/30 p-3">
-                        <p className="text-[11px] font-semibold leading-relaxed text-ink-soft">
+                        <p className="text-[12px] font-semibold leading-relaxed text-ink-soft">
                           15분 안에 입금이 확인되지 않아 예약이 자동으로 풀렸어요. 같은 시간대를 다시 예약할 수
                           있어요.
                         </p>
@@ -380,8 +380,8 @@ export default function BookingsPage() {
 
                     {cancelling === booking.id && (
                       <div className="mt-3 rounded-xl border border-red-100 bg-red-50/70 p-3">
-                        <p className="text-[11px] font-semibold text-red-700">정말 이 예약을 취소할까요?</p>
-                        <p className="mt-0.5 text-[10px] text-red-500">
+                        <p className="text-[12px] font-semibold text-red-700">정말 이 예약을 취소할까요?</p>
+                        <p className="mt-0.5 text-[11.5px] text-red-500">
                           이용 3일 전까지 무료 취소, 이후에는 사장님과 협의가 필요해요.
                         </p>
                         <div className="mt-2 flex gap-2">
@@ -389,14 +389,14 @@ export default function BookingsPage() {
                             type="button"
                             onClick={() => cancel(booking.id)}
                             disabled={busyId === booking.id}
-                            className="rounded-lg bg-red-500 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-red-600 disabled:opacity-60"
+                            className="rounded-lg bg-red-500 px-3 py-1.5 text-[12px] font-bold text-white hover:bg-red-600 disabled:opacity-60"
                           >
                             {busyId === booking.id ? "취소 중…" : "취소하기"}
                           </button>
                           <button
                             type="button"
                             onClick={() => setCancelling(null)}
-                            className="rounded-lg bg-white px-3 py-1.5 text-[11px] font-bold text-ink-soft"
+                            className="rounded-lg bg-white px-3 py-1.5 text-[12px] font-bold text-ink-soft"
                           >
                             돌아가기
                           </button>
@@ -413,7 +413,7 @@ export default function BookingsPage() {
 
       <div className="mt-6 rounded-xl2 border border-ink-line bg-brand-light/50 p-4">
         <p className="text-xs font-bold text-ink">예약 진행 안내</p>
-        <ol className="mt-1 list-decimal space-y-0.5 pl-4 text-[11px] leading-relaxed text-ink-soft">
+        <ol className="mt-1 list-decimal space-y-0.5 pl-4 text-[12px] leading-relaxed text-ink-soft">
           <li>예약 신청 후 15분 안에 안내된 계좌로 이용 요금을 입금해 주세요.</li>
           <li>사장님이 입금을 확인하면 예약이 확정되고, 예약 내역에 [예약확정]으로 표시돼요.</li>
           <li>15분 안에 입금이 확인되지 않으면 예약은 자동으로 취소되어 다른 손님이 예약할 수 있어요.</li>

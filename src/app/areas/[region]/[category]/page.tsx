@@ -51,20 +51,20 @@ export default async function RegionCategoryPage({ params }: { params: Promise<P
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
-      <nav className="text-[11px] text-ink-mute">
-        <Link href="/areas" className="hover:text-brand">
+      <nav className="text-[12px] text-ink-mute">
+        <Link href="/areas" className="hover:text-brand-dark">
           지역별 찾기
         </Link>
         <span className="mx-1">›</span>
-        <Link href={`/areas/${regionSlugValue}`} className="hover:text-brand">
+        <Link href={`/areas/${regionSlugValue}`} className="hover:text-brand-dark">
           {region}
         </Link>
         <span className="mx-1">›</span>
         <span className="font-bold text-ink-soft">{label}</span>
       </nav>
 
-      <h1 className="mt-2 text-2xl font-black text-ink">
-        {region} {label} <span className="text-brand">{matched.length}</span>
+      <h1 className="mt-2 text-2xl font-extrabold text-ink">
+        {region} {label} <span className="text-brand-dark">{matched.length}</span>
       </h1>
       <p className="mt-2 text-sm text-ink-soft">
         {matched.length > 0
@@ -93,12 +93,12 @@ export default async function RegionCategoryPage({ params }: { params: Promise<P
       )}
 
       <h2 className="mt-10 text-sm font-extrabold text-ink">{region}의 다른 카테고리</h2>
-      <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
+      <div className="mt-2 flex flex-wrap gap-2 text-[12px]">
         {CATEGORIES.filter((item) => item.key !== category).map((item) => (
           <Link
             key={item.key}
             href={`/areas/${regionSlugValue}/${item.key}`}
-            className="rounded-full border border-ink-line bg-white px-3 py-1.5 font-semibold text-ink-soft hover:border-brand hover:text-brand"
+            className="rounded-full border border-ink-line bg-white px-3 py-1.5 font-semibold text-ink-soft hover:border-brand hover:text-brand-dark"
           >
             {item.emoji} {region} {item.label}
           </Link>

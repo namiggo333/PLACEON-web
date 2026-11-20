@@ -58,7 +58,7 @@ export function SpaceMedia({
         {category.emoji}
       </span>
       {showLabel && (
-        <span className="absolute bottom-3 left-3 rounded-md bg-white/85 px-2 py-0.5 text-[10px] font-bold text-ink">
+        <span className="absolute bottom-3 left-3 rounded-md bg-white/85 px-2 py-0.5 text-[11.5px] font-bold text-ink">
           {category.label}
         </span>
       )}
@@ -85,7 +85,7 @@ export function SpaceCard({ space, className }: { space: Space; className?: stri
             <span className="badge bg-ink/85 px-1.5 text-white backdrop-blur sm:px-2">AD</span>
           )}
           {space.timeDeal && discounted && (
-            <span className="badge bg-brand px-1.5 text-white shadow-sm sm:px-2 sm:text-[11px]">
+            <span className="badge bg-brand px-1.5 text-white shadow-sm sm:px-2 sm:text-[12px]">
               <span className="sm:hidden">특가</span>
               <span className="hidden sm:inline">타임특가 {space.discountRate}%</span>
             </span>
@@ -97,13 +97,13 @@ export function SpaceCard({ space, className }: { space: Space; className?: stri
         </span>
       </div>
       <div className="flex min-w-0 flex-1 flex-col justify-center p-3 sm:p-3.5">
-        <p className="text-[10px] font-medium text-ink-mute sm:text-[11px]">
+        <p className="text-[11.5px] font-medium text-ink-mute sm:text-[12px]">
           {space.region} {space.district}
         </p>
-        <h3 className="mt-0.5 truncate text-[14px] font-bold text-ink transition group-hover:text-brand sm:text-[15px]">
+        <h3 className="mt-0.5 truncate text-[14px] font-bold text-ink transition group-hover:text-brand-dark sm:text-[15px]">
           {space.name}
         </h3>
-        <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-ink-soft sm:mt-1 sm:text-[11px]">
+        <div className="mt-0.5 flex items-center gap-1.5 text-[11.5px] text-ink-soft sm:mt-1 sm:text-[12px]">
           <StarIcon size={11} className="text-amber-400" />
           {space.reviewCount > 0 ? (
             <>
@@ -117,14 +117,14 @@ export function SpaceCard({ space, className }: { space: Space; className?: stri
           <UsersIcon size={11} />
           <span>{space.capacity}명</span>
         </div>
-        <div className="mt-1.5 flex flex-wrap items-baseline gap-x-1.5 sm:mt-2.5">
+        <div className="mt-1.5 flex flex-wrap items-baseline gap-x-1.5 sm:mt-2">
           {discounted && (
-            <span className="text-[11px] font-extrabold text-brand sm:text-xs">{space.discountRate}%</span>
+            <span className="text-[12px] font-extrabold text-brand-dark sm:text-[13px]">{space.discountRate}%</span>
           )}
-          <span className="font-display text-[15px] text-ink sm:text-[16px]">{won(finalPrice)}</span>
-          <span className="text-[10px] text-ink-mute sm:text-[11px]">/시간</span>
+          <span className="price-sm text-ink">{won(finalPrice)}</span>
+          <span className="text-[12.5px] font-medium text-ink-mute sm:text-[12px]">/시간</span>
           {discounted && (
-            <span className="ml-auto hidden text-[11px] font-medium text-ink-mute line-through sm:inline">
+            <span className="ml-auto hidden text-[12px] font-medium text-ink-mute line-through sm:inline">
               {won(space.pricePerHour)}
             </span>
           )}

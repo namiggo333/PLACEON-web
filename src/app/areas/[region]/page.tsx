@@ -45,16 +45,16 @@ export default async function RegionLandingPage({ params }: { params: Promise<Pa
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
-      <nav className="text-[11px] text-ink-mute">
-        <Link href="/areas" className="hover:text-brand">
+      <nav className="text-[12px] text-ink-mute">
+        <Link href="/areas" className="hover:text-brand-dark">
           지역별 찾기
         </Link>
         <span className="mx-1">›</span>
         <span className="font-bold text-ink-soft">{region}</span>
       </nav>
 
-      <h1 className="mt-2 text-2xl font-black text-ink">
-        {region} 공간대여 <span className="text-brand">{inRegion.length}</span>
+      <h1 className="mt-2 text-2xl font-extrabold text-ink">
+        {region} 공간대여 <span className="text-brand-dark">{inRegion.length}</span>
       </h1>
       <p className="mt-2 text-sm text-ink-soft">
         {inRegion.length > 0
@@ -62,7 +62,7 @@ export default async function RegionLandingPage({ params }: { params: Promise<Pa
           : `${region}에는 아직 공개된 공간이 없어요. 곧 사장님들의 공간이 열리면 이 페이지에서 바로 만날 수 있어요.`}
       </p>
       {districts.length > 0 && (
-        <p className="mt-1 text-[11px] text-ink-mute">지역 · {districts.join(" · ")}</p>
+        <p className="mt-1 text-[12px] text-ink-mute">지역 · {districts.join(" · ")}</p>
       )}
 
       {activeCategories.length > 0 && (
@@ -71,7 +71,7 @@ export default async function RegionLandingPage({ params }: { params: Promise<Pa
             <Link
               key={category.key}
               href={`/areas/${regionSlug(region)}/${category.key}`}
-              className="rounded-full border border-ink-line bg-white px-3.5 py-2 text-xs font-bold text-ink-soft hover:border-brand hover:text-brand"
+              className="rounded-full border border-ink-line bg-white px-3.5 py-2 text-xs font-bold text-ink-soft hover:border-brand hover:text-brand-dark"
             >
               {category.emoji} {region} {category.label} {counts.get(category.key)}
             </Link>
@@ -100,12 +100,12 @@ export default async function RegionLandingPage({ params }: { params: Promise<Pa
         </div>
       )}
 
-      <div className="mt-8 flex flex-wrap gap-2 text-[11px]">
+      <div className="mt-8 flex flex-wrap gap-2 text-[12px]">
         {CATEGORIES.map((category) => (
           <Link
             key={category.key}
             href={`/areas/${regionSlug(region)}/${category.key}`}
-            className="rounded-full bg-ink-line/40 px-3 py-1.5 font-semibold text-ink-soft hover:bg-brand-light hover:text-brand"
+            className="rounded-full bg-ink-line/40 px-3 py-1.5 font-semibold text-ink-soft hover:bg-brand-light hover:text-brand-dark"
           >
             {region} {CATEGORY_MAP[category.key].label}
           </Link>

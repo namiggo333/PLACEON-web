@@ -33,13 +33,13 @@ export function MascotBanner({
             decoding="async"
             className="absolute inset-0 h-full w-full object-cover object-[50%_14%]"
           />
-          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/85 px-2.5 py-1 text-[10px] font-extrabold text-brand shadow-sm backdrop-blur">
+          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/85 px-2.5 py-1 text-[11.5px] font-extrabold text-brand-dark shadow-sm backdrop-blur">
             <SparkleIcon size={11} />
             이곳저곳 PICK
           </span>
         </div>
         <div className="flex items-center gap-2 bg-white px-3 py-2.5">
-          <p className="min-w-0 flex-1 text-[11.5px] font-extrabold leading-snug text-ink">
+          <p className="min-w-0 flex-1 text-[12.5px] font-extrabold leading-snug text-ink">
             지금, 이곳저곳에서 특별한 공간을 만나보세요!
           </p>
           <Link
@@ -68,7 +68,7 @@ export function MascotBanner({
         decoding="async"
         className="absolute inset-0 h-full w-full object-cover object-[50%_16%]"
       />
-      <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/85 px-2.5 py-1 text-[10px] font-extrabold text-brand shadow-sm backdrop-blur">
+      <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/85 px-2.5 py-1 text-[11.5px] font-extrabold text-brand-dark shadow-sm backdrop-blur">
         <SparkleIcon size={11} />
         이곳저곳 PICK
       </span>
@@ -80,7 +80,7 @@ export function MascotBanner({
               <br />
               특별한 공간을 만나보세요!
             </p>
-            <p className="mt-0.5 truncate text-[10px] font-semibold text-ink-mute sm:text-[10.5px]">
+            <p className="mt-0.5 truncate text-[11.5px] font-semibold text-ink-mute sm:text-[11.5px]">
               찾고, 예약하고, 결제까지 한 번에
             </p>
           </div>
@@ -118,7 +118,7 @@ export function SearchPanel() {
       className="flex flex-col gap-2 rounded-2xl bg-white p-2.5 shadow-float md:flex-row md:items-center md:gap-1 md:rounded-full md:p-2"
     >
       <label className="flex flex-1 items-center gap-2 rounded-xl px-3 py-2 md:rounded-full">
-        <SearchIcon size={18} className="shrink-0 text-brand" />
+        <SearchIcon size={18} className="shrink-0 text-brand-dark" />
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
@@ -193,12 +193,12 @@ export function TimeDealSection({ spaces }: { spaces: Space[] }) {
           </span>
           <div>
             <h2 className="text-base font-extrabold sm:text-lg">오늘의 공실 타임특가</h2>
-            <p className="text-[11px] text-white/60">비어 있는 시간대를 최대 25% 할인가로</p>
+            <p className="text-[12px] text-white/60">비어 있는 시간대를 최대 25% 할인가로</p>
           </div>
         </div>
         <span className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-white/90 backdrop-blur">
           <ClockIcon size={14} />
-          <span className="text-[11px] font-medium">오늘 마감까지</span>
+          <span className="text-[12px] font-medium">오늘 마감까지</span>
           <span className="text-sm font-extrabold tabular-nums tracking-wider">{countdown}</span>
         </span>
       </div>
@@ -219,15 +219,15 @@ export function TimeDealSection({ spaces }: { spaces: Space[] }) {
                 </span>
               </div>
               <div className="p-3">
-                <p className="text-[10px] font-medium text-ink-mute">
+                <p className="text-[11.5px] font-medium text-ink-mute">
                   {space.region} {space.district}
                 </p>
-                <p className="mt-0.5 truncate text-sm font-bold text-ink group-hover:text-brand">
+                <p className="mt-0.5 truncate text-sm font-bold text-ink group-hover:text-brand-dark">
                   {space.name}
                 </p>
                 <div className="mt-1 flex items-baseline gap-1.5">
-                  <span className="text-sm font-extrabold text-brand">{won(finalPrice)}</span>
-                  <span className="text-[10px] text-ink-mute line-through">{won(space.pricePerHour)}</span>
+                  <span className="text-sm font-extrabold text-brand-dark">{won(finalPrice)}</span>
+                  <span className="text-[11.5px] text-ink-mute line-through">{won(space.pricePerHour)}</span>
                 </div>
               </div>
             </Link>

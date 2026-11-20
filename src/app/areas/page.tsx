@@ -27,8 +27,8 @@ export default async function AreasIndexPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
-      <p className="text-[11px] font-bold text-brand">지역별 공간 찾기</p>
-      <h1 className="mt-1 text-2xl font-black text-ink">어느 동네에서 모일까요?</h1>
+      <p className="text-[12px] font-bold text-brand-dark">지역별 공간 찾기</p>
+      <h1 className="mt-1 text-2xl font-extrabold text-ink">어느 동네에서 모일까요?</h1>
       <p className="mt-2 text-sm text-ink-soft">
         지역을 고르면 그 동네에서 지금 예약할 수 있는 공간과 카테고리별 모음이 나옵니다.
       </p>
@@ -41,7 +41,7 @@ export default async function AreasIndexPage() {
             className="card flex items-center justify-between p-4 transition hover:border-brand/40"
           >
             <span className="text-sm font-extrabold text-ink">{item.region}</span>
-            <span className="text-[11px] font-bold text-brand">
+            <span className="text-[12px] font-bold text-brand-dark">
               {item.count > 0 ? `${item.count}곳` : "준비 중"}
             </span>
           </Link>
@@ -54,7 +54,7 @@ export default async function AreasIndexPage() {
           <Link
             key={category.key}
             href={`/search?category=${category.key}`}
-            className="rounded-full border border-ink-line bg-white px-3.5 py-2 text-xs font-bold text-ink-soft hover:border-brand hover:text-brand"
+            className="rounded-full border border-ink-line bg-white px-3.5 py-2 text-xs font-bold text-ink-soft hover:border-brand hover:text-brand-dark"
           >
             {category.emoji} {category.label}
           </Link>

@@ -46,7 +46,7 @@ function SearchContent() {
   return (
     <div className="container-page py-6 sm:py-10">
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-black tracking-tight text-ink sm:text-3xl">공간 찾기</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">공간 찾기</h1>
         <p className="muted">지역·키워드·카테고리로 원하는 공간을 골라보세요.</p>
       </div>
 
@@ -54,7 +54,7 @@ function SearchContent() {
         onSubmit={(event) => event.preventDefault()}
         className="mt-4 flex items-center gap-2 rounded-2xl border border-ink-line bg-white p-2 shadow-card focus-within:border-brand/50"
       >
-        <SearchIcon size={18} className="ml-1.5 shrink-0 text-brand" />
+        <SearchIcon size={18} className="ml-1.5 shrink-0 text-brand-dark" />
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
@@ -66,7 +66,7 @@ function SearchContent() {
           <button
             type="button"
             onClick={() => setQuery("")}
-            className="shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-ink-mute hover:text-brand"
+            className="shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-ink-mute hover:text-brand-dark"
           >
             지우기
           </button>
@@ -128,7 +128,7 @@ function SearchContent() {
             </option>
           ))}
         </select>
-        <button type="button" onClick={reset} className="rounded-lg px-2 py-2 text-xs font-semibold text-ink-mute hover:text-brand">
+        <button type="button" onClick={reset} className="rounded-lg px-2 py-2 text-xs font-semibold text-ink-mute hover:text-brand-dark">
           초기화
         </button>
       </div>
@@ -136,9 +136,9 @@ function SearchContent() {
       <div className="mt-6 flex items-center justify-between">
         <p className="text-sm font-semibold text-ink">
           {query ? `‘${query}’ ` : ""}검색 결과{" "}
-          {ready ? <span className="text-brand">{results.length}</span> : <span className="skeleton ml-1 inline-block h-4 w-6 align-middle" />}개
+          {ready ? <span className="text-brand-dark">{results.length}</span> : <span className="skeleton ml-1 inline-block h-4 w-6 align-middle" />}개
         </p>
-        <p className="text-[11px] text-ink-mute">시간당 요금 · 실시간 예약</p>
+        <p className="text-[12px] text-ink-mute">시간당 요금 · 실시간 예약</p>
       </div>
 
       <div className="mt-3">

@@ -25,3 +25,6 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 .vercel
+
+# 로컬 작업 임시 폴더
+.tmp/

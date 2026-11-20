@@ -489,7 +489,7 @@ export default function HostPage() {
       <div className="container-page py-12 sm:py-16">
         <div className="mx-auto max-w-md text-center">
           <MascotAvatar size={92} className="mx-auto" />
-          <h1 className="mt-4 text-xl font-black text-ink">사장님 센터</h1>
+          <h1 className="mt-4 text-xl font-extrabold text-ink">사장님 센터</h1>
           <p className="mt-1.5 text-sm leading-relaxed text-ink-mute">
             공간을 등록하고 예약·광고·결제 링크를 관리하려면 사장님 계정으로 로그인해 주세요.
           </p>
@@ -526,8 +526,8 @@ export default function HostPage() {
     <div className="container-page py-6 sm:py-10">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-[11px] font-bold text-brand">HOST CENTER</p>
-          <h1 className="mt-0.5 text-2xl font-black tracking-tight text-ink sm:text-3xl">
+          <p className="text-[11px] font-bold text-brand-dark">HOST CENTER</p>
+          <h1 className="mt-0.5 text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">
             {user.name} 님의 사장님 센터
           </h1>
           <p className="mt-1 text-xs text-ink-mute">
@@ -575,23 +575,23 @@ export default function HostPage() {
         <div className="mt-5 space-y-5">
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <div className="rounded-xl2 border border-brand/20 bg-brand-light p-4">
-              <p className="text-[11px] font-semibold text-brand/80">이번 달 예상 매출</p>
-              <p className="mt-1 text-2xl font-black text-brand">{wonShort(stats.revenue)}</p>
-              <p className="mt-0.5 text-[10px] text-brand/70">확정 예약 {stats.confirmedCount}건 기준</p>
+              <p className="text-[11px] font-semibold text-brand-dark/80">이번 달 예상 매출</p>
+              <p className="mt-1 text-2xl font-extrabold text-brand-dark">{wonShort(stats.revenue)}</p>
+              <p className="mt-0.5 text-[10px] text-brand-dark/70">확정 예약 {stats.confirmedCount}건 기준</p>
             </div>
             <div className="card p-4">
               <p className="text-[11px] font-semibold text-ink-mute">접수된 예약</p>
-              <p className="mt-1 text-2xl font-black text-ink">{stats.pending}건</p>
+              <p className="mt-1 text-2xl font-extrabold text-ink">{stats.pending}건</p>
               <p className="mt-0.5 text-[10px] text-ink-mute">승인 대기 중</p>
             </div>
             <div className="card p-4">
               <p className="text-[11px] font-semibold text-ink-mute">노출 중인 공간</p>
-              <p className="mt-1 text-2xl font-black text-ink">{mySpaces.length}개</p>
+              <p className="mt-1 text-2xl font-extrabold text-ink">{mySpaces.length}개</p>
               <p className="mt-0.5 text-[10px] text-ink-mute">상단 광고 {stats.exposed} · 타임특가 {stats.deals}</p>
             </div>
             <div className="card p-4">
               <p className="text-[11px] font-semibold text-ink-mute">결제 링크로 들어온 예약</p>
-              <p className="mt-1 text-2xl font-black text-ink">
+              <p className="mt-1 text-2xl font-extrabold text-ink">
                 {myBookings.filter((booking) => booking.channel === "link").length}건
               </p>
               <p className="mt-0.5 text-[10px] text-ink-mute">자체 유입 손님</p>
@@ -607,7 +607,7 @@ export default function HostPage() {
                 <button
                   type="button"
                   onClick={() => setTab("bookings")}
-                  className="text-[11px] font-semibold text-ink-mute hover:text-brand"
+                  className="text-[11px] font-semibold text-ink-mute hover:text-brand-dark"
                 >
                   전체 보기
                 </button>
@@ -640,17 +640,17 @@ export default function HostPage() {
               <h2 className="text-sm font-extrabold text-ink">오늘의 운영 팁</h2>
               <ul className="mt-2 space-y-2 text-[11px] leading-relaxed text-ink-soft">
                 <li className="flex gap-2">
-                  <span className="text-brand">•</span>
+                  <span className="text-brand-dark">•</span>
                   {stats.pending > 0
                     ? `승인 대기 예약이 ${stats.pending}건 있어요. 빠르게 답할수록 확정률이 올라갑니다.`
                     : "대기 중인 예약이 없어요. 상단 노출을 켜 두면 오늘 저녁 검색 손님을 만날 수 있어요."}
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-brand">•</span>
+                  <span className="text-brand-dark">•</span>
                   타임특가를 켜 두면 비어 있는 시간대를 채우기 쉬워요.
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-brand">•</span>
+                  <span className="text-brand-dark">•</span>
                   인스타·블로그 손님에게 예약 링크를 보내면 자체 유입 예약을 바로 받을 수 있어요.
                 </li>
               </ul>
@@ -671,7 +671,7 @@ export default function HostPage() {
                 <p className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold">
                   <SparkleIcon size={12} /> 무료 운영 단계
                 </p>
-                <h2 className="mt-2 text-lg font-black">지금은 수수료 0%로 운영 중이에요</h2>
+                <h2 className="mt-2 text-lg font-extrabold">지금은 수수료 0%로 운영 중이에요</h2>
                 <p className="mt-1 text-[11px] text-white/70">
                   플랫폼 예약·전용 결제 링크 모두 수수료 없이 정산됩니다. 정식 오픈 시점과 요율은 사전에 안내드려요.
                 </p>
@@ -679,7 +679,7 @@ export default function HostPage() {
               <div className="flex items-center gap-3">
                 <MascotAvatar size={64} className="hidden ring-white/30 sm:inline-grid" />
                 <span className="rounded-xl bg-white/10 px-4 py-3 text-center">
-                  <span className="block text-2xl font-black">0%</span>
+                  <span className="block text-2xl font-extrabold">0%</span>
                   <span className="block text-[10px] text-white/70">현재 수수료</span>
                 </span>
               </div>
@@ -691,7 +691,7 @@ export default function HostPage() {
       {tab === "spaces" && (
         <div className="mt-5">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-extrabold text-ink">내 공간 <span className="text-brand">{mySpaces.length}</span></h2>
+            <h2 className="text-base font-extrabold text-ink">내 공간 <span className="text-brand-dark">{mySpaces.length}</span></h2>
             <button type="button" onClick={openCreate} className="btn-primary btn-sm">
               <PlusIcon size={14} />
               공간 등록
@@ -735,7 +735,7 @@ export default function HostPage() {
                     <h3 className="mt-0.5 truncate text-sm font-bold text-ink">{space.name}</h3>
                     <p className="mt-1 text-xs text-ink-soft">
                       시간당 <b className="text-ink">{won(space.pricePerHour)}</b>
-                      {space.discountRate > 0 && <span className="ml-1 text-brand">−{space.discountRate}%</span>}
+                      {space.discountRate > 0 && <span className="ml-1 text-brand-dark">−{space.discountRate}%</span>}
                       <span className="ml-1 text-ink-mute">· {space.capacity}명</span>
                     </p>
 
@@ -765,12 +765,12 @@ export default function HostPage() {
                     </div>
 
                     <div className="mt-2.5 flex items-center gap-1.5 rounded-lg bg-ink-line/30 px-2.5 py-2">
-                      <LinkIcon size={12} className="shrink-0 text-brand" />
+                      <LinkIcon size={12} className="shrink-0 text-brand-dark" />
                       <span className="min-w-0 flex-1 truncate text-[10px] text-ink-soft">/pay/{space.paySlug}</span>
                       <button
                         type="button"
                         onClick={() => void copy(`${origin}/pay/${space.paySlug}`, "결제 링크를 복사했어요!")}
-                        className="shrink-0 rounded-md bg-white px-2 py-1 text-[10px] font-bold text-brand"
+                        className="shrink-0 rounded-md bg-white px-2 py-1 text-[10px] font-bold text-brand-dark"
                       >
                         복사
                       </button>
@@ -859,7 +859,7 @@ export default function HostPage() {
         <div className="mt-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-base font-extrabold text-ink">
-              예약 관리 <span className="text-brand">{myBookings.length}</span>
+              예약 관리 <span className="text-brand-dark">{myBookings.length}</span>
             </h2>
             <p className="text-[11px] text-ink-mute">승인 대기 {stats.pending}건 · 확정 {stats.confirmedCount}건</p>
           </div>
@@ -867,7 +867,7 @@ export default function HostPage() {
           <div className="mt-3 space-y-3">
             {myBookings.length === 0 ? (
               <div className="card flex flex-col items-center gap-2 px-6 py-14 text-center">
-                <CalendarIcon size={30} className="text-brand/60" />
+                <CalendarIcon size={30} className="text-brand-dark/60" />
                 <p className="text-sm font-bold text-ink">아직 접수된 예약이 없어요</p>
                 <p className="text-xs text-ink-mute">결제 링크를 손님에게 보내면 예약이 바로 들어와요.</p>
               </div>
@@ -881,7 +881,7 @@ export default function HostPage() {
                       <div className="flex flex-wrap items-center gap-1.5">
                         <span className={cn("badge", meta.style)}>{meta.label}</span>
                         {booking.channel === "link" && (
-                          <span className="badge bg-brand-light text-brand">
+                          <span className="badge bg-brand-light text-brand-dark">
                             <LinkIcon size={11} />
                             결제 링크
                           </span>
@@ -907,7 +907,7 @@ export default function HostPage() {
                       </div>
                       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-ink-line/30 px-2.5 py-2 text-[11px]">
                         <span className="font-semibold text-ink">{booking.guestName}</span>
-                        <a href={`tel:${booking.guestPhone}`} className="text-ink-soft hover:text-brand">
+                        <a href={`tel:${booking.guestPhone}`} className="text-ink-soft hover:text-brand-dark">
                           {booking.guestPhone}
                         </a>
                         {booking.memo && <span className="text-ink-mute">요청: {booking.memo}</span>}
@@ -996,7 +996,7 @@ export default function HostPage() {
         <div className="mt-5 space-y-4">
           <section className="card p-4 sm:p-5">
             <div className="flex items-center gap-2">
-              <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand-light text-brand">
+              <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand-light text-brand-dark">
                 <ClockIcon size={18} />
               </span>
               <div>
@@ -1116,7 +1116,7 @@ export default function HostPage() {
 
           <section className="card p-4 sm:p-5">
             <h2 className="text-sm font-extrabold text-ink">
-              차단 중인 시간 <span className="text-brand">{myBlocks.length}</span>
+              차단 중인 시간 <span className="text-brand-dark">{myBlocks.length}</span>
             </h2>
             <div className="mt-2 divide-y divide-ink-line">
               {myBlocks.length === 0 ? (
@@ -1142,7 +1142,7 @@ export default function HostPage() {
                           setToast(err instanceof Error ? err.message : "차단을 해제하지 못했어요.");
                         }
                       }}
-                      className="rounded-lg border border-ink-line px-3 py-1.5 text-[11px] font-bold text-ink-soft hover:border-brand hover:text-brand"
+                      className="rounded-lg border border-ink-line px-3 py-1.5 text-[11px] font-bold text-ink-soft hover:border-brand hover:text-brand-dark"
                     >
                       차단 해제
                     </button>
@@ -1161,7 +1161,7 @@ export default function HostPage() {
         <div className="mt-5 grid gap-4 lg:grid-cols-[1.2fr_1fr]">
           <section className="card p-5">
             <div className="flex items-center gap-2">
-              <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand-light text-brand">
+              <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand-light text-brand-dark">
                 <BoltIcon size={18} />
               </span>
               <div>
@@ -1239,7 +1239,7 @@ export default function HostPage() {
                   <p className="mt-0.5">
                     시간당 {won(selectedLinkSpace.pricePerHour)}
                     {selectedLinkSpace.discountRate > 0 && (
-                      <span className="text-brand"> → {won(
+                      <span className="text-brand-dark"> → {won(
                         Math.round((selectedLinkSpace.pricePerHour * (100 - selectedLinkSpace.discountRate)) / 100)
                       )} ({selectedLinkSpace.discountRate}% 할인)</span>
                     )}
@@ -1257,7 +1257,7 @@ export default function HostPage() {
               <SparkleIcon size={12} />
               자체 유입 손님 수수료 0%
             </span>
-            <h2 className="mt-3 text-lg font-black leading-snug">
+            <h2 className="mt-3 text-lg font-extrabold leading-snug">
               내가 데려온 손님은
               <br />
               전용 링크로 받으세요
@@ -1282,7 +1282,7 @@ export default function HostPage() {
               type="button"
               onClick={() => void copy(dmText, "DM 문구를 복사했어요!")}
               disabled={!dmText}
-              className="btn mt-4 w-full bg-white text-brand hover:bg-brand-light"
+              className="btn mt-4 w-full bg-white text-brand-dark hover:bg-brand-light"
             >
               <CopyIcon size={15} />
               인스타 DM 문구 복사
@@ -1363,7 +1363,7 @@ export default function HostPage() {
                       type="button"
                       onClick={() => photoInputRef.current?.click()}
                       disabled={uploading}
-                      className="flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-brand/40 bg-brand-light/40 text-[10px] font-bold text-brand transition hover:border-brand disabled:opacity-60"
+                      className="flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-brand/40 bg-brand-light/40 text-[10px] font-bold text-brand-dark transition hover:border-brand disabled:opacity-60"
                     >
                       {uploading ? (
                         <>
@@ -1541,7 +1541,7 @@ export default function HostPage() {
               <div className="rounded-xl border border-brand/20 bg-brand-light/60 p-3">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-[11px] font-extrabold text-ink">입금 받을 계좌</p>
-                  <span className="rounded-full bg-white px-2 py-0.5 text-[9px] font-bold text-brand">15분 입금 확인</span>
+                  <span className="rounded-full bg-white px-2 py-0.5 text-[9px] font-bold text-brand-dark">15분 입금 확인</span>
                 </div>
                 <p className="mt-0.5 text-[10px] leading-relaxed text-ink-mute">
                   손님이 예약하면 이 계좌로 이용 요금을 입금합니다. 15분 안에 입금되지 않으면 예약은 자동으로 풀려요.
@@ -1675,7 +1675,7 @@ export default function HostPage() {
                 setToast("미리보기 데이터를 초기화했어요.");
               }
             }}
-            className="text-[10px] font-semibold text-ink-mute underline-offset-2 hover:text-brand hover:underline"
+            className="text-[10px] font-semibold text-ink-mute underline-offset-2 hover:text-brand-dark hover:underline"
           >
             미리보기 데이터 초기화
           </button>
