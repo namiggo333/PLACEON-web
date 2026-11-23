@@ -28,10 +28,22 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+/**
+ * 이곳저곳 Item 진입 메뉴(상단·모바일·푸터)는 사장님에게만 노출한다.
+ * - 사장님 역할(host) 또는 총괄 관리자(admin)로 로그인한 경우에만 보이고,
+ *   비로그인·일반 게스트에게는 상단·푸터 어디에도 보이지 않는다.
+ * - 사장님 센터(/host)의 Item 배너와 /item 주소 직접 접속은 그대로 열어 둔다.
+ */
+function useShowItemMenu() {
+  const { user, ready } = useApp();
+  return ready && !!user && (user.role === "host" || isAdminEmail(user.email));
+}
+
 function SiteHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, signOut, ready } = useApp();
+  const showItem = useShowItemMenu();
 
   return (
     <header className="sticky top-0 z-40 border-b border-ink-line/70 bg-white/92 backdrop-blur-md">
@@ -63,20 +75,22 @@ function SiteHeader() {
                 </Link>
               );
             })}
-            <Link
-              href="/item"
-              className={cn(
-                "ml-0.5 inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-[13.5px] font-semibold transition",
-                isActive(pathname, "/item")
-                  ? "bg-brand-light text-brand-dark"
-                  : "text-ink-soft hover:bg-ink-line/60 hover:text-ink"
-              )}
-            >
-              이곳저곳 Item
-              <span className="rounded-full bg-brand-light px-1.5 py-0.5 text-[12px] font-extrabold leading-none text-brand-dark">
-                오픈예정
-              </span>
-            </Link>
+            {showItem && (
+              <Link
+                href="/item"
+                className={cn(
+                  "ml-0.5 inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-[13.5px] font-semibold transition",
+                  isActive(pathname, "/item")
+                    ? "bg-brand-light text-brand-dark"
+                    : "text-ink-soft hover:bg-ink-line/60 hover:text-ink"
+                )}
+              >
+                이곳저곳 Item
+                <span className="rounded-full bg-brand-light px-1.5 py-0.5 text-[12px] font-extrabold leading-none text-brand-dark">
+                  오픈예정
+                </span>
+              </Link>
+            )}
           </nav>
         </div>
 
@@ -95,17 +109,19 @@ function SiteHeader() {
               <span>관리자</span>
             </Link>
           )}
-          <Link
-            href="/item"
-            className={cn(
-              "inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[12px] font-extrabold transition md:hidden",
-              pathname.startsWith("/item") ? "bg-brand-dark text-white" : "bg-brand-light text-brand-dark hover:bg-brand-soft"
-            )}
-            aria-label="이곳저곳 Item 오픈 예정"
-          >
-            Item
-            <span className="h-1.5 w-1.5 rounded-full bg-brand" aria-hidden />
-          </Link>
+          {showItem && (
+            <Link
+              href="/item"
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[12px] font-extrabold transition md:hidden",
+                pathname.startsWith("/item") ? "bg-brand-dark text-white" : "bg-brand-light text-brand-dark hover:bg-brand-soft"
+              )}
+              aria-label="이곳저곳 Item 오픈 예정"
+            >
+              Item
+              <span className="h-1.5 w-1.5 rounded-full bg-brand" aria-hidden />
+            </Link>
+          )}
           {ready && user ? (
             <>
               <div className="hidden items-center gap-2 sm:flex">
@@ -168,6 +184,7 @@ function BottomNav() {
 }
 
 function SiteFooter() {
+  const showItem = useShowItemMenu();
   return (
     <footer className="mt-16 border-t border-ink-line bg-brand-light/60">
       <div className="container-page flex flex-col gap-6 py-10 md:flex-row md:items-start md:justify-between">
@@ -194,10 +211,12 @@ function SiteFooter() {
           <div className="flex flex-col gap-2">
             <span className="font-bold text-ink">사장님</span>
             <Link href="/host" className="hover:text-brand-dark">사장님 센터</Link>
-            <Link href="/item" className="inline-flex items-center gap-1 hover:text-brand-dark">
-              이곳저곳 Item
-              <span className="rounded bg-brand-light px-1 py-0.5 text-[12px] font-bold text-brand-dark">오픈예정</span>
-            </Link>
+            {showItem && (
+              <Link href="/item" className="inline-flex items-center gap-1 hover:text-brand-dark">
+                이곳저곳 Item
+                <span className="rounded bg-brand-light px-1 py-0.5 text-[12px] font-bold text-brand-dark">오픈예정</span>
+              </Link>
+            )}
             <Link href="/host" className="hover:text-brand-dark">공간 등록</Link>
             <Link href="/host" className="hover:text-brand-dark">결제 링크 만들기</Link>
           </div>
