@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CheckIcon, ChevronRightIcon, SparkleIcon } from "@/components/Icons";
-import { ITEM_CATEGORIES } from "@/lib/constants";
+import { ITEM_CATEGORIES, ITEM_PRODUCT_STATUS_MAP, itemCategoryLabel } from "@/lib/constants";
+import { won, cn } from "@/lib/format";
+import { fetchPublicItemProducts } from "@/lib/item-products-server";
 import { ItemWaitlistForm } from "./ItemWaitlistForm";
+
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "이곳저곳 Item · 공간 사장님을 위한 리퍼·비품 특가 몰 (오픈 예정)",
@@ -40,14 +44,26 @@ const STEPS = [
   { step: "03", title: "오픈 알림 · 사장님 특가", body: "오픈하는 날, 신청한 분께 가장 먼저 구매 링크를 보내 드려요." },
 ];
 
-const FAQS = [
+const FAQS: { q: string; a: string; whenProducts?: boolean }[] = [
+  {
+    q: "지금 상품을 살 수 있나요?",
+    a: "네, 목록에 있는 상품은 이곳저곳에서 확인한 재고예요. 결제 기능은 준비 중이라, 원하시는 품목은 아래 사전 수요조사로 남겨 주시면 저희가 확인해 연락드려요.",
+    whenProducts: true,
+  },
   {
     q: "지금 상품을 살 수 있나요?",
     a: "아니요. 이곳저곳 Item은 아직 오픈 전이라 어떤 상품도 판매하지 않아요. 이 페이지는 필요한 품목을 미리 듣는 사전 수요조사이고, 결제는 발생하지 않습니다.",
+    whenProducts: false,
+  },
+  {
+    q: "가격과 재고는 언제 알 수 있나요?",
+    a: "상품마다 표시된 가격·재고가 지금 확인 가능한 값이에요. 입고대기·품절 상품은 채워지는 대로 목록에서 상태가 바뀝니다.",
+    whenProducts: true,
   },
   {
     q: "가격과 재고는 언제 알 수 있나요?",
     a: "아직 정해지지 않아 지금은 표시하지 않아요. 실제 검수 상품과 가격이 확정되면 오픈 페이지에서 한 번에 공개합니다.",
+    whenProducts: false,
   },
   {
     q: "공간을 아직 준비 중이어도 신청할 수 있나요?",
@@ -59,7 +75,10 @@ const FAQS = [
   },
 ];
 
-export default function ItemPage() {
+export default async function ItemPage() {
+  const products = await fetchPublicItemProducts();
+  const hasProducts = products.length > 0;
+
   return (
     <div>
       {/* ---------- 오픈 예고 히어로 ---------- */}
@@ -80,7 +99,7 @@ export default function ItemPage() {
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand opacity-60" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-dark" />
                 </span>
-                OPEN SOON · 이곳저곳 Item
+                {hasProducts ? "OPEN · 이곳저곳 Item" : "OPEN SOON · 이곳저곳 Item"}
               </span>
 
               <h1 className="mt-4 heading-1 text-ink">
@@ -91,26 +110,50 @@ export default function ItemPage() {
                   이곳저곳 Item
                   <span className="absolute inset-x-0 -bottom-1 h-2 rounded-full bg-brand/20" aria-hidden />
                 </span>
-                <br className="hidden sm:block" /> 곧 오픈합니다
+                <br className="hidden sm:block" /> {hasProducts ? "지금 만나보세요" : "곧 오픈합니다"}
               </h1>
 
               <p className="mt-4 max-w-xl text-sm leading-relaxed text-ink-soft sm:text-base">
                 전시·리퍼 가전과 비품을 검수해서, 공간 사장님께 맞춘 특가로 준비해요.{" "}
                 <br className="hidden sm:block" />
-                지금 필요한 품목을 알려 주시면 <b className="text-ink">가장 많이 찾은 것부터</b> 채워서 오픈할게요.
+                {hasProducts ? (
+                  <>
+                    지금 올라온 재고는 <b className="text-ink">실제 확인한 수량</b>이고, 필요한 품목이 아직 없다면 알려 주세요. 가장 많이 찾은 것부터 채워 드릴게요.
+                  </>
+                ) : (
+                  <>
+                    지금 필요한 품목을 알려 주시면 <b className="text-ink">가장 많이 찾은 것부터</b> 채워서 오픈할게요.
+                  </>
+                )}
               </p>
 
               <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:items-center">
-                <a href="#apply" className="btn-primary px-5 py-3 text-[15px]">
-                  <SparkleIcon size={16} /> 사전 수요조사 신청하기
-                </a>
-                <a href="#lineup" className="btn-ghost px-5 py-3 text-[15px]">
-                  오픈 예정 카테고리 보기
-                </a>
+                {hasProducts ? (
+                  <>
+                    <a href="#products" className="btn-primary px-5 py-3 text-[15px]">
+                      <SparkleIcon size={16} /> 판매 상품 보기
+                    </a>
+                    <a href="#apply" className="btn-ghost px-5 py-3 text-[15px]">
+                      사전 수요조사 신청
+                    </a>
+                  </>
+                ) : (
+                  <>
+                    <a href="#apply" className="btn-primary px-5 py-3 text-[15px]">
+                      <SparkleIcon size={16} /> 사전 수요조사 신청하기
+                    </a>
+                    <a href="#lineup" className="btn-ghost px-5 py-3 text-[15px]">
+                      오픈 예정 카테고리 보기
+                    </a>
+                  </>
+                )}
               </div>
 
               <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px] font-semibold text-ink-soft">
-                {["검수 후 입고", "사장님 전용 특가", "오픈 알림 우선 발송"].map((label) => (
+                {(hasProducts
+                  ? ["검수 완료 상품", "사장님 전용 특가", "재고 실시간 표시"]
+                  : ["검수 후 입고", "사장님 전용 특가", "오픈 알림 우선 발송"]
+                ).map((label) => (
                   <span key={label} className="inline-flex items-center gap-1.5">
                     <CheckIcon size={14} className="text-brand-dark" />
                     {label}
@@ -132,7 +175,7 @@ export default function ItemPage() {
                     decoding="async"
                   />
                   <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[12px] font-extrabold text-brand-dark shadow-sm backdrop-blur">
-                    오픈 준비 중
+                    {hasProducts ? "판매 중" : "오픈 준비 중"}
                   </span>
                 </div>
                 <div className="mt-2 rounded-[20px] bg-white px-4 py-3 shadow-card">
@@ -148,6 +191,88 @@ export default function ItemPage() {
       </section>
 
       <div className="container-page space-y-12 pb-6 pt-8 sm:space-y-16 sm:pt-12">
+        {/* ---------- 판매 중인 상품 (/admin 에서 등록한 재고) ---------- */}
+        {hasProducts && (
+          <section id="products" className="scroll-mt-24">
+            <div className="flex flex-wrap items-end justify-between gap-2">
+              <div>
+                <span className="text-[12px] font-extrabold tracking-wide text-brand-dark">NOW ON SALE</span>
+                <h2 className="mt-1 section-title text-ink">지금 준비된 상품</h2>
+                <p className="mt-1.5 text-sm text-ink-soft">검수해서 올린 재고예요. 수량이 바뀌면 목록도 바로 바뀝니다.</p>
+              </div>
+              <span className="badge bg-emerald-50 text-emerald-600">
+                판매중 {products.filter((product) => product.status === "active").length}개
+              </span>
+            </div>
+
+            <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {products.map((product) => {
+                const status = ITEM_PRODUCT_STATUS_MAP[product.status];
+                const cat = ITEM_CATEGORIES.find((item) => item.key === product.category);
+                const stockLabel =
+                  product.status === "soldout"
+                    ? "재고 없음"
+                    : product.status === "restocking"
+                      ? "입고 대기"
+                      : `재고 ${product.stock}개`;
+                return (
+                  <article key={product.id} className="card overflow-hidden">
+                    <div className="relative aspect-[4/3] w-full overflow-hidden bg-ink-line/30">
+                      {product.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={product.imageUrl}
+                          alt={product.name}
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      ) : (
+                        <span
+                          aria-hidden
+                          className={cn("grid h-full w-full place-items-center text-4xl", cat?.pastel ?? "bg-brand-light")}
+                        >
+                          {cat?.emoji ?? "📦"}
+                        </span>
+                      )}
+                      <span className={cn("badge absolute left-2.5 top-2.5", status?.style)}>{status?.label}</span>
+                    </div>
+                    <div className="p-4">
+                      <p className="text-[12px] font-semibold text-ink-mute">{itemCategoryLabel(product.category)}</p>
+                      <h3 className="mt-0.5 text-[15px] font-extrabold leading-snug text-ink">{product.name}</h3>
+                      {product.description && (
+                        <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-ink-soft">{product.description}</p>
+                      )}
+                      <div className="mt-2.5 flex flex-wrap items-end justify-between gap-x-2 gap-y-1">
+                        <p className="text-lg font-extrabold text-ink">
+                          {won(product.price)}
+                          <span className="ml-1 text-[12px] font-semibold text-ink-mute">/ {product.unit}</span>
+                        </p>
+                        <p
+                          className={cn(
+                            "text-[12px] font-bold",
+                            product.status === "soldout"
+                              ? "text-ink-mute"
+                              : product.stock <= 3
+                                ? "text-brand-dark"
+                                : "text-ink-mute"
+                          )}
+                        >
+                          {stockLabel}
+                        </p>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+
+            <p className="mt-3.5 rounded-xl bg-ink-line/40 px-4 py-3 text-[13px] leading-relaxed text-ink-soft">
+              <b className="text-ink">결제 기능은 준비 중이에요.</b> 원하는 상품은 아래 사전 수요조사에 남겨 주시면 재고·배송을 확인해 연락드립니다.
+            </p>
+          </section>
+        )}
+
         {/* ---------- 핵심 가치 ---------- */}
         <section>
           <div className="grid gap-3 sm:grid-cols-3">
@@ -168,10 +293,10 @@ export default function ItemPage() {
           <div className="flex flex-wrap items-end justify-between gap-2">
             <div>
               <span className="text-[12px] font-extrabold tracking-wide text-brand-dark">LINEUP</span>
-              <h2 className="mt-1 section-title text-ink">오픈 예정 카테고리</h2>
+              <h2 className="mt-1 section-title text-ink">{hasProducts ? "들여오는 카테고리" : "오픈 예정 카테고리"}</h2>
               <p className="mt-1.5 text-sm text-ink-soft">공간을 운영하며 가장 자주 찾는 품목부터 준비하고 있어요.</p>
             </div>
-            <span className="badge bg-brand-light text-brand-dark">전체 오픈 예정</span>
+            <span className="badge bg-brand-light text-brand-dark">{hasProducts ? "순차 입고 중" : "전체 오픈 예정"}</span>
           </div>
 
           <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -183,7 +308,9 @@ export default function ItemPage() {
                 <span className={`grid h-12 w-12 place-items-center rounded-2xl text-2xl ${item.pastel}`} aria-hidden>
                   {item.emoji}
                 </span>
-                <span className="badge absolute right-3 top-3 bg-ink-line/70 text-ink-mute">오픈 예정</span>
+                <span className="badge absolute right-3 top-3 bg-ink-line/70 text-ink-mute">
+                  {products.some((product) => product.category === item.key) ? "입고 중" : "오픈 예정"}
+                </span>
                 <h3 className="mt-3 text-[14.5px] font-bold leading-snug text-ink">{item.label}</h3>
                 <p className="mt-1 text-[12px] leading-relaxed text-ink-mute">{item.desc}</p>
               </article>
@@ -191,8 +318,17 @@ export default function ItemPage() {
           </div>
 
           <p className="mt-3.5 rounded-xl bg-ink-line/40 px-4 py-3 text-[13px] leading-relaxed text-ink-soft">
-            <b className="text-ink">아직 판매 전이에요.</b> 실제 재고나 가격이 정해지지 않아 금액·수량은 표시하지 않습니다.
-            오픈 시 검수된 상품의 상태와 가격을 그대로 공개할게요.
+            {hasProducts ? (
+              <>
+                <b className="text-ink">카테고리마다 순차로 들여오고 있어요.</b> 아직 상품이 없는 카테고리는 필요한 품목을 알려 주시면
+                가장 많이 찾은 것부터 검수해 올릴게요.
+              </>
+            ) : (
+              <>
+                <b className="text-ink">아직 판매 전이에요.</b> 실제 재고나 가격이 정해지지 않아 금액·수량은 표시하지 않습니다.
+                오픈 시 검수된 상품의 상태와 가격을 그대로 공개할게요.
+              </>
+            )}
           </p>
         </section>
 
@@ -253,7 +389,7 @@ export default function ItemPage() {
         <section>
           <h2 className="section-title text-ink">자주 묻는 질문</h2>
           <div className="mt-4 space-y-2">
-            {FAQS.map((faq) => (
+            {FAQS.filter((faq) => faq.whenProducts === undefined || faq.whenProducts === hasProducts).map((faq) => (
               <details key={faq.q} className="group card overflow-hidden">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-[14px] font-bold text-ink marker:hidden">
                   {faq.q}

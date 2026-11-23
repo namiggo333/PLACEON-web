@@ -176,6 +176,46 @@ export interface ItemWaitlistEntry {
   wantsNotice: boolean;
   source: string;
   createdAt: string;
+  /** 처리 상태 — 접수(new) · 연락완료(contacted) · 처리완료(done) */
+  status: ItemWaitlistStatus;
+  /** 관리자 메모(연락 결과·처리 내용) */
+  adminMemo: string;
+}
+
+export type ItemWaitlistStatus = "new" | "contacted" | "done";
+
+/** 이곳저곳 Item 상품 판매 상태 */
+export type ItemProductStatus = "active" | "restocking" | "soldout" | "hidden";
+
+/** 총괄 관리자가 등록한 이곳저곳 Item 판매 상품 */
+export interface ItemProduct {
+  id: string;
+  name: string;
+  /** 카테고리 키 (projector, furniture, climate, lighting, cleaning, supplies) */
+  category: string;
+  description: string;
+  price: number;
+  /** 판매 단위 (예: 1대, 1세트(10개)) */
+  unit: string;
+  stock: number;
+  status: ItemProductStatus;
+  imageUrl: string | null;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** 상품 등록·수정 입력 */
+export interface ItemProductInput {
+  name: string;
+  category: string;
+  description?: string;
+  price: number;
+  unit?: string;
+  stock: number;
+  status?: ItemProductStatus;
+  imageUrl?: string | null;
+  sortOrder?: number;
 }
 
 /** 예약에 안내된 입금 계좌가 모두 채워져 있는지 */

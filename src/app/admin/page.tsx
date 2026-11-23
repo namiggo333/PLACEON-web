@@ -10,6 +10,8 @@ import {
   CalendarIcon,
   CheckIcon,
   CloseIcon,
+  CopyIcon,
+  PlusIcon,
   SearchIcon,
   ShieldIcon,
   SparkleIcon,
@@ -23,6 +25,11 @@ import {
   APPROVAL_STYLE,
   CATEGORY_MAP,
   ITEM_CATEGORIES,
+  ITEM_CATEGORY_MAP,
+  ITEM_LOW_STOCK,
+  ITEM_PRODUCT_STATUSES,
+  ITEM_PRODUCT_STATUS_MAP,
+  ITEM_WAITLIST_STATUSES,
   REFUND_LABEL,
   REFUND_STYLE,
   bookingStatusMeta,
@@ -31,12 +38,16 @@ import {
 } from "@/lib/constants";
 import { DepositInfoRow } from "@/components/DepositInfoRow";
 import {
+  createItemProduct,
   fetchAdminData,
   patchSpace,
+  removeItemProduct,
   removeItemWaitlist,
   removeSpace,
   setSpaceApproval,
   updateBookingStatus,
+  updateItemProduct,
+  updateItemWaitlistEntry,
   updateRefundStatus,
   type AdminData,
 } from "@/lib/db";
@@ -52,7 +63,7 @@ import {
   won,
   wonShort,
 } from "@/lib/format";
-import { countsForRevenue, type ApprovalStatus, type Booking, type BookingStatus, type Category, type ItemWaitlistEntry, type Space } from "@/lib/types";
+import { countsForRevenue, type ApprovalStatus, type Booking, type BookingStatus, type Category, type ItemProduct, type ItemProductStatus, type ItemWaitlistEntry, type ItemWaitlistStatus, type Space } from "@/lib/types";
 
 type TabKey = "spaces" | "bookings" | "members" | "item";
 
@@ -60,8 +71,44 @@ const TABS: { key: TabKey; label: string; icon: typeof StoreIcon }[] = [
   { key: "spaces", label: "입점 공간 관리", icon: StoreIcon },
   { key: "bookings", label: "예약 현황", icon: CalendarIcon },
   { key: "members", label: "사장님·회원", icon: UsersIcon },
-  { key: "item", label: "Item 수요조사", icon: SparkleIcon },
+  { key: "item", label: "Item 관리", icon: SparkleIcon },
 ];
+
+/** 관리자 상품 등록·수정 폼 (입력값은 문자열로 들고 있다가 저장할 때 숫자로 바꿈) */
+interface ProductDraft {
+  name: string;
+  category: string;
+  description: string;
+  price: string;
+  unit: string;
+  stock: string;
+  status: ItemProductStatus;
+  imageUrl: string;
+}
+
+const EMPTY_PRODUCT: ProductDraft = {
+  name: "",
+  category: ITEM_CATEGORIES[0]?.key ?? "supplies",
+  description: "",
+  price: "",
+  unit: "",
+  stock: "0",
+  status: "active",
+  imageUrl: "",
+};
+
+function draftFromProduct(product: ItemProduct): ProductDraft {
+  return {
+    name: product.name,
+    category: product.category,
+    description: product.description,
+    price: String(product.price),
+    unit: product.unit,
+    stock: String(product.stock),
+    status: product.status,
+    imageUrl: product.imageUrl ?? "",
+  };
+}
 
 const STATUS_FILTERS: { key: BookingStatus | "all"; label: string }[] = [
   { key: "all", label: "전체" },
@@ -179,6 +226,16 @@ export default function AdminPage() {
   const [statusFilter, setStatusFilter] = useState<BookingStatus | "all">("all");
   const [memberQuery, setMemberQuery] = useState("");
   const [itemQuery, setItemQuery] = useState("");
+  const [itemView, setItemView] = useState<"products" | "waitlist">("products");
+  const [waitlistFilter, setWaitlistFilter] = useState<ItemWaitlistStatus | "all">("all");
+  const [productFormOpen, setProductFormOpen] = useState(false);
+  const [productEditing, setProductEditing] = useState<string | null>(null);
+  const [productDraft, setProductDraft] = useState<ProductDraft>(EMPTY_PRODUCT);
+  const [productError, setProductError] = useState("");
+  const [productSaving, setProductSaving] = useState(false);
+  const [confirmProductDelete, setConfirmProductDelete] = useState<string | null>(null);
+  const [stockDrafts, setStockDrafts] = useState<Record<string, string>>({});
+  const [memoDrafts, setMemoDrafts] = useState<Record<string, string>>({});
   const [busyId, setBusyId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [toast, setToast] = useState("");
@@ -224,6 +281,7 @@ export default function AdminPage() {
     const hosts = profiles.filter((profile) => profile.role === "host").length;
     const guests = profiles.filter((profile) => profile.role === "guest").length;
     const itemWaitlist = data?.itemWaitlist ?? [];
+    const itemProducts = data?.itemProducts ?? [];
     return {
       spaces: spaces.length,
       hidden,
@@ -240,6 +298,14 @@ export default function AdminPage() {
       hosts,
       guests,
       itemWaitlist: itemWaitlist.length,
+      itemPending: itemWaitlist.filter((entry) => entry.status === "new").length,
+      itemProducts: itemProducts.length,
+      itemStockLow: itemProducts.filter(
+        (product) =>
+          product.status !== "hidden" && (product.status === "soldout" || product.stock <= ITEM_LOW_STOCK)
+      ).length,
+      itemActive: itemProducts.filter((product) => product.status === "active").length,
+      itemHidden: itemProducts.filter((product) => product.status === "hidden").length,
     };
   }, [data]);
 
@@ -304,11 +370,13 @@ export default function AdminPage() {
   const filteredWaitlist = useMemo(() => {
     const query = itemQuery.trim().toLowerCase();
     return (data?.itemWaitlist ?? []).filter((entry) => {
+      if (waitlistFilter !== "all" && entry.status !== waitlistFilter) return false;
       if (!query) return true;
       return [
         entry.contact,
         entry.customItem,
         entry.note,
+        entry.adminMemo,
         entry.budgetOrQty,
         itemSpaceTypeLabel(entry.spaceType),
         ...entry.categories.map(itemCategoryLabel),
@@ -317,7 +385,16 @@ export default function AdminPage() {
         .toLowerCase()
         .includes(query);
     });
-  }, [data, itemQuery]);
+  }, [data, itemQuery, waitlistFilter]);
+
+  const waitlistStatusCounts = useMemo(() => {
+    const counts = { all: 0, new: 0, contacted: 0, done: 0 };
+    for (const entry of data?.itemWaitlist ?? []) {
+      counts.all += 1;
+      counts[entry.status] += 1;
+    }
+    return counts;
+  }, [data]);
 
   /** Item 수요조사 카테고리별 신청 수 — 어떤 품목부터 입고할지 판단하는 데 쓴다. */
   const itemDemand = useMemo(() => {
@@ -348,6 +425,190 @@ export default function AdminPage() {
       setToast(err instanceof Error ? err.message : "삭제에 실패했어요.");
     } finally {
       setBusyId(null);
+    }
+  }
+
+  /* ---------------- Item 상품·재고 ---------------- */
+
+  function replaceProduct(product: ItemProduct) {
+    setData((prev) =>
+      prev
+        ? {
+            ...prev,
+            itemProducts: prev.itemProducts.some((item) => item.id === product.id)
+              ? prev.itemProducts.map((item) => (item.id === product.id ? product : item))
+              : [product, ...prev.itemProducts],
+          }
+        : prev
+    );
+  }
+
+  function openProductForm(product?: ItemProduct) {
+    setProductError("");
+    setProductEditing(product?.id ?? null);
+    setProductDraft(product ? draftFromProduct(product) : { ...EMPTY_PRODUCT });
+    setProductFormOpen(true);
+  }
+
+  function closeProductForm() {
+    setProductEditing(null);
+    setProductFormOpen(false);
+    setProductError("");
+    setProductDraft({ ...EMPTY_PRODUCT });
+  }
+
+  async function saveProduct() {
+    const name = productDraft.name.trim();
+    const price = Number.parseInt(productDraft.price, 10);
+    const stock = Number.parseInt(productDraft.stock, 10);
+    if (!name) {
+      setProductError("상품명을 입력해 주세요.");
+      return;
+    }
+    if (!Number.isFinite(price) || price < 0) {
+      setProductError("가격을 0원 이상 숫자로 입력해 주세요.");
+      return;
+    }
+    if (!Number.isFinite(stock) || stock < 0) {
+      setProductError("재고 수량을 0 이상 숫자로 입력해 주세요.");
+      return;
+    }
+
+    setProductSaving(true);
+    setProductError("");
+    try {
+      const payload = {
+        name,
+        category: productDraft.category,
+        description: productDraft.description.trim(),
+        price,
+        unit: productDraft.unit.trim() || "1개",
+        stock,
+        status: productDraft.status,
+        imageUrl: productDraft.imageUrl.trim(),
+      };
+      const saved = productEditing
+        ? await updateItemProduct(productEditing, payload)
+        : await createItemProduct(payload);
+      replaceProduct(saved);
+      closeProductForm();
+      setToast(productEditing ? "상품 정보를 저장했어요." : `'${saved.name}' 상품을 등록했어요.`);
+    } catch (err) {
+      setProductError(err instanceof Error ? err.message : "상품을 저장하지 못했어요.");
+    } finally {
+      setProductSaving(false);
+    }
+  }
+
+  async function patchProduct(
+    product: ItemProduct,
+    patch: Parameters<typeof updateItemProduct>[1],
+    message: string
+  ) {
+    setBusyId(product.id);
+    try {
+      replaceProduct(await updateItemProduct(product.id, patch));
+      setToast(message);
+    } catch (err) {
+      setToast(err instanceof Error ? err.message : "변경에 실패했어요.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function applyStockDraft(product: ItemProduct) {
+    const raw = stockDrafts[product.id];
+    if (raw === undefined) return;
+    const next = Number.parseInt(raw, 10);
+    if (!Number.isFinite(next) || next < 0) {
+      setToast("재고 수량을 0 이상 숫자로 입력해 주세요.");
+      return;
+    }
+    setStockDrafts((prev) => {
+      const copy = { ...prev };
+      delete copy[product.id];
+      return copy;
+    });
+    await patchProduct(product, { stock: next }, `재고를 ${next}개로 바꿨어요.`);
+  }
+
+  async function deleteProduct(product: ItemProduct) {
+    setBusyId(product.id);
+    try {
+      await removeItemProduct(product.id);
+      setData((prev) =>
+        prev ? { ...prev, itemProducts: prev.itemProducts.filter((item) => item.id !== product.id) } : prev
+      );
+      setConfirmProductDelete(null);
+      setToast("상품을 삭제했어요.");
+    } catch (err) {
+      setToast(err instanceof Error ? err.message : "삭제에 실패했어요.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  /* ---------------- Item 수요조사·문의 처리 ---------------- */
+
+  async function setWaitlistStatus(entry: ItemWaitlistEntry, status: ItemWaitlistStatus) {
+    setBusyId(entry.id);
+    try {
+      const updated = await updateItemWaitlistEntry(entry.id, { status });
+      setData((prev) =>
+        prev
+          ? {
+              ...prev,
+              itemWaitlist: prev.itemWaitlist.map((item) =>
+                item.id === entry.id ? { ...item, status: updated.status, adminMemo: updated.adminMemo } : item
+              ),
+            }
+          : prev
+      );
+      setToast(
+        status === "done" ? "처리완료로 바꿨어요." : status === "contacted" ? "연락완료로 바꿨어요." : "접수 상태로 되돌렸어요."
+      );
+    } catch (err) {
+      setToast(err instanceof Error ? err.message : "상태를 바꾸지 못했어요.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function saveWaitlistMemo(entry: ItemWaitlistEntry) {
+    const memo = memoDrafts[entry.id];
+    if (memo === undefined) return;
+    setBusyId(entry.id);
+    try {
+      const updated = await updateItemWaitlistEntry(entry.id, { adminMemo: memo });
+      setData((prev) =>
+        prev
+          ? {
+              ...prev,
+              itemWaitlist: prev.itemWaitlist.map((item) =>
+                item.id === entry.id ? { ...item, status: updated.status, adminMemo: updated.adminMemo } : item
+              ),
+            }
+          : prev
+      );
+      setMemoDrafts((prev) => {
+        const copy = { ...prev };
+        delete copy[entry.id];
+        return copy;
+      });
+      setToast("관리자 메모를 저장했어요.");
+    } catch (err) {
+      setToast(err instanceof Error ? err.message : "메모를 저장하지 못했어요.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function copyContact(entry: ItemWaitlistEntry) {
+    try {
+      await navigator.clipboard.writeText(entry.contact);
+      setToast("연락처를 복사했어요.");
+    } catch {
+      setToast(prettyContact(entry));
     }
   }
 
@@ -535,8 +796,8 @@ export default function AdminPage() {
             </p>
             <h1 className="mt-2.5 text-2xl font-extrabold tracking-tight sm:text-3xl">이곳저곳 총괄 관리자</h1>
             <p className="mt-1 text-xs text-white/75">
-              {user.name} 님 · 전체 공간 {stats.spaces}개 · 예약 {stats.bookings}건 · 회원 {stats.profiles}명 · Item 수요조사{" "}
-              {stats.itemWaitlist}건을 관리합니다.
+              {user.name} 님 · 전체 공간 {stats.spaces}개 · 예약 {stats.bookings}건 · 회원 {stats.profiles}명 · Item 상품{" "}
+              {stats.itemProducts}개 · 문의 {stats.itemWaitlist}건을 관리합니다.
             </p>
             {mode === "demo" && (
               <p className="mt-2 rounded-lg bg-white/10 px-2.5 py-1.5 text-[12px] text-white/80">
@@ -1224,134 +1485,608 @@ export default function AdminPage() {
 
       {!loading && data && tab === "item" && (
         <section className="mt-5">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-base font-extrabold text-ink">
-                이곳저곳 Item 사전 수요조사 <span className="text-brand-dark">{filteredWaitlist.length}</span>
-                <span className="ml-1 text-xs font-semibold text-ink-mute">/ 전체 {stats.itemWaitlist}건</span>
-              </h2>
-              <p className="mt-0.5 text-xs text-ink-mute">
-                오픈 알림 신청 {itemNoticeCount}건 · 공개 페이지 <Link href="/item" className="font-semibold text-brand-dark underline">/item</Link>
-              </p>
-            </div>
-            <div className="relative w-full sm:max-w-xs">
-              <SearchIcon size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-mute" />
-              <input
-                value={itemQuery}
-                onChange={(event) => setItemQuery(event.target.value)}
-                placeholder="연락처·품목·공간 유형 검색"
-                className="input py-2 pl-9 text-xs"
-                aria-label="수요조사 검색"
-              />
-            </div>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <StatCard
+              label="등록 상품"
+              value={`${stats.itemProducts}개`}
+              hint={`판매중 ${stats.itemActive} · 숨김 ${stats.itemHidden}`}
+              tone="brand"
+            />
+            <StatCard
+              label="품절·재고부족"
+              value={`${stats.itemStockLow}개`}
+              hint={`재고 ${ITEM_LOW_STOCK}개 이하 포함`}
+            />
+            <StatCard
+              label="미처리 문의"
+              value={`${stats.itemPending}건`}
+              hint={`연락완료 ${waitlistStatusCounts.contacted} · 전체 ${stats.itemWaitlist}건`}
+            />
+            <StatCard label="오픈 알림 신청" value={`${itemNoticeCount}건`} hint="수요조사 중 알림 동의" />
           </div>
 
           {stats.itemWaitlist > 0 && (
-            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-              {itemDemand.map((item) => (
-                <div key={item.key} className="card px-3 py-2.5">
-                  <p className="flex items-center gap-1.5 text-[12px] font-bold text-ink-soft">
-                    <span aria-hidden>{item.emoji}</span>
-                    <span className="truncate">{item.label}</span>
-                  </p>
-                  <p className="mt-1 text-lg font-extrabold tabular-nums text-ink">
-                    {item.count}
-                    <span className="ml-0.5 text-[12px] font-semibold text-ink-mute">건</span>
-                  </p>
-                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-ink-line/70">
-                    <div
-                      className="h-full rounded-full bg-brand"
-                      style={{ width: `${Math.round((item.count / Math.max(1, stats.itemWaitlist)) * 100)}%` }}
-                    />
+            <div className="mt-4">
+              <p className="text-[12px] font-bold text-ink-soft">카테고리별 수요 — 어떤 품목부터 입고할지 판단해요</p>
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+                {itemDemand.map((item) => (
+                  <div key={item.key} className="card px-3 py-2.5">
+                    <p className="flex items-center gap-1.5 text-[12px] font-bold text-ink-soft">
+                      <span aria-hidden>{item.emoji}</span>
+                      <span className="truncate">{item.label}</span>
+                    </p>
+                    <p className="mt-1 text-lg font-extrabold tabular-nums text-ink">
+                      {item.count}
+                      <span className="ml-0.5 text-[12px] font-semibold text-ink-mute">건</span>
+                    </p>
+                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-ink-line/70">
+                      <div
+                        className="h-full rounded-full bg-brand"
+                        style={{ width: `${Math.round((item.count / Math.max(1, stats.itemWaitlist)) * 100)}%` }}
+                      />
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
 
-          {filteredWaitlist.length === 0 ? (
-            <div className="card mt-4 flex flex-col items-center gap-2 px-6 py-14 text-center">
-              <SparkleIcon size={30} className="text-brand-dark/60" />
-              <p className="text-sm font-bold text-ink">
-                {stats.itemWaitlist === 0 ? "아직 접수된 수요조사가 없어요" : "조건에 맞는 신청이 없어요"}
-              </p>
-              <p className="text-xs text-ink-mute">
-                {stats.itemWaitlist === 0 ? (
-                  <>
-                    <Link href="/item" className="font-semibold text-brand-dark underline">/item</Link> 페이지에서 신청이 들어오면 여기에 쌓입니다.
-                  </>
-                ) : (
-                  "검색어를 바꿔 보세요."
-                )}
-              </p>
+          <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="no-scrollbar flex gap-1 overflow-x-auto rounded-xl bg-ink-line/40 p-1">
+              {([
+                { key: "products" as const, label: "상품·재고 관리", count: stats.itemProducts },
+                { key: "waitlist" as const, label: "수요조사·문의", count: stats.itemWaitlist },
+              ]).map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setItemView(item.key)}
+                  className={cn(
+                    "flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-2.5 text-[13px] font-bold transition",
+                    itemView === item.key ? "bg-white text-ink shadow-sm" : "text-ink-mute hover:text-ink"
+                  )}
+                >
+                  {item.label}
+                  <span
+                    className={cn(
+                      "rounded-full px-1.5 py-0.5 text-[12px] font-bold",
+                      itemView === item.key ? "bg-brand text-white" : "bg-white text-ink-mute"
+                    )}
+                  >
+                    {item.count}
+                  </span>
+                </button>
+              ))}
             </div>
-          ) : (
-            <>
-              <div className="card mt-4 hidden overflow-x-auto md:block">
-                <table className="w-full min-w-[980px] border-collapse text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-ink-line bg-ink-line/25 text-[12px] text-ink-mute">
-                      <th className="px-3 py-2.5 font-bold">접수</th>
-                      <th className="px-3 py-2.5 font-bold">공간 유형</th>
-                      <th className="px-3 py-2.5 font-bold">희망 카테고리</th>
-                      <th className="px-3 py-2.5 font-bold">희망 품목·모델</th>
-                      <th className="px-3 py-2.5 font-bold">예산·수량</th>
-                      <th className="px-3 py-2.5 font-bold">연락처</th>
-                      <th className="px-3 py-2.5 font-bold">요청사항</th>
-                      <th className="px-3 py-2.5 text-right font-bold">관리</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredWaitlist.map((entry) => (
-                      <tr key={entry.id} className="border-b border-ink-line/70 align-top last:border-0">
-                        <td className="whitespace-nowrap px-3 py-2.5 text-ink-soft">{receivedAt(entry.createdAt)}</td>
-                        <td className="whitespace-nowrap px-3 py-2.5">
-                          <span className="badge bg-brand-light text-brand-dark">{itemSpaceTypeLabel(entry.spaceType)}</span>
-                        </td>
-                        <td className="px-3 py-2.5">
-                          {entry.categories.length === 0 ? (
-                            <span className="text-ink-mute">—</span>
-                          ) : (
-                            <div className="flex max-w-[190px] flex-wrap gap-1">
-                              {entry.categories.map((key) => (
-                                <span key={key} className="badge bg-ink-line/60 text-ink-soft">
-                                  {itemCategoryLabel(key)}
-                                </span>
-                              ))}
+            <div className="flex items-center gap-1.5">
+              <Link href="/item" className="btn-ghost btn-sm">
+                /item 페이지 보기
+              </Link>
+              <button type="button" onClick={() => void load()} className="btn-ghost btn-sm">
+                새로고침
+              </button>
+            </div>
+          </div>
+
+          {itemView === "products" && (
+            <div className="mt-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-base font-extrabold text-ink">
+                  상품·재고 <span className="text-brand-dark">{stats.itemProducts}</span>
+                  <span className="ml-1 text-xs font-semibold text-ink-mute">/ 숨김 상품 포함</span>
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => (productFormOpen ? closeProductForm() : openProductForm())}
+                  className="inline-flex h-11 items-center gap-1 rounded-xl bg-brand px-4 text-[13px] font-bold text-white transition hover:bg-brand-dark"
+                >
+                  <PlusIcon size={15} />
+                  {productFormOpen ? "등록 닫기" : "새 상품 등록"}
+                </button>
+              </div>
+
+              {productFormOpen && (
+                <div className="card mt-3 border-brand/30 p-4">
+                  <p className="text-sm font-extrabold text-ink">{productEditing ? "상품 수정" : "새 상품 등록"}</p>
+                  <p className="mt-0.5 text-[12px] text-ink-mute">
+                    재고 0으로 등록하면 품절로 시작해요. 숨김 상품은 /item 페이지에 보이지 않습니다.
+                  </p>
+                  <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+                    <label className="block text-[12px] font-bold text-ink-soft">
+                      상품명 <span className="text-brand">*</span>
+                      <input
+                        value={productDraft.name}
+                        onChange={(event) => setProductDraft((prev) => ({ ...prev, name: event.target.value }))}
+                        placeholder="예: 엡손 EB-970 빔프로젝터"
+                        maxLength={80}
+                        className="input mt-1 text-[13px]"
+                      />
+                    </label>
+                    <label className="block text-[12px] font-bold text-ink-soft">
+                      카테고리
+                      <select
+                        value={productDraft.category}
+                        onChange={(event) => setProductDraft((prev) => ({ ...prev, category: event.target.value }))}
+                        className="input mt-1 text-[13px] font-semibold"
+                      >
+                        {ITEM_CATEGORIES.map((item) => (
+                          <option key={item.key} value={item.key}>
+                            {item.emoji} {item.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="block text-[12px] font-bold text-ink-soft">
+                      가격(원) <span className="text-brand">*</span>
+                      <input
+                        value={productDraft.price}
+                        onChange={(event) => setProductDraft((prev) => ({ ...prev, price: event.target.value.replace(/[^\d]/g, "") }))}
+                        inputMode="numeric"
+                        placeholder="예: 350000"
+                        className="input mt-1 text-[13px]"
+                      />
+                    </label>
+                    <label className="block text-[12px] font-bold text-ink-soft">
+                      판매 단위
+                      <input
+                        value={productDraft.unit}
+                        onChange={(event) => setProductDraft((prev) => ({ ...prev, unit: event.target.value }))}
+                        placeholder="예: 1세트(10개)"
+                        maxLength={40}
+                        className="input mt-1 text-[13px]"
+                      />
+                    </label>
+                    <label className="block text-[12px] font-bold text-ink-soft">
+                      재고 수량 <span className="text-brand">*</span>
+                      <input
+                        value={productDraft.stock}
+                        onChange={(event) => setProductDraft((prev) => ({ ...prev, stock: event.target.value.replace(/[^\d]/g, "") }))}
+                        inputMode="numeric"
+                        placeholder="0"
+                        className="input mt-1 text-[13px]"
+                      />
+                    </label>
+                    <label className="block text-[12px] font-bold text-ink-soft">
+                      판매 상태
+                      <select
+                        value={productDraft.status}
+                        onChange={(event) =>
+                          setProductDraft((prev) => ({ ...prev, status: event.target.value as ItemProductStatus }))
+                        }
+                        className="input mt-1 text-[13px] font-semibold"
+                      >
+                        {ITEM_PRODUCT_STATUSES.map((item) => (
+                          <option key={item.key} value={item.key}>
+                            {item.label} — {item.hint}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="block text-[12px] font-bold text-ink-soft sm:col-span-2">
+                      간단한 설명
+                      <textarea
+                        value={productDraft.description}
+                        onChange={(event) => setProductDraft((prev) => ({ ...prev, description: event.target.value }))}
+                        rows={2}
+                        maxLength={500}
+                        placeholder="예: 램프 2,300시간 · HDMI 2포트 · 리모컨 포함"
+                        className="input mt-1 resize-y text-[13px]"
+                      />
+                    </label>
+                    <label className="block text-[12px] font-bold text-ink-soft sm:col-span-2">
+                      이미지 URL
+                      <input
+                        value={productDraft.imageUrl}
+                        onChange={(event) => setProductDraft((prev) => ({ ...prev, imageUrl: event.target.value }))}
+                        placeholder="https://... 또는 /images/..."
+                        maxLength={500}
+                        className="input mt-1 text-[13px]"
+                      />
+                    </label>
+                  </div>
+
+                  {productError && (
+                    <p className="mt-2.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[12px] font-semibold text-red-600">
+                      {productError}
+                    </p>
+                  )}
+
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      type="button"
+                      disabled={productSaving}
+                      onClick={() => void saveProduct()}
+                      className="h-11 flex-1 rounded-xl bg-brand text-[13px] font-bold text-white transition hover:bg-brand-dark disabled:opacity-60"
+                    >
+                      {productSaving ? "저장 중…" : productEditing ? "수정 저장" : "상품 등록"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={closeProductForm}
+                      className="h-11 rounded-xl border border-ink-line bg-white px-4 text-[13px] font-bold text-ink-soft hover:bg-ink-line/30"
+                    >
+                      취소
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {data.itemProducts.length === 0 ? (
+                <div className="card mt-3 flex flex-col items-center gap-2 px-6 py-14 text-center">
+                  <SparkleIcon size={30} className="text-brand-dark/60" />
+                  <p className="text-sm font-bold text-ink">아직 등록한 상품이 없어요</p>
+                  <p className="text-xs text-ink-mute">위의 [새 상품 등록]으로 첫 상품을 올리면 /item 페이지에 바로 보여요.</p>
+                </div>
+              ) : (
+                <div className="mt-3 space-y-3">
+                  {data.itemProducts.map((product) => {
+                    const statusMeta = ITEM_PRODUCT_STATUS_MAP[product.status];
+                    const cat = ITEM_CATEGORY_MAP[product.category];
+                    const lowStock = product.status !== "hidden" && product.stock <= ITEM_LOW_STOCK;
+                    const stockDirty = stockDrafts[product.id] !== undefined;
+                    return (
+                      <article key={product.id} className="card p-3.5">
+                        <div className="flex gap-3">
+                          <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-xl border border-ink-line bg-ink-line/20">
+                            {product.imageUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={product.imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+                            ) : (
+                              <span className="text-2xl" aria-hidden>
+                                {cat?.emoji ?? "📦"}
+                              </span>
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-1">
+                              <span className={cn("badge", statusMeta?.style)}>{statusMeta?.label}</span>
+                              <span className="badge bg-ink-line/60 text-ink-soft">{itemCategoryLabel(product.category)}</span>
+                              {lowStock && <span className="badge bg-brand-light text-brand-dark">재고부족</span>}
                             </div>
+                            <h4 className="mt-1 truncate text-sm font-extrabold text-ink">{product.name}</h4>
+                            <p className="mt-0.5 text-[12px] text-ink-soft">
+                              {won(product.price)} / {product.unit} · 재고 {product.stock}개
+                            </p>
+                            {product.description && (
+                              <p className="mt-0.5 line-clamp-2 text-[12px] leading-relaxed text-ink-mute">
+                                {product.description}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="mt-2.5 grid gap-2 sm:grid-cols-2">
+                          <div>
+                            <p className="text-[12px] font-bold text-ink-soft">재고 수량</p>
+                            <div className="mt-1 flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                disabled={busyId === product.id || product.stock <= 0}
+                                onClick={() => void patchProduct(product, { stockDelta: -1 }, "재고를 1개 줄였어요.")}
+                                className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-ink-line bg-white text-lg font-bold text-ink-soft transition hover:border-brand/40 hover:text-brand-dark disabled:opacity-40"
+                                aria-label={`${product.name} 재고 1개 줄이기`}
+                              >
+                                −
+                              </button>
+                              <input
+                                value={stockDrafts[product.id] ?? String(product.stock)}
+                                onChange={(event) =>
+                                  setStockDrafts((prev) => ({
+                                    ...prev,
+                                    [product.id]: event.target.value.replace(/[^\d]/g, ""),
+                                  }))
+                                }
+                                inputMode="numeric"
+                                aria-label={`${product.name} 재고 수량`}
+                                className="input h-11 w-16 text-center text-[13px] font-bold tabular-nums"
+                              />
+                              <button
+                                type="button"
+                                disabled={busyId === product.id}
+                                onClick={() => void patchProduct(product, { stockDelta: 1 }, "재고를 1개 늘렸어요.")}
+                                className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-ink-line bg-white text-lg font-bold text-ink-soft transition hover:border-brand/40 hover:text-brand-dark disabled:opacity-40"
+                                aria-label={`${product.name} 재고 1개 늘리기`}
+                              >
+                                +
+                              </button>
+                              {stockDirty && (
+                                <button
+                                  type="button"
+                                  disabled={busyId === product.id}
+                                  onClick={() => void applyStockDraft(product)}
+                                  className="h-11 rounded-lg bg-ink px-3 text-[12px] font-bold text-white disabled:opacity-50"
+                                >
+                                  적용
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          <label className="block text-[12px] font-bold text-ink-soft">
+                            판매 상태
+                            <select
+                              value={product.status}
+                              disabled={busyId === product.id}
+                              onChange={(event) =>
+                                void patchProduct(
+                                  product,
+                                  { status: event.target.value as ItemProductStatus },
+                                  "판매 상태를 바꿨어요."
+                                )
+                              }
+                              className="input mt-1 h-11 text-[13px] font-semibold"
+                              aria-label={`${product.name} 판매 상태`}
+                            >
+                              {ITEM_PRODUCT_STATUSES.map((item) => (
+                                <option key={item.key} value={item.key}>
+                                  {item.label}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        </div>
+
+                        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-[12px] text-ink-mute">
+                            {product.status === "hidden"
+                              ? "/item 페이지에서 숨김"
+                              : product.status === "soldout"
+                                ? "품절 — 목록에는 보이지만 재고 없음"
+                                : product.status === "restocking"
+                                  ? "입고대기 — 문의를 받는 중"
+                                  : "/item 페이지에 공개 중"}
+                          </p>
+                          <div className="flex gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => openProductForm(product)}
+                              className="h-11 rounded-lg border border-ink-line bg-white px-3 text-[12px] font-bold text-ink-soft transition hover:border-brand/40 hover:text-brand-dark"
+                            >
+                              수정
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmProductDelete(product.id)}
+                              className="inline-flex h-11 items-center gap-1 rounded-lg border border-ink-line bg-white px-3 text-[12px] font-bold text-ink-mute transition hover:border-red-200 hover:text-red-500"
+                            >
+                              <TrashIcon size={13} /> 삭제
+                            </button>
+                          </div>
+                        </div>
+
+                        {confirmProductDelete === product.id && (
+                          <div className="mt-2 rounded-lg bg-red-50 p-3">
+                            <p className="text-[12px] font-semibold text-red-700">
+                              <b>{product.name}</b> 을(를) 삭제할까요? /item 페이지에서도 사라지며 되돌릴 수 없어요.
+                            </p>
+                            <div className="mt-2 flex gap-2">
+                              <button
+                                type="button"
+                                disabled={busyId === product.id}
+                                onClick={() => void deleteProduct(product)}
+                                className="h-11 rounded-lg bg-red-500 px-3 text-[12px] font-bold text-white disabled:opacity-60"
+                              >
+                                {busyId === product.id ? "삭제 중…" : "삭제"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmProductDelete(null)}
+                                className="h-11 rounded-lg bg-white px-3 text-[12px] font-bold text-ink-soft"
+                              >
+                                취소
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {itemView === "waitlist" && (
+            <div className="mt-4">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h3 className="text-base font-extrabold text-ink">
+                    이곳저곳 Item 수요조사·문의{" "}
+                    <span className="text-brand-dark">{filteredWaitlist.length}</span>
+                    <span className="ml-1 text-xs font-semibold text-ink-mute">/ 전체 {stats.itemWaitlist}건</span>
+                  </h3>
+                  <p className="mt-0.5 text-xs text-ink-mute">
+                    오픈 알림 신청 {itemNoticeCount}건 · 공개 페이지{" "}
+                    <Link href="/item" className="font-semibold text-brand-dark underline">
+                      /item
+                    </Link>
+                  </p>
+                </div>
+                <div className="relative w-full sm:max-w-xs">
+                  <SearchIcon size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-mute" />
+                  <input
+                    value={itemQuery}
+                    onChange={(event) => setItemQuery(event.target.value)}
+                    placeholder="연락처·품목·메모 검색"
+                    className="input py-2 pl-9 text-xs"
+                    aria-label="수요조사 검색"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {([
+                  { key: "all" as const, label: "전체", count: waitlistStatusCounts.all },
+                  { key: "new" as const, label: "접수", count: waitlistStatusCounts.new },
+                  { key: "contacted" as const, label: "연락완료", count: waitlistStatusCounts.contacted },
+                  { key: "done" as const, label: "처리완료", count: waitlistStatusCounts.done },
+                ]).map((item) => (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => setWaitlistFilter(item.key)}
+                    className={cn(
+                      "rounded-full border px-3 py-2 text-[12px] font-bold transition",
+                      waitlistFilter === item.key
+                        ? "border-brand bg-brand text-white"
+                        : "border-ink-line bg-white text-ink-soft hover:border-brand/40 hover:text-brand-dark"
+                    )}
+                  >
+                    {item.label} {item.count}
+                  </button>
+                ))}
+              </div>
+
+              {filteredWaitlist.length === 0 ? (
+                <div className="card mt-3 flex flex-col items-center gap-2 px-6 py-14 text-center">
+                  <SparkleIcon size={30} className="text-brand-dark/60" />
+                  <p className="text-sm font-bold text-ink">
+                    {stats.itemWaitlist === 0 ? "아직 접수된 수요조사가 없어요" : "조건에 맞는 신청이 없어요"}
+                  </p>
+                  <p className="text-xs text-ink-mute">
+                    {stats.itemWaitlist === 0 ? (
+                      <>
+                        <Link href="/item" className="font-semibold text-brand-dark underline">
+                          /item
+                        </Link>{" "}
+                        페이지에서 신청이 들어오면 여기에 쌓입니다.
+                      </>
+                    ) : (
+                      "상태 필터나 검색어를 바꿔 보세요."
+                    )}
+                  </p>
+                </div>
+              ) : (
+                <div className="mt-3 space-y-2.5">
+                  {filteredWaitlist.map((entry) => {
+                    const statusMeta = ITEM_WAITLIST_STATUSES.find((item) => item.key === entry.status);
+                    const memoValue = memoDrafts[entry.id] ?? entry.adminMemo;
+                    const memoDirty = memoDrafts[entry.id] !== undefined && memoDrafts[entry.id] !== entry.adminMemo;
+                    return (
+                      <article key={entry.id} className="card p-3.5">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="min-w-0">
+                            <p className="flex flex-wrap items-center gap-1.5 text-sm font-extrabold text-ink">
+                              {prettyContact(entry)}
+                              <span className={cn("badge", statusMeta?.style)}>{statusMeta?.label ?? "접수"}</span>
+                              <span className="badge bg-brand-light text-brand-dark">
+                                {itemSpaceTypeLabel(entry.spaceType)}
+                              </span>
+                              {entry.wantsNotice && <span className="badge bg-emerald-50 text-emerald-600">알림</span>}
+                            </p>
+                            <p className="mt-0.5 text-[12px] text-ink-mute">
+                              접수 {receivedAt(entry.createdAt)} · {entry.contactType === "email" ? "메일" : "문자"}
+                            </p>
+                          </div>
+                          <label className="block shrink-0 text-[12px] font-bold text-ink-soft sm:w-40">
+                            처리 상태
+                            <select
+                              value={entry.status}
+                              disabled={busyId === entry.id}
+                              onChange={(event) =>
+                                void setWaitlistStatus(entry, event.target.value as ItemWaitlistStatus)
+                              }
+                              className="input mt-1 h-11 text-[13px] font-semibold"
+                              aria-label={`${prettyContact(entry)} 처리 상태`}
+                            >
+                              {ITEM_WAITLIST_STATUSES.map((item) => (
+                                <option key={item.key} value={item.key}>
+                                  {item.label}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        </div>
+
+                        {entry.categories.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {entry.categories.map((key) => (
+                              <span key={key} className="badge bg-ink-line/60 text-ink-soft">
+                                {itemCategoryLabel(key)}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        {entry.customItem && (
+                          <p className="mt-1.5 text-[12px] leading-relaxed text-ink-soft">
+                            <b className="text-ink">희망 품목</b> {entry.customItem}
+                          </p>
+                        )}
+                        {entry.budgetOrQty && (
+                          <p className="mt-1 text-[12px] text-ink-soft">
+                            <b className="text-ink">예산·수량</b> {entry.budgetOrQty}
+                          </p>
+                        )}
+                        {entry.note && (
+                          <p className="mt-1 text-[12px] leading-relaxed text-ink-mute">
+                            <b className="text-ink-soft">요청사항</b> {entry.note}
+                          </p>
+                        )}
+
+                        <div className="mt-2 rounded-xl bg-ink-line/20 p-2.5">
+                          <label htmlFor={`item-memo-${entry.id}`} className="block text-[12px] font-bold text-ink-soft">
+                            관리자 메모
+                          </label>
+                          <textarea
+                            id={`item-memo-${entry.id}`}
+                            value={memoValue}
+                            onChange={(event) => setMemoDrafts((prev) => ({ ...prev, [entry.id]: event.target.value }))}
+                            rows={2}
+                            maxLength={2000}
+                            placeholder="예: 11/24 문자 발송 · 2세트 견적 안내"
+                            className="input mt-1 resize-y text-[13px]"
+                          />
+                          <div className="mt-1.5 flex items-center justify-between gap-2">
+                            <p className="text-[12px] text-ink-mute">
+                              {entry.adminMemo ? "저장된 메모 있음" : "아직 메모 없음"}
+                            </p>
+                            <button
+                              type="button"
+                              disabled={busyId === entry.id || !memoDirty}
+                              onClick={() => void saveWaitlistMemo(entry)}
+                              className="h-11 rounded-lg bg-ink px-3 text-[12px] font-bold text-white disabled:opacity-40"
+                            >
+                              {busyId === entry.id ? "저장 중…" : "메모 저장"}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="mt-2 flex flex-wrap items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => void copyContact(entry)}
+                            className="inline-flex h-11 items-center gap-1 rounded-lg border border-ink-line bg-white px-3 text-[12px] font-bold text-ink-soft transition hover:border-brand/40 hover:text-brand-dark"
+                          >
+                            <CopyIcon size={13} /> 연락처 복사
+                          </button>
+                          {entry.contactType === "phone" ? (
+                            <a
+                              href={`tel:${entry.contact}`}
+                              className="inline-flex h-11 items-center rounded-lg border border-ink-line bg-white px-3 text-[12px] font-bold text-ink-soft transition hover:border-brand/40 hover:text-brand-dark"
+                            >
+                              전화 걸기
+                            </a>
+                          ) : (
+                            <a
+                              href={`mailto:${entry.contact}`}
+                              className="inline-flex h-11 items-center rounded-lg border border-ink-line bg-white px-3 text-[12px] font-bold text-ink-soft transition hover:border-brand/40 hover:text-brand-dark"
+                            >
+                              메일 보내기
+                            </a>
                           )}
-                        </td>
-                        <td className="max-w-[210px] px-3 py-2.5 text-ink-soft">
-                          <span className="line-clamp-3">{entry.customItem || <span className="text-ink-mute">—</span>}</span>
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-2.5 text-ink-soft">
-                          {entry.budgetOrQty || <span className="text-ink-mute">—</span>}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-2.5">
-                          <span className="font-semibold text-ink">{prettyContact(entry)}</span>
-                          <span className="ml-1 text-[12px] text-ink-mute">{entry.contactType === "email" ? "메일" : "문자"}</span>
-                          {entry.wantsNotice && (
-                            <span className="badge ml-1 bg-emerald-50 text-emerald-600">알림</span>
-                          )}
-                        </td>
-                        <td className="max-w-[200px] px-3 py-2.5 text-ink-mute">
-                          <span className="line-clamp-3">{entry.note || "—"}</span>
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-2.5 text-right">
                           {confirmDelete === entry.id ? (
-                            <span className="inline-flex gap-1">
+                            <span className="inline-flex gap-1.5">
                               <button
                                 type="button"
                                 disabled={busyId === entry.id}
                                 onClick={() => void deleteWaitlist(entry)}
-                                className="rounded-md bg-red-500 px-2 py-1 text-[12px] font-bold text-white disabled:opacity-60"
+                                className="h-11 rounded-lg bg-red-500 px-3 text-[12px] font-bold text-white disabled:opacity-60"
                               >
                                 삭제
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setConfirmDelete(null)}
-                                className="rounded-md bg-ink-line/70 px-2 py-1 text-[12px] font-bold text-ink-soft"
+                                className="h-11 rounded-lg bg-ink-line/70 px-3 text-[12px] font-bold text-ink-soft"
                               >
                                 취소
                               </button>
@@ -1360,69 +2095,18 @@ export default function AdminPage() {
                             <button
                               type="button"
                               onClick={() => setConfirmDelete(entry.id)}
-                              className="grid h-7 w-7 place-items-center rounded-md text-ink-mute transition hover:bg-red-50 hover:text-red-500"
-                              aria-label="수요조사 삭제"
+                              className="inline-flex h-11 items-center gap-1 rounded-lg border border-ink-line bg-white px-3 text-[12px] font-bold text-ink-mute transition hover:border-red-200 hover:text-red-500"
                             >
-                              <TrashIcon size={14} />
+                              <TrashIcon size={13} /> 삭제
                             </button>
                           )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="mt-4 space-y-2.5 md:hidden">
-                {filteredWaitlist.map((entry) => (
-                  <article key={entry.id} className="card p-3.5">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="flex items-center gap-1.5 text-sm font-extrabold text-ink">
-                          {prettyContact(entry)}
-                          <span className="badge bg-brand-light text-brand-dark">{itemSpaceTypeLabel(entry.spaceType)}</span>
-                        </p>
-                        <p className="mt-0.5 text-[12px] text-ink-mute">
-                          접수 {receivedAt(entry.createdAt)} · {entry.contactType === "email" ? "메일" : "문자"}
-                          {entry.wantsNotice ? " · 오픈 알림 신청" : ""}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => (confirmDelete === entry.id ? void deleteWaitlist(entry) : setConfirmDelete(entry.id))}
-                        disabled={busyId === entry.id}
-                        className={cn(
-                          "shrink-0 rounded-md px-2 py-1 text-[12px] font-bold transition disabled:opacity-60",
-                          confirmDelete === entry.id ? "bg-red-500 text-white" : "bg-ink-line/70 text-ink-mute"
-                        )}
-                      >
-                        {confirmDelete === entry.id ? "삭제" : "정리"}
-                      </button>
-                    </div>
-                    {entry.categories.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {entry.categories.map((key) => (
-                          <span key={key} className="badge bg-brand-light text-brand-dark">
-                            {itemCategoryLabel(key)}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    {entry.customItem && (
-                      <p className="mt-2 text-[12px] leading-relaxed text-ink-soft">
-                        <b className="text-ink">희망 품목</b> {entry.customItem}
-                      </p>
-                    )}
-                    {entry.budgetOrQty && (
-                      <p className="mt-1 text-[12px] text-ink-soft">
-                        <b className="text-ink">예산·수량</b> {entry.budgetOrQty}
-                      </p>
-                    )}
-                    {entry.note && <p className="mt-1 text-[12px] leading-relaxed text-ink-mute">{entry.note}</p>}
-                  </article>
-                ))}
-              </div>
-            </>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           )}
         </section>
       )}

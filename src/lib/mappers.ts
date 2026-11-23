@@ -6,7 +6,10 @@ import type {
   BookingSource,
   BookingStatus,
   CancelReason,
+  ItemProduct,
+  ItemProductStatus,
   ItemWaitlistEntry,
+  ItemWaitlistStatus,
   Profile,
   RefundStatus,
   Role,
@@ -229,6 +232,8 @@ export interface ItemWaitlistRow {
   wants_notice: boolean | null;
   source: string | null;
   created_at: string | null;
+  status?: string | null;
+  admin_memo?: string | null;
 }
 
 export function mapItemWaitlist(row: ItemWaitlistRow): ItemWaitlistEntry {
@@ -244,5 +249,41 @@ export function mapItemWaitlist(row: ItemWaitlistRow): ItemWaitlistEntry {
     wantsNotice: row.wants_notice ?? true,
     source: row.source ?? "item",
     createdAt: row.created_at ?? new Date().toISOString(),
+    status: row.status === "contacted" || row.status === "done" ? (row.status as ItemWaitlistStatus) : "new",
+    adminMemo: row.admin_memo ?? "",
+  };
+}
+
+export interface ItemProductRow {
+  id: string;
+  name: string;
+  category: string | null;
+  description: string | null;
+  price: number | null;
+  unit: string | null;
+  stock: number | null;
+  status: string | null;
+  image_url: string | null;
+  sort_order: number | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export function mapItemProduct(row: ItemProductRow): ItemProduct {
+  const status: ItemProductStatus =
+    row.status === "restocking" || row.status === "soldout" || row.status === "hidden" ? row.status : "active";
+  return {
+    id: row.id,
+    name: row.name ?? "",
+    category: row.category ?? "supplies",
+    description: row.description ?? "",
+    price: Number(row.price ?? 0),
+    unit: row.unit ?? "1개",
+    stock: Number(row.stock ?? 0),
+    status,
+    imageUrl: row.image_url ?? null,
+    sortOrder: Number(row.sort_order ?? 0),
+    createdAt: row.created_at ?? new Date().toISOString(),
+    updatedAt: row.updated_at ?? row.created_at ?? new Date().toISOString(),
   };
 }

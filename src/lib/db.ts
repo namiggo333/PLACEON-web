@@ -2,12 +2,14 @@ import { makeSlug } from "./format";
 import {
   mapBooking,
   mapBookingEvent,
+  mapItemProduct,
   mapItemWaitlist,
   mapProfile,
   mapSpace,
   mapSpacePrivate,
   type BookingEventRow,
   type BookingRow,
+  type ItemProductRow,
   type ItemWaitlistRow,
   type ProfileRow,
   type SpacePrivateRow,
@@ -24,7 +26,10 @@ import type {
   BookingStatus,
   RefundStatus,
   CancelReason,
+  ItemProduct,
+  ItemProductInput,
   ItemWaitlistEntry,
+  ItemWaitlistStatus,
   Profile,
   Role,
   Space,
@@ -818,6 +823,31 @@ export interface AdminData {
   profiles: Profile[];
   /** 이곳저곳 Item 사전 수요조사 (관리자만 조회) */
   itemWaitlist: ItemWaitlistEntry[];
+  /** 이곳저곳 Item 판매 상품·재고 (숨김 포함) */
+  itemProducts: ItemProduct[];
+}
+
+/** 관리자 API 호출용 액세스 토큰 */
+async function adminAccessToken(): Promise<string> {
+  if (!supabase) throw new Error("미리보기(데모) 모드에서는 관리자 기능이 저장되지 않아요.");
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error("로그인이 끝났어요. 다시 로그인해 주세요.");
+  return token;
+}
+
+async function adminJson<T>(path: string, method: string, body: unknown): Promise<T> {
+  const token = await adminAccessToken();
+  const response = await fetch(path, {
+    method,
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(body),
+  });
+  const payload = (await response.json().catch(() => null)) as (T & { error?: string }) | null;
+  if (!response.ok || !payload) {
+    throw new Error(payload?.error ?? "요청을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.");
+  }
+  return payload;
 }
 
 /**
@@ -835,7 +865,7 @@ export async function fetchAdminData(): Promise<AdminData> {
     const error = spaceRes.error ?? bookingRes.error ?? profileRes.error;
     if (error) throw new Error(`관리자 데이터를 불러오지 못했어요. (${error.message})`);
 
-    // Item 수요조사는 아직 테이블이 없거나 RLS 로 막힌 경우에도 관리자 화면 전체가 죽지 않게 따로 읽는다.
+    // Item 상품·수요조사는 테이블이 없거나 RLS 로 막힌 경우에도 관리자 화면 전체가 죽지 않게 따로 읽는다.
     let itemWaitlist: ItemWaitlistEntry[] = [];
     try {
       const { data: waitlistRows, error: waitlistError } = await supabase
@@ -848,11 +878,25 @@ export async function fetchAdminData(): Promise<AdminData> {
       console.warn("[db] Item 수요조사를 불러오지 못했어요.", waitlistError);
     }
 
+    let itemProducts: ItemProduct[] = [];
+    try {
+      const { data: productRows, error: productError } = await supabase
+        .from("item_products")
+        .select("*")
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: false });
+      if (productError) throw productError;
+      itemProducts = ((productRows ?? []) as ItemProductRow[]).map(mapItemProduct);
+    } catch (productError) {
+      console.warn("[db] Item 상품을 불러오지 못했어요.", productError);
+    }
+
     return {
       spaces: ((spaceRes.data ?? []) as SpaceRow[]).map(mapSpace),
       bookings: ((bookingRes.data ?? []) as BookingRow[]).map(mapBooking),
       profiles: ((profileRes.data ?? []) as ProfileRow[]).map(mapProfile),
       itemWaitlist,
+      itemProducts,
     };
   }
 
@@ -864,25 +908,53 @@ export async function fetchAdminData(): Promise<AdminData> {
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     profiles: db.profiles.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     itemWaitlist: [],
+    itemProducts: [],
   };
 }
 
 /** 관리자 화면에서 Item 수요조사 한 건을 삭제한다. */
 export async function removeItemWaitlist(id: string): Promise<void> {
   if (!supabase) return;
-  const { data: sessionData } = await supabase.auth.getSession();
-  const token = sessionData.session?.access_token;
-  if (!token) throw new Error("로그인이 끝났어요. 다시 로그인해 주세요.");
+  await adminJson<{ ok?: boolean }>("/api/admin/item-waitlist", "DELETE", { id });
+}
 
-  const response = await fetch("/api/admin/item-waitlist", {
-    method: "DELETE",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ id }),
-  });
-  if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
-    throw new Error(payload?.error ?? "수요조사를 삭제하지 못했어요.");
-  }
+/** 수요조사·문의 처리 상태/관리자 메모 저장 */
+export async function updateItemWaitlistEntry(
+  id: string,
+  patch: { status?: ItemWaitlistStatus; adminMemo?: string }
+): Promise<{ status: ItemWaitlistStatus; adminMemo: string }> {
+  const payload = await adminJson<{ entry?: { status?: string; admin_memo?: string } }>(
+    "/api/admin/item-waitlist",
+    "PATCH",
+    { id, ...patch }
+  );
+  const entry = payload.entry ?? {};
+  return {
+    status: entry.status === "contacted" || entry.status === "done" ? entry.status : "new",
+    adminMemo: entry.admin_memo ?? "",
+  };
+}
+
+/** 새 Item 상품 등록 */
+export async function createItemProduct(input: ItemProductInput): Promise<ItemProduct> {
+  const payload = await adminJson<{ product?: ItemProductRow }>("/api/admin/items", "POST", input);
+  if (!payload.product) throw new Error("상품을 등록하지 못했어요.");
+  return mapItemProduct(payload.product);
+}
+
+/** Item 상품 정보·재고·판매 상태 수정 (stockDelta 로 재고 +/-) */
+export async function updateItemProduct(
+  id: string,
+  patch: Partial<ItemProductInput> & { stockDelta?: number }
+): Promise<ItemProduct> {
+  const payload = await adminJson<{ product?: ItemProductRow }>("/api/admin/items", "PATCH", { id, ...patch });
+  if (!payload.product) throw new Error("상품을 수정하지 못했어요.");
+  return mapItemProduct(payload.product);
+}
+
+/** Item 상품 삭제 */
+export async function removeItemProduct(id: string): Promise<void> {
+  await adminJson<{ ok?: boolean }>("/api/admin/items", "DELETE", { id });
 }
 
 export async function updateBookingStatus(

@@ -298,6 +298,41 @@ export function itemSpaceTypeLabel(key: string): string {
   return ITEM_SPACE_TYPES.find((item) => item.key === key)?.label ?? key;
 }
 
+/** 이곳저곳 Item 상품 판매 상태 (관리자 · /item 공통) */
+export const ITEM_PRODUCT_STATUSES: {
+  key: "active" | "restocking" | "soldout" | "hidden";
+  label: string;
+  hint: string;
+  style: string;
+}[] = [
+  { key: "active", label: "판매중", hint: "손님에게 공개·판매 중", style: "bg-emerald-50 text-emerald-600" },
+  { key: "restocking", label: "입고대기", hint: "곧 입고 · 문의 받는 중", style: "bg-amber-50 text-amber-600" },
+  { key: "soldout", label: "품절", hint: "재고 없음 · 목록에는 보임", style: "bg-slate-100 text-slate-500" },
+  { key: "hidden", label: "숨김", hint: "/item 에서 보이지 않음", style: "bg-slate-700 text-white" },
+];
+
+export const ITEM_PRODUCT_STATUS_MAP = Object.fromEntries(
+  ITEM_PRODUCT_STATUSES.map((item) => [item.key, item])
+) as Record<string, (typeof ITEM_PRODUCT_STATUSES)[number]>;
+
+/** 재고가 이 수량 이하이면 '재고부족'으로 본다 (관리자 요약 카드) */
+export const ITEM_LOW_STOCK = 3;
+
+/** 수요조사·문의 처리 상태 */
+export const ITEM_WAITLIST_STATUSES: {
+  key: "new" | "contacted" | "done";
+  label: string;
+  style: string;
+}[] = [
+  { key: "new", label: "접수", style: "bg-brand-light text-brand-dark" },
+  { key: "contacted", label: "연락완료", style: "bg-amber-50 text-amber-600" },
+  { key: "done", label: "처리완료", style: "bg-emerald-50 text-emerald-600" },
+];
+
+export function itemWaitlistStatusLabel(key: string): string {
+  return ITEM_WAITLIST_STATUSES.find((item) => item.key === key)?.label ?? "접수";
+}
+
 export const DEMO_ACCOUNTS = {
   guest: { email: "guest@placeon.kr", password: "placeon1234", name: "박기남", role: "guest" as Role },
   host: { email: "host@placeon.kr", password: "placeon1234", name: "김사장", role: "host" as Role },
