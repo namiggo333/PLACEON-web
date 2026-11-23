@@ -68,22 +68,22 @@ export function MonthlySavings({ bookings }: { bookings: Booking[] }) {
         <div className="rounded-xl bg-brand-light p-3">
           <p className="text-[12px] font-bold text-brand-dark/80">확정 매출</p>
           <p className="mt-0.5 text-xl font-extrabold text-brand-dark">{wonShort(report.totalRevenue)}</p>
-          <p className="text-[9.5px] text-brand-dark/70">{report.bookingCount}건 · 취소·차단 제외</p>
+          <p className="text-[12px] text-brand-dark/70">{report.bookingCount}건 · 취소·차단 제외</p>
         </div>
         <div className="rounded-xl bg-emerald-50 p-3">
           <p className="text-[12px] font-bold text-emerald-700/80">아낀 수수료</p>
           <p className="mt-0.5 text-xl font-extrabold text-emerald-600">{wonShort(report.savedFee)}</p>
-          <p className="text-[9.5px] text-emerald-700/70">{Math.round(PLATFORM_COMMISSION_RATE * 100)}% 기준</p>
+          <p className="text-[12px] text-emerald-700/70">{Math.round(PLATFORM_COMMISSION_RATE * 100)}% 기준</p>
         </div>
         <div className="rounded-xl bg-ink-line/30 p-3">
           <p className="text-[12px] font-bold text-ink-mute">전용 링크 매출</p>
           <p className="mt-0.5 text-xl font-extrabold text-ink">{wonShort(report.linkRevenue)}</p>
-          <p className="text-[9.5px] text-ink-mute">{report.linkCount}건 · 전체 {linkShare}%</p>
+          <p className="text-[12px] text-ink-mute">{report.linkCount}건 · 전체 {linkShare}%</p>
         </div>
         <div className="rounded-xl bg-ink-line/30 p-3">
           <p className="text-[12px] font-bold text-ink-mute">사이트 유입 매출</p>
           <p className="mt-0.5 text-xl font-extrabold text-ink">{wonShort(report.webRevenue)}</p>
-          <p className="text-[9.5px] text-ink-mute">{report.bookingCount - report.linkCount}건</p>
+          <p className="text-[12px] text-ink-mute">{report.bookingCount - report.linkCount}건</p>
         </div>
       </div>
 
@@ -93,7 +93,7 @@ export function MonthlySavings({ bookings }: { bookings: Booking[] }) {
             <div className="h-full bg-brand" style={{ width: `${Math.max(2, linkShare)}%` }} />
             <div className="h-full flex-1 bg-ink/20" />
           </div>
-          <div className="mt-1 flex justify-between text-[9.5px] text-ink-mute">
+          <div className="mt-1 flex justify-between text-[12px] text-ink-mute">
             <span>전용 링크 {won(report.linkRevenue)}</span>
             <span>사이트 유입 {won(report.webRevenue)}</span>
           </div>
