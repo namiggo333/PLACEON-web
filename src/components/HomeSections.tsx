@@ -33,13 +33,13 @@ export function MascotBanner({
             decoding="async"
             className="absolute inset-0 h-full w-full object-cover object-[50%_14%]"
           />
-          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/85 px-2.5 py-1 text-[11.5px] font-extrabold text-brand-dark shadow-sm backdrop-blur">
+          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/85 px-2.5 py-1 text-[12px] font-extrabold text-brand-dark shadow-sm backdrop-blur">
             <SparkleIcon size={11} />
             이곳저곳 PICK
           </span>
         </div>
         <div className="flex items-center gap-2 bg-white px-3 py-2.5">
-          <p className="min-w-0 flex-1 text-[12.5px] font-extrabold leading-snug text-ink">
+          <p className="min-w-0 flex-1 text-[13px] font-extrabold leading-snug text-ink">
             지금, 이곳저곳에서 특별한 공간을 만나보세요!
           </p>
           <Link
@@ -68,19 +68,19 @@ export function MascotBanner({
         decoding="async"
         className="absolute inset-0 h-full w-full object-cover object-[50%_16%]"
       />
-      <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/85 px-2.5 py-1 text-[11.5px] font-extrabold text-brand-dark shadow-sm backdrop-blur">
+      <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/85 px-2.5 py-1 text-[12px] font-extrabold text-brand-dark shadow-sm backdrop-blur">
         <SparkleIcon size={11} />
         이곳저곳 PICK
       </span>
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-brand-deep/40 via-brand-deep/5 to-transparent p-3 pt-14 sm:p-3.5 sm:pt-16">
         <div className="flex items-center gap-3 rounded-2xl bg-white p-3 shadow-card ring-1 ring-brand/10">
           <div className="min-w-0 flex-1">
-            <p className="text-[12.5px] font-extrabold leading-snug text-ink sm:text-[13px]">
+            <p className="text-[13px] font-extrabold leading-snug text-ink sm:text-[13px]">
               지금, 이곳저곳에서
               <br />
               특별한 공간을 만나보세요!
             </p>
-            <p className="mt-0.5 truncate text-[11.5px] font-semibold text-ink-mute sm:text-[11.5px]">
+            <p className="mt-0.5 truncate text-[12px] font-semibold text-ink-mute sm:text-[12px]">
               찾고, 예약하고, 결제까지 한 번에
             </p>
           </div>
@@ -219,7 +219,7 @@ export function TimeDealSection({ spaces }: { spaces: Space[] }) {
                 </span>
               </div>
               <div className="p-3">
-                <p className="text-[11.5px] font-medium text-ink-mute">
+                <p className="text-[12px] font-medium text-ink-mute">
                   {space.region} {space.district}
                 </p>
                 <p className="mt-0.5 truncate text-sm font-bold text-ink group-hover:text-brand-dark">
@@ -227,7 +227,7 @@ export function TimeDealSection({ spaces }: { spaces: Space[] }) {
                 </p>
                 <div className="mt-1 flex items-baseline gap-1.5">
                   <span className="text-sm font-extrabold text-brand-dark">{won(finalPrice)}</span>
-                  <span className="text-[11.5px] text-ink-mute line-through">{won(space.pricePerHour)}</span>
+                  <span className="text-[12px] text-ink-mute line-through">{won(space.pricePerHour)}</span>
                 </div>
               </div>
             </Link>

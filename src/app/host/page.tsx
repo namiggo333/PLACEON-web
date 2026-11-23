@@ -7,6 +7,7 @@ import { LogoMark, MascotAvatar } from "@/components/Logo";
 import { DemoAccountButtons } from "@/components/Bits";
 import { DepositInfoRow } from "@/components/DepositInfoRow";
 import { SpaceMedia } from "@/components/SpaceCard";
+import { QrShare } from "@/components/host/QrShare";
 import {
   BoltIcon,
   CalendarIcon,
@@ -15,6 +16,7 @@ import {
   CloseIcon,
   CopyIcon,
   EyeOffIcon,
+  HourglassIcon,
   LinkIcon,
   PhotoIcon,
   PlusIcon,
@@ -42,7 +44,7 @@ import {
   validatePhoto,
 } from "@/lib/storage";
 import { SITE_URL } from "@/lib/site-url";
-import type { Category, Role, Space, SpaceInput, SpacePrivate } from "@/lib/types";
+import type { Booking, Category, Role, Space, SpaceInput, SpacePrivate } from "@/lib/types";
 import { BookingTimeline } from "@/components/BookingAccess";
 import { IcalPanel } from "@/components/host/IcalPanel";
 import { MonthlySavings } from "@/components/host/MonthlySavings";
@@ -56,6 +58,14 @@ const TABS: { key: TabKey; label: string; icon: typeof StoreIcon }[] = [
   { key: "bookings", label: "예약 관리", icon: CalendarIcon },
   { key: "schedule", label: "시간 관리", icon: ClockIcon },
   { key: "links", label: "결제 링크", icon: LinkIcon },
+];
+
+/** 모바일 하단 탭 — 360px 화면에서도 4개가 한 번에 보이도록 대표 동선만 남긴다. */
+const MOBILE_TABS: { key: TabKey; label: string; icon: typeof StoreIcon }[] = [
+  { key: "dashboard", label: "오늘", icon: BoltIcon },
+  { key: "bookings", label: "예약", icon: CalendarIcon },
+  { key: "spaces", label: "공간", icon: StoreIcon },
+  { key: "links", label: "공유", icon: LinkIcon },
 ];
 
 interface FormState {
@@ -125,7 +135,7 @@ function Switch({
     >
       <span>
         <span className="block text-xs font-bold text-ink">{label}</span>
-        {hint && <span className="mt-0.5 block text-[10px] text-ink-mute">{hint}</span>}
+        {hint && <span className="mt-0.5 block text-[12px] text-ink-mute">{hint}</span>}
       </span>
       <span
         className={cn(
@@ -181,11 +191,18 @@ export default function HostPage() {
   const [linkSpaceId, setLinkSpaceId] = useState("");
   const [demoBusy, setDemoBusy] = useState<Role | null>(null);
   const [blockForm, setBlockForm] = useState({ spaceId: "", date: "", startTime: "10:00", hours: 2, memo: "" });
+  const [confirmBooking, setConfirmBooking] = useState<Booking | null>(null);
+  const [clock, setClock] = useState(() => Date.now());
   const [blockBusy, setBlockBusy] = useState(false);
   const [blockError, setBlockError] = useState("");
 
   useEffect(() => {
     if (typeof window !== "undefined") setOrigin(window.location.origin);
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setClock(Date.now()), 15000);
+    return () => window.clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -224,6 +241,18 @@ export default function HostPage() {
         .sort((a, b) => `${a.date}T${a.startTime}`.localeCompare(`${b.date}T${b.startTime}`)),
     [bookings, mySpaceIds]
   );
+
+  /** 오늘 처리할 일 — 입금 확인(신고 도착 우선) · 환불 처리 두 종류만. */
+  const todayQueue = useMemo(() => {
+    return myBookings
+      .filter((booking) => booking.status === "pending" || booking.refundStatus === "pending")
+      .sort((a, b) => {
+        const aClaim = a.paidClaimedAt ? 1 : 0;
+        const bClaim = b.paidClaimedAt ? 1 : 0;
+        if (aClaim !== bClaim) return bClaim - aClaim;
+        return `${a.expiresAt ?? ""}`.localeCompare(`${b.expiresAt ?? ""}`);
+      });
+  }, [myBookings]);
 
   useEffect(() => {
     if (!blockForm.spaceId && mySpaces.length > 0) {
@@ -525,10 +554,10 @@ export default function HostPage() {
     : "";
 
   return (
-    <div className="container-page py-6 sm:py-10">
+    <div className="container-page py-6 pb-24 sm:py-10 sm:pb-10">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-[11px] font-bold text-brand-dark">HOST CENTER</p>
+          <p className="text-[12px] font-bold text-brand-dark">HOST CENTER</p>
           <h1 className="mt-0.5 text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">
             {user.name} 님의 사장님 센터
           </h1>
@@ -569,7 +598,7 @@ export default function HostPage() {
         </span>
       </Link>
 
-      <div className="no-scrollbar mt-5 flex gap-1 overflow-x-auto rounded-xl bg-ink-line/40 p-1">
+      <div className="no-scrollbar mt-5 hidden gap-1 overflow-x-auto rounded-xl bg-ink-line/40 p-1 sm:flex">
         {TABS.map((item) => {
           const Icon = item.icon;
           const active = tab === item.key;
@@ -586,7 +615,7 @@ export default function HostPage() {
               <Icon size={15} />
               {item.label}
               {item.key === "bookings" && stats.pending > 0 && (
-                <span className="rounded-full bg-brand px-1.5 py-0.5 text-[10px] font-bold text-white">
+                <span className="rounded-full bg-brand px-1.5 py-0.5 text-[12px] font-bold text-white">
                   {stats.pending}
                 </span>
               )}
@@ -597,41 +626,128 @@ export default function HostPage() {
 
       {tab === "dashboard" && (
         <div className="mt-5 space-y-5">
+          {/* 오늘 처리할 일 — 입금 확인은 시트까지 2탭 */}
+          <section className="card overflow-hidden">
+            <div className="flex items-center justify-between gap-2 px-4 pt-4">
+              <div>
+                <h2 className="text-[15px] font-extrabold text-ink">오늘 처리할 일</h2>
+                <p className="mt-0.5 text-[12px] text-ink-mute">
+                  입금 확인 {todayQueue.filter((b) => b.status === "pending").length}건 · 환불 처리{" "}
+                  {todayQueue.filter((b) => b.refundStatus === "pending").length}건
+                </p>
+              </div>
+              {todayQueue.length > 0 && (
+                <span className="ui-badge ui-badge--pay">{todayQueue.length}건 대기</span>
+              )}
+            </div>
+
+            <div className="mt-2 divide-y divide-ink-line">
+              {todayQueue.length === 0 && (
+                <div className="px-4 pb-4 pt-3">
+                  <p className="text-[13px] font-semibold text-ink">오늘은 처리할 일이 없어요 🎉</p>
+                  <p className="mt-0.5 text-[12px] text-ink-mute">
+                    손님에게 결제 링크를 보내 두면 예약이 들어올 때 바로 확인할 수 있어요.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setTab("links")}
+                    className="btn-soft btn-sm mt-2"
+                  >
+                    <LinkIcon size={14} />
+                    링크 공유하기
+                  </button>
+                </div>
+              )}
+
+              {todayQueue.map((booking) => {
+                const claimed = Boolean(booking.paidClaimedAt);
+                const deadline = booking.expiresAt ? new Date(booking.expiresAt).getTime() : null;
+                const remaining = deadline ? deadline - clock : null;
+                const urgent = remaining !== null && remaining <= 5 * 60 * 1000;
+                const isRefund = booking.status !== "pending" && booking.refundStatus === "pending";
+                return (
+                  <button
+                    key={booking.id}
+                    type="button"
+                    onClick={() => setConfirmBooking(booking)}
+                    className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-brand-light/40"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[12px] text-ink-mute">
+                        {formatDate(booking.date)} {formatTime(booking.startTime)} · {booking.spaceName}
+                      </p>
+                      <p className="mt-0.5 flex flex-wrap items-baseline gap-x-1.5">
+                        <span className="text-[18px] font-extrabold text-ink">{won(booking.totalAmount)}</span>
+                        <span className="text-[13px] font-bold text-ink-soft">
+                          · {booking.depositorName || booking.guestName}
+                        </span>
+                      </p>
+                      <p
+                        className={cn(
+                          "mt-0.5 inline-flex items-center gap-1 text-[12px] font-semibold",
+                          claimed ? "text-[#1D4ED8]" : urgent ? "text-red-500" : "text-amber-700"
+                        )}
+                      >
+                        {isRefund ? (
+                          "환불 처리 필요"
+                        ) : claimed ? (
+                          <>
+                            <HourglassIcon size={12} /> 입금 신고 도착 · 확인만 하면 확정
+                          </>
+                        ) : (
+                          <>
+                            <ClockIcon size={12} />
+                            {remaining !== null && remaining > 0
+                              ? `남은 ${Math.floor(remaining / 60000)}분 · 입금 대기`
+                              : "입금 대기"}
+                          </>
+                        )}
+                      </p>
+                    </div>
+                    <span className="grid h-11 min-w-[84px] shrink-0 place-items-center rounded-xl bg-brand-dark px-3 text-[13px] font-bold text-white">
+                      {isRefund ? "환불 처리" : "입금 확인"}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <div className="rounded-xl2 border border-brand/20 bg-brand-light p-4">
-              <p className="text-[11px] font-semibold text-brand-dark/80">이번 달 예상 매출</p>
+              <p className="text-[12px] font-semibold text-brand-dark/80">이번 달 예상 매출</p>
               <p className="mt-1 text-2xl font-extrabold text-brand-dark">{wonShort(stats.revenue)}</p>
-              <p className="mt-0.5 text-[10px] text-brand-dark/70">확정 예약 {stats.confirmedCount}건 기준</p>
+              <p className="mt-0.5 text-[12px] text-brand-dark/70">확정 예약 {stats.confirmedCount}건 기준</p>
             </div>
             <div className="card p-4">
-              <p className="text-[11px] font-semibold text-ink-mute">접수된 예약</p>
+              <p className="text-[12px] font-semibold text-ink-mute">접수된 예약</p>
               <p className="mt-1 text-2xl font-extrabold text-ink">{stats.pending}건</p>
-              <p className="mt-0.5 text-[10px] text-ink-mute">승인 대기 중</p>
+              <p className="mt-0.5 text-[12px] text-ink-mute">승인 대기 중</p>
             </div>
             <div className="card p-4">
-              <p className="text-[11px] font-semibold text-ink-mute">노출 중인 공간</p>
+              <p className="text-[12px] font-semibold text-ink-mute">노출 중인 공간</p>
               <p className="mt-1 text-2xl font-extrabold text-ink">{mySpaces.length}개</p>
-              <p className="mt-0.5 text-[10px] text-ink-mute">상단 광고 {stats.exposed} · 타임특가 {stats.deals}</p>
+              <p className="mt-0.5 text-[12px] text-ink-mute">상단 광고 {stats.exposed} · 타임특가 {stats.deals}</p>
             </div>
             <div className="card p-4">
-              <p className="text-[11px] font-semibold text-ink-mute">결제 링크로 들어온 예약</p>
+              <p className="text-[12px] font-semibold text-ink-mute">결제 링크로 들어온 예약</p>
               <p className="mt-1 text-2xl font-extrabold text-ink">
                 {myBookings.filter((booking) => booking.channel === "link").length}건
               </p>
-              <p className="mt-0.5 text-[10px] text-ink-mute">자체 유입 손님</p>
+              <p className="mt-0.5 text-[12px] text-ink-mute">자체 유입 손님</p>
             </div>
           </div>
 
           <MonthlySavings bookings={myBookings} />
 
-          <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr_1fr]">
             <section className="card p-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-extrabold text-ink">최근 예약</h2>
                 <button
                   type="button"
                   onClick={() => setTab("bookings")}
-                  className="text-[11px] font-semibold text-ink-mute hover:text-brand-dark"
+                  className="text-[12px] font-semibold text-ink-mute hover:text-brand-dark"
                 >
                   전체 보기
                 </button>
@@ -646,7 +762,7 @@ export default function HostPage() {
                         <p className="truncate text-xs font-bold text-ink">
                           {booking.guestName} · {booking.spaceName}
                         </p>
-                        <p className="text-[10px] text-ink-mute">
+                        <p className="text-[12px] text-ink-mute">
                           {formatDate(booking.date)} {formatTime(booking.startTime)} · {booking.guests}명
                         </p>
                       </div>
@@ -662,7 +778,7 @@ export default function HostPage() {
 
             <section className="card p-4">
               <h2 className="text-sm font-extrabold text-ink">오늘의 운영 팁</h2>
-              <ul className="mt-2 space-y-2 text-[11px] leading-relaxed text-ink-soft">
+              <ul className="mt-2 space-y-2 text-[12px] leading-relaxed text-ink-soft">
                 <li className="flex gap-2">
                   <span className="text-brand-dark">•</span>
                   {stats.pending > 0
@@ -692,11 +808,11 @@ export default function HostPage() {
           <section className="relative overflow-hidden rounded-xl2 bg-gradient-to-br from-[#1B1624] via-[#2A1B2C] to-[#4A1F38] p-5 text-white">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="max-w-sm">
-                <p className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold">
+                <p className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[12px] font-bold">
                   <SparkleIcon size={12} /> 무료 운영 단계
                 </p>
                 <h2 className="mt-2 text-lg font-extrabold">지금은 수수료 0%로 운영 중이에요</h2>
-                <p className="mt-1 text-[11px] text-white/70">
+                <p className="mt-1 text-[12px] text-white/70">
                   플랫폼 예약·전용 결제 링크 모두 수수료 없이 정산됩니다. 정식 오픈 시점과 요율은 사전에 안내드려요.
                 </p>
               </div>
@@ -704,7 +820,7 @@ export default function HostPage() {
                 <MascotAvatar size={64} className="hidden ring-white/30 sm:inline-grid" />
                 <span className="rounded-xl bg-white/10 px-4 py-3 text-center">
                   <span className="block text-2xl font-extrabold">0%</span>
-                  <span className="block text-[10px] text-white/70">현재 수수료</span>
+                  <span className="block text-[12px] text-white/70">현재 수수료</span>
                 </span>
               </div>
             </div>
@@ -753,7 +869,7 @@ export default function HostPage() {
                     </div>
                   </div>
                   <div className="p-3.5">
-                    <p className="text-[10px] text-ink-mute">
+                    <p className="text-[12px] text-ink-mute">
                       {CATEGORY_MAP[space.category]?.label} · {space.region} {space.district}
                     </p>
                     <h3 className="mt-0.5 truncate text-sm font-bold text-ink">{space.name}</h3>
@@ -790,29 +906,29 @@ export default function HostPage() {
 
                     <div className="mt-2.5 flex items-center gap-1.5 rounded-lg bg-ink-line/30 px-2.5 py-2">
                       <LinkIcon size={12} className="shrink-0 text-brand-dark" />
-                      <span className="min-w-0 flex-1 truncate text-[10px] text-ink-soft">/pay/{space.paySlug}</span>
+                      <span className="min-w-0 flex-1 truncate text-[12px] text-ink-soft">/pay/{space.paySlug}</span>
                       <button
                         type="button"
                         onClick={() => void copy(`${origin}/pay/${space.paySlug}`, "결제 링크를 복사했어요!")}
-                        className="shrink-0 rounded-md bg-white px-2 py-1 text-[10px] font-bold text-brand-dark"
+                        className="shrink-0 rounded-md bg-white px-2 py-1 text-[12px] font-bold text-brand-dark"
                       >
                         복사
                       </button>
                     </div>
 
                     {space.approvalStatus === "rejected" && (
-                      <p className="mt-1.5 rounded-lg bg-red-50 px-2.5 py-2 text-[10px] font-semibold leading-relaxed text-red-600">
+                      <p className="mt-1.5 rounded-lg bg-red-50 px-2.5 py-2 text-[12px] font-semibold leading-relaxed text-red-600">
                         반려 사유 · {space.rejectionReason || "관리자 안내를 확인해 주세요."}
                       </p>
                     )}
                     {space.approvalStatus === "pending_review" && (
-                      <p className="mt-1.5 rounded-lg bg-amber-50 px-2.5 py-2 text-[10px] font-semibold leading-relaxed text-amber-700">
+                      <p className="mt-1.5 rounded-lg bg-amber-50 px-2.5 py-2 text-[12px] font-semibold leading-relaxed text-amber-700">
                         관리자 확인 중이에요. 승인되면 손님 화면에 공개되고 예약을 받을 수 있어요.
                       </p>
                     )}
 
                     {spaceAccounts[space.id] ? (
-                      <div className="mt-1.5 flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-2 text-[10px] text-emerald-700">
+                      <div className="mt-1.5 flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-2 text-[12px] text-emerald-700">
                         <CheckIcon size={11} className="shrink-0" />
                         <span className="min-w-0 truncate font-semibold">
                           입금 계좌 · {spaceAccounts[space.id].bankName} {spaceAccounts[space.id].accountNumber}
@@ -822,7 +938,7 @@ export default function HostPage() {
                       <button
                         type="button"
                         onClick={() => openEdit(space)}
-                        className="mt-1.5 flex w-full items-center gap-1.5 rounded-lg bg-amber-50 px-2.5 py-2 text-left text-[10px] font-semibold text-amber-700 transition hover:bg-amber-100"
+                        className="mt-1.5 flex w-full items-center gap-1.5 rounded-lg bg-amber-50 px-2.5 py-2 text-left text-[12px] font-semibold text-amber-700 transition hover:bg-amber-100"
                       >
                         <span className="shrink-0">⚠️</span>
                         <span className="min-w-0 flex-1">입금 계좌 미등록 · 손님에게 입금 안내가 나가지 않아요</span>
@@ -847,7 +963,7 @@ export default function HostPage() {
                     </div>
                     {confirmDelete === space.id && (
                       <div className="mt-2 rounded-lg bg-red-50 p-2.5">
-                        <p className="text-[10px] font-semibold text-red-700">이 공간을 삭제할까요? 예약 내역도 함께 숨겨져요.</p>
+                        <p className="text-[12px] font-semibold text-red-700">이 공간을 삭제할까요? 예약 내역도 함께 숨겨져요.</p>
                         <div className="mt-1.5 flex gap-1.5">
                           <button
                             type="button"
@@ -857,14 +973,14 @@ export default function HostPage() {
                               setConfirmDelete(null);
                               setToast("공간을 삭제했어요.");
                             }}
-                            className="rounded-md bg-red-500 px-2.5 py-1 text-[10px] font-bold text-white"
+                            className="rounded-md bg-red-500 px-2.5 py-1 text-[12px] font-bold text-white"
                           >
                             삭제
                           </button>
                           <button
                             type="button"
                             onClick={() => setConfirmDelete(null)}
-                            className="rounded-md bg-white px-2.5 py-1 text-[10px] font-bold text-ink-soft"
+                            className="rounded-md bg-white px-2.5 py-1 text-[12px] font-bold text-ink-soft"
                           >
                             취소
                           </button>
@@ -885,7 +1001,7 @@ export default function HostPage() {
             <h2 className="text-base font-extrabold text-ink">
               예약 관리 <span className="text-brand-dark">{myBookings.length}</span>
             </h2>
-            <p className="text-[11px] text-ink-mute">승인 대기 {stats.pending}건 · 확정 {stats.confirmedCount}건</p>
+            <p className="text-[12px] text-ink-mute">승인 대기 {stats.pending}건 · 확정 {stats.confirmedCount}건</p>
           </div>
 
           <div className="mt-3 space-y-3">
@@ -915,11 +1031,11 @@ export default function HostPage() {
                             {REFUND_LABEL[booking.refundStatus]}
                           </span>
                         )}
-                        <span className="text-[10px] text-ink-mute">No. {shortId(booking.id)}</span>
-                        <span className="text-[10px] text-ink-mute">· {formatRelativeDate(booking.createdAt)}</span>
+                        <span className="text-[12px] text-ink-mute">No. {shortId(booking.id)}</span>
+                        <span className="text-[12px] text-ink-mute">· {formatRelativeDate(booking.createdAt)}</span>
                       </div>
                       <h3 className="mt-1.5 text-sm font-bold text-ink">{booking.spaceName}</h3>
-                      <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-ink-soft">
+                      <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-ink-soft">
                         <span className="inline-flex items-center gap-1">
                           <CalendarIcon size={12} className="text-ink-mute" />
                           {formatDate(booking.date)} {formatTime(booking.startTime)} ~ {endTime(booking.startTime, booking.hours)}
@@ -929,7 +1045,7 @@ export default function HostPage() {
                           {booking.guests}명 · {booking.hours}시간
                         </span>
                       </div>
-                      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-ink-line/30 px-2.5 py-2 text-[11px]">
+                      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-ink-line/30 px-2.5 py-2 text-[12px]">
                         <span className="font-semibold text-ink">{booking.guestName}</span>
                         <a href={`tel:${booking.guestPhone}`} className="text-ink-soft hover:text-brand-dark">
                           {booking.guestPhone}
@@ -953,7 +1069,7 @@ export default function HostPage() {
                               type="button"
                               disabled={busyBooking === booking.id}
                               onClick={() => void handleBooking(booking.id, "confirmed")}
-                              className="rounded-lg bg-brand px-3 py-1.5 text-[11px] font-bold text-white shadow-sm hover:bg-brand-dark disabled:opacity-60"
+                              className="h-11 min-w-[104px] rounded-xl bg-brand-dark px-4 text-[14px] font-bold text-white shadow-sm hover:bg-brand-deep disabled:opacity-60"
                             >
                               입금 확인(확정)
                             </button>
@@ -961,7 +1077,7 @@ export default function HostPage() {
                               type="button"
                               disabled={busyBooking === booking.id}
                               onClick={() => void handleBooking(booking.id, "cancelled")}
-                              className="rounded-lg border border-ink-line px-3 py-1.5 text-[11px] font-bold text-ink-soft hover:border-red-200 hover:text-red-500 disabled:opacity-60"
+                              className="h-11 min-w-[88px] rounded-xl border border-ink-line px-4 text-[14px] font-bold text-ink-soft hover:border-red-200 hover:text-red-500 disabled:opacity-60"
                             >
                               예약 거절
                             </button>
@@ -972,7 +1088,7 @@ export default function HostPage() {
                             type="button"
                             disabled={busyBooking === booking.id}
                             onClick={() => void handleBooking(booking.id, "cancelled")}
-                            className="rounded-lg border border-ink-line px-3 py-1.5 text-[11px] font-bold text-ink-soft hover:border-red-200 hover:text-red-500 disabled:opacity-60"
+                            className="h-11 min-w-[88px] rounded-xl border border-ink-line px-4 text-[14px] font-bold text-ink-soft hover:border-red-200 hover:text-red-500 disabled:opacity-60"
                           >
                             예약 취소
                           </button>
@@ -992,18 +1108,18 @@ export default function HostPage() {
                                 setBusyBooking(null);
                               }
                             }}
-                            className="rounded-lg bg-amber-500 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-amber-600 disabled:opacity-60"
+                            className="h-11 min-w-[104px] rounded-xl bg-amber-500 px-4 text-[14px] font-bold text-white hover:bg-amber-600 disabled:opacity-60"
                           >
                             환불 완료 처리
                           </button>
                         )}
                         {booking.status === "cancelled" && booking.refundStatus === "none" && (
-                          <span className="text-[11px] text-ink-mute">
+                          <span className="text-[12px] text-ink-mute">
                             {booking.cancelReason === "expired" ? "입금 기한 만료로 자동 취소" : "종료된 예약"}
                           </span>
                         )}
                         {booking.status === "cancelled" && booking.refundStatus === "completed" && (
-                          <span className="text-[11px] font-semibold text-emerald-600">환불 완료</span>
+                          <span className="text-[12px] font-semibold text-emerald-600">환불 완료</span>
                         )}
                       </div>
                     </div>
@@ -1025,7 +1141,7 @@ export default function HostPage() {
               </span>
               <div>
                 <h2 className="text-sm font-extrabold text-ink">사장님 시간 차단</h2>
-                <p className="text-[10px] text-ink-mute">
+                <p className="text-[12px] text-ink-mute">
                   예약을 받고 싶지 않은 시간대를 막아 두면 손님 화면에서 선택할 수 없어요.
                 </p>
               </div>
@@ -1125,7 +1241,7 @@ export default function HostPage() {
               </button>
             </div>
             {blockError && (
-              <p className="mt-2 rounded-lg bg-red-50 px-2.5 py-1.5 text-[10.5px] font-medium text-red-600">{blockError}</p>
+              <p className="mt-2 rounded-lg bg-red-50 px-2.5 py-1.5 text-[12px] font-medium text-red-600">{blockError}</p>
             )}
           </section>
 
@@ -1144,14 +1260,14 @@ export default function HostPage() {
             </h2>
             <div className="mt-2 divide-y divide-ink-line">
               {myBlocks.length === 0 ? (
-                <p className="py-6 text-center text-[11px] text-ink-mute">아직 차단한 시간이 없어요.</p>
+                <p className="py-6 text-center text-[12px] text-ink-mute">아직 차단한 시간이 없어요.</p>
               ) : (
                 myBlocks.map((block) => (
                   <div key={block.id} className="flex flex-wrap items-center gap-2 py-2.5">
                     <span className="badge bg-slate-100 text-slate-600">차단</span>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-xs font-bold text-ink">{block.spaceName}</p>
-                      <p className="text-[10px] text-ink-mute">
+                      <p className="text-[12px] text-ink-mute">
                         {formatDate(block.date)} {formatTime(block.startTime)} ~ {formatTime(endTime(block.startTime, block.hours))}
                         {block.memo ? ` · ${block.memo}` : ""}
                       </p>
@@ -1166,7 +1282,7 @@ export default function HostPage() {
                           setToast(err instanceof Error ? err.message : "차단을 해제하지 못했어요.");
                         }
                       }}
-                      className="rounded-lg border border-ink-line px-3 py-1.5 text-[11px] font-bold text-ink-soft hover:border-brand hover:text-brand-dark"
+                      className="h-11 rounded-xl border border-ink-line px-4 text-[14px] font-bold text-ink-soft hover:border-brand hover:text-brand-dark"
                     >
                       차단 해제
                     </button>
@@ -1174,7 +1290,7 @@ export default function HostPage() {
                 ))
               )}
             </div>
-            <p className="mt-2 rounded-lg bg-ink-line/30 px-2.5 py-2 text-[10px] leading-relaxed text-ink-mute">
+            <p className="mt-2 rounded-lg bg-ink-line/30 px-2.5 py-2 text-[12px] leading-relaxed text-ink-mute">
               차단한 시간은 예약과 똑같이 중복 예약이 막히고, 매출·정산 집계에서는 제외돼요.
             </p>
           </section>
@@ -1190,7 +1306,7 @@ export default function HostPage() {
               </span>
               <div>
                 <h2 className="text-sm font-extrabold text-ink">간편 결제 링크 1초 생성기</h2>
-                <p className="text-[10px] text-ink-mute">인스타 DM·카톡으로 보내면 손님이 바로 예약·결제해요.</p>
+                <p className="text-[12px] text-ink-mute">인스타 DM·카톡으로 보내면 손님이 바로 예약·결제해요.</p>
               </div>
             </div>
 
@@ -1220,7 +1336,7 @@ export default function HostPage() {
                   전용 결제·예약 링크
                 </label>
                 <div className="flex gap-2">
-                  <input id="link-url" readOnly value={payLink} className="input bg-ink-line/20 text-[11px]" />
+                  <input id="link-url" readOnly value={payLink} className="input bg-ink-line/20 text-[12px]" />
                   <button
                     type="button"
                     disabled={!payLink}
@@ -1250,15 +1366,17 @@ export default function HostPage() {
                 </button>
               </div>
 
+              <QrShare url={payLink} spaceName={selectedLinkSpace?.name ?? ""} onToast={setToast} />
+
               {mode === "demo" && (
-                <p className="rounded-lg bg-amber-50 px-3 py-2 text-[10px] leading-relaxed text-amber-700">
+                <p className="rounded-lg bg-amber-50 px-3 py-2 text-[12px] leading-relaxed text-amber-700">
                   미리보기 모드에서는 링크가 이 브라우저에서만 열려요. Supabase를 연결하면 손님 기기에서도 그대로
                   열립니다.
                 </p>
               )}
 
               {selectedLinkSpace && (
-                <div className="rounded-xl bg-ink-line/30 p-3 text-[11px] leading-relaxed text-ink-soft">
+                <div className="rounded-xl bg-ink-line/30 p-3 text-[12px] leading-relaxed text-ink-soft">
                   <p className="font-bold text-ink">{selectedLinkSpace.name}</p>
                   <p className="mt-0.5">
                     시간당 {won(selectedLinkSpace.pricePerHour)}
@@ -1286,14 +1404,14 @@ export default function HostPage() {
               <br />
               전용 링크로 받으세요
             </h2>
-            <p className="mt-2 text-[11px] leading-relaxed text-white/80">
+            <p className="mt-2 text-[12px] leading-relaxed text-white/80">
               전용 링크로 들어온 예약은 사장님 센터에 바로 접수되고, 확정·결제 안내까지 한 번에 관리할 수 있어요.
               공간별로 링크가 자동 발급되어 인스타 프로필·블로그에 그대로 붙여 넣으면 됩니다.
             </p>
-            <div className="mt-4 space-y-2 text-[11px]">
+            <div className="mt-4 space-y-2 text-[12px]">
               {[
                 "공간별 전용 링크 자동 발급",
-                "손님은 로그인 없이 3초 만에 예약",
+                "손님은 로그인 없이 이름·연락처만으로 예약 요청",
                 "예약 접수 → 승인 → 정산까지 한 곳에서",
               ].map((item) => (
                 <p key={item} className="flex items-center gap-1.5">
@@ -1334,7 +1452,7 @@ export default function HostPage() {
               <div>
                 <div className="flex items-center justify-between">
                   <span className="label mb-0">공간 사진</span>
-                  <span className="text-[10px] font-semibold text-ink-mute">
+                  <span className="text-[12px] font-semibold text-ink-mute">
                     {form.photos.length}/{MAX_PHOTOS}장
                   </span>
                 </div>
@@ -1360,14 +1478,14 @@ export default function HostPage() {
                         className="h-full w-full object-cover"
                       />
                       {index === 0 ? (
-                        <span className="absolute left-1 top-1 rounded bg-ink/80 px-1.5 py-0.5 text-[9px] font-bold text-white">
+                        <span className="absolute left-1 top-1 rounded bg-ink/80 px-1.5 py-0.5 text-[12px] font-bold text-white">
                           대표
                         </span>
                       ) : (
                         <button
                           type="button"
                           onClick={() => makeCoverPhoto(url)}
-                          className="absolute inset-x-1 bottom-1 rounded bg-white/90 px-1 py-0.5 text-[9px] font-bold text-ink-soft transition sm:opacity-0 sm:group-hover:opacity-100"
+                          className="absolute inset-x-1 bottom-1 h-8 rounded bg-white/90 px-1 text-[12px] font-bold text-ink-soft transition sm:opacity-0 sm:group-hover:opacity-100"
                         >
                           대표로
                         </button>
@@ -1375,7 +1493,7 @@ export default function HostPage() {
                       <button
                         type="button"
                         onClick={() => removePhoto(url)}
-                        className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-ink/70 text-white transition hover:bg-brand"
+                        className="absolute right-1 top-1 grid h-8 w-8 place-items-center rounded-full bg-ink/70 text-white transition hover:bg-brand"
                         aria-label="사진 삭제"
                       >
                         <CloseIcon size={11} />
@@ -1387,7 +1505,7 @@ export default function HostPage() {
                       type="button"
                       onClick={() => photoInputRef.current?.click()}
                       disabled={uploading}
-                      className="flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-brand/40 bg-brand-light/40 text-[10px] font-bold text-brand-dark transition hover:border-brand disabled:opacity-60"
+                      className="flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-brand/40 bg-brand-light/40 text-[12px] font-bold text-brand-dark transition hover:border-brand disabled:opacity-60"
                     >
                       {uploading ? (
                         <>
@@ -1403,11 +1521,11 @@ export default function HostPage() {
                     </button>
                   )}
                 </div>
-                <p className="mt-1.5 text-[10px] leading-relaxed text-ink-mute">
+                <p className="mt-1.5 text-[12px] leading-relaxed text-ink-mute">
                   첫 번째 사진이 대표 사진으로 보여요. JPG·PNG·WebP · 최대 {MAX_PHOTOS}장
                 </p>
                 {photoError && (
-                  <p className="mt-1 rounded-lg bg-red-50 px-2.5 py-1.5 text-[10px] font-medium text-red-500">
+                  <p className="mt-1 rounded-lg bg-red-50 px-2.5 py-1.5 text-[12px] font-medium text-red-500">
                     {photoError}
                   </p>
                 )}
@@ -1483,10 +1601,10 @@ export default function HostPage() {
 
               <div className="rounded-xl border border-ink-line bg-ink-line/20 p-3">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-[11px] font-extrabold text-ink">확정 후에만 공개되는 정보</p>
-                  <span className="rounded-full bg-white px-2 py-0.5 text-[9px] font-bold text-ink-mute">🔒 예약 확정 손님만</span>
+                  <p className="text-[12px] font-extrabold text-ink">확정 후에만 공개되는 정보</p>
+                  <span className="rounded-full bg-white px-2 py-0.5 text-[12px] font-bold text-ink-mute">🔒 예약 확정 손님만</span>
                 </div>
-                <p className="mt-0.5 text-[10px] leading-relaxed text-ink-mute">
+                <p className="mt-0.5 text-[12px] leading-relaxed text-ink-mute">
                   공개 화면에는 동네까지만 보여요. 입금이 확인돼 예약이 확정되면 아래 정보가 예약자에게 열립니다.
                 </p>
                 <div className="mt-2">
@@ -1564,10 +1682,10 @@ export default function HostPage() {
 
               <div className="rounded-xl border border-brand/20 bg-brand-light/60 p-3">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-[11px] font-extrabold text-ink">입금 받을 계좌</p>
-                  <span className="rounded-full bg-white px-2 py-0.5 text-[9px] font-bold text-brand-dark">15분 입금 확인</span>
+                  <p className="text-[12px] font-extrabold text-ink">입금 받을 계좌</p>
+                  <span className="rounded-full bg-white px-2 py-0.5 text-[12px] font-bold text-brand-dark">15분 입금 확인</span>
                 </div>
-                <p className="mt-0.5 text-[10px] leading-relaxed text-ink-mute">
+                <p className="mt-0.5 text-[12px] leading-relaxed text-ink-mute">
                   손님이 예약하면 이 계좌로 이용 요금을 입금합니다. 15분 안에 입금되지 않으면 예약은 자동으로 풀려요.
                 </p>
                 <div className="mt-2 grid grid-cols-2 gap-2">
@@ -1610,12 +1728,12 @@ export default function HostPage() {
                   />
                 </div>
                 {!form.bankName.trim() && !form.accountNumber.trim() && !form.accountHolder.trim() && (
-                  <p className="mt-1.5 text-[10px] font-medium text-amber-700">
+                  <p className="mt-1.5 text-[12px] font-medium text-amber-700">
                     계좌를 비워 두면 손님 예약 화면에는 &ldquo;계좌 미등록&rdquo; 안내가 나가요.
                   </p>
                 )}
                 {editing && (
-                  <p className="mt-1.5 rounded-lg bg-amber-50 px-2.5 py-1.5 text-[10px] font-medium leading-relaxed text-amber-700">
+                  <p className="mt-1.5 rounded-lg bg-amber-50 px-2.5 py-1.5 text-[12px] font-medium leading-relaxed text-amber-700">
                     🛡️ 입금 계좌를 바꾸면 계좌 바꿔치기 사기를 막기 위해 <b>관리자 재승인 전까지</b> 공개·새 예약이
                     잠시 멈춰요.
                   </p>
@@ -1667,7 +1785,7 @@ export default function HostPage() {
               </div>
 
               {formError && (
-                <p className="rounded-lg bg-red-50 px-3 py-2 text-[11px] font-medium text-red-600">{formError}</p>
+                <p className="rounded-lg bg-red-50 px-3 py-2 text-[12px] font-medium text-red-600">{formError}</p>
               )}
 
               <div className="flex gap-2 pt-1">
@@ -1683,11 +1801,119 @@ export default function HostPage() {
         </div>
       )}
 
+      {/* 입금 확인·환불 처리 시트 — 큐에서 한 번 누르고 여기서 한 번 더 누르면 끝(2탭) */}
+      {confirmBooking && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/50 backdrop-blur-sm sm:items-center sm:p-4">
+          <div className="w-full max-w-md animate-pop-in rounded-t-2xl bg-white p-5 shadow-float sm:rounded-2xl">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <h2 className="text-[17px] font-extrabold text-ink">
+                  {confirmBooking.status === "pending" ? "입금을 확인할까요?" : "환불을 처리했나요?"}
+                </h2>
+                <p className="mt-0.5 text-[12px] text-ink-mute">
+                  {confirmBooking.status === "pending"
+                    ? "통장 거래내역과 아래 이름·금액을 대조해 주세요."
+                    : "손님 계좌로 환불을 보낸 뒤 표시해 주세요."}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setConfirmBooking(null)}
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-lg text-ink-mute hover:bg-ink-line/60"
+                aria-label="닫기"
+              >
+                <CloseIcon size={18} />
+              </button>
+            </div>
+
+            <div className="mt-3 rounded-2xl bg-brand-light/70 px-4 py-3">
+              <p className="text-[12px] font-semibold text-ink-mute">
+                {confirmBooking.spaceName} · {formatDate(confirmBooking.date)} {formatTime(confirmBooking.startTime)}
+              </p>
+              <p className="mt-1 text-[24px] font-extrabold leading-tight text-ink">{won(confirmBooking.totalAmount)}</p>
+              <p className="mt-0.5 text-[14px] font-bold text-ink-soft">
+                입금자명 · {confirmBooking.depositorName || confirmBooking.guestName}
+              </p>
+            </div>
+
+            <p className="mt-3 text-[12px] leading-relaxed text-ink-mute">
+              {confirmBooking.status === "pending"
+                ? "확인하면 예약이 확정되고 손님의 예약 내역에 바로 반영돼요."
+                : "표시하면 예약 관리 목록에서 '환불 완료'로 바뀝니다."}
+            </p>
+
+            <div className="mt-4 flex gap-2">
+              <button type="button" onClick={() => setConfirmBooking(null)} className="btn-ghost flex-1 py-3">
+                닫기
+              </button>
+              <button
+                type="button"
+                disabled={busyBooking === confirmBooking.id}
+                onClick={async () => {
+                  const target = confirmBooking;
+                  if (target.status === "pending") {
+                    await handleBooking(target.id, "confirmed");
+                  } else {
+                    setBusyBooking(target.id);
+                    try {
+                      await updateRefund(target.id, "completed", "사장님 계좌 환불 완료");
+                      setToast("환불 완료로 처리했어요.");
+                    } catch (err) {
+                      setToast(err instanceof Error ? err.message : "환불 처리를 하지 못했어요.");
+                    } finally {
+                      setBusyBooking(null);
+                    }
+                  }
+                  setConfirmBooking(null);
+                }}
+                className="flex-1 rounded-xl bg-brand-dark py-3 text-[15px] font-bold text-white disabled:opacity-60"
+              >
+                {busyBooking === confirmBooking.id
+                  ? "처리 중…"
+                  : confirmBooking.status === "pending"
+                    ? "입금 확인 완료"
+                    : "환불 완료 표시"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {toast && (
-        <div className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 animate-fade-up rounded-full bg-ink px-4 py-2.5 text-xs font-bold text-white shadow-float md:bottom-8">
+        <div className="ui-toast text-white">
           {toast}
         </div>
       )}
+
+      {/* 모바일 하단 탭 — 360px에서도 4개가 한 번에 보인다 */}
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-ink-line bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur sm:hidden">
+        <div className="grid grid-cols-4">
+          {MOBILE_TABS.map((item) => {
+            const Icon = item.icon;
+            const active = tab === item.key;
+            return (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => setTab(item.key)}
+                className={cn(
+                  "flex flex-col items-center gap-1 py-2.5 text-[12px] font-semibold transition",
+                  active ? "text-brand-dark" : "text-ink-mute"
+                )}
+                aria-current={active ? "page" : undefined}
+              >
+                <Icon size={22} />
+                {item.label}
+                {item.key === "bookings" && stats.pending > 0 && (
+                  <span className="absolute mt-0 -translate-y-9 translate-x-4 rounded-full bg-brand px-1.5 text-[12px] font-bold text-white">
+                    {stats.pending}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </nav>
 
       {tab === "spaces" && mySpaces.length > 0 && mode === "demo" && (
         <div className="mt-6 flex justify-end">
@@ -1699,7 +1925,7 @@ export default function HostPage() {
                 setToast("미리보기 데이터를 초기화했어요.");
               }
             }}
-            className="text-[10px] font-semibold text-ink-mute underline-offset-2 hover:text-brand-dark hover:underline"
+            className="text-[12px] font-semibold text-ink-mute underline-offset-2 hover:text-brand-dark hover:underline"
           >
             미리보기 데이터 초기화
           </button>

@@ -2,22 +2,22 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useApp } from "@/components/AppProvider";
 import { CategoryChips } from "@/components/Bits";
 import { MascotBanner, SearchPanel, TimeDealSection } from "@/components/HomeSections";
 import { SpaceGrid } from "@/components/SpaceCard";
-import { ChevronRightIcon, SparkleIcon, StoreIcon } from "@/components/Icons";
+import { ChevronRightIcon, CloseIcon, SparkleIcon, StoreIcon } from "@/components/Icons";
 import { SloganUnderline } from "@/components/Logo";
+import { fetchSoldOutSpaces } from "@/lib/availability";
 import { PRICE_RANGES, REGIONS } from "@/lib/constants";
 import { filterSpaces, type SortKey } from "@/lib/filter";
+import { todayISO } from "@/lib/format";
 import type { Category, Space } from "@/lib/types";
 
 const SORTS: { key: SortKey; label: string }[] = [
   { key: "recommend", label: "추천순" },
   { key: "price", label: "가격 낮은순" },
-  { key: "rating", label: "평점 높은순" },
-  { key: "reviews", label: "리뷰 많은순" },
 ];
 
 export default function HomeView({ initialSpaces }: { initialSpaces: Space[] }) {
@@ -26,6 +26,8 @@ export default function HomeView({ initialSpaces }: { initialSpaces: Space[] }) 
   const [region, setRegion] = useState("all");
   const [price, setPrice] = useState("all");
   const [sort, setSort] = useState<SortKey>("recommend");
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [soldOut, setSoldOut] = useState<Set<string>>(new Set());
 
   // 서버(SSR/ISR)가 내려준 초기 목록으로 바로 그리고, 로그인·사장님 데이터가
   // 준비되면 숨김 공간까지 반영한 목록으로 조용히 교체한다.
@@ -36,6 +38,21 @@ export default function HomeView({ initialSpaces }: { initialSpaces: Space[] }) 
     [spaces, region, price, sort]
   );
 
+  // 카드의 '마감' 배지 — 오늘 예약 가능한 시간이 하나도 없는 공간 (실패해도 화면은 그대로)
+  useEffect(() => {
+    if (!ready || spaces.length === 0) return;
+    let alive = true;
+    const ids = spaces.map((space) => space.id).slice(0, 40);
+    fetchSoldOutSpaces(ids, todayISO())
+      .then((set) => {
+        if (alive) setSoldOut(set);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [ready, spaces]);
+
   function selectCategory(category: Category | "all") {
     router.push(category === "all" ? "/search" : `/search?category=${category}`);
   }
@@ -45,6 +62,9 @@ export default function HomeView({ initialSpaces }: { initialSpaces: Space[] }) 
     setPrice("all");
     setSort("recommend");
   }
+
+  const priceLabel = PRICE_RANGES.find((range) => range.key === price)?.label ?? "전체 가격";
+  const activeCount = (region !== "all" ? 1 : 0) + (price !== "all" ? 1 : 0) + (sort !== "recommend" ? 1 : 0);
 
   return (
     <div>
@@ -58,11 +78,11 @@ export default function HomeView({ initialSpaces }: { initialSpaces: Space[] }) 
           aria-hidden
         />
         <div className="container-page relative pb-8 pt-9 sm:pb-12 sm:pt-14">
-          <div className="grid gap-6 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:gap-10">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:gap-10">
             <div className="min-w-0">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/20 bg-white/80 px-3 py-1 text-[12px] font-bold text-brand-dark">
                 <SparkleIcon size={13} />
-                찾고, 예약하고, 결제까지 — 한 번에!
+                찾고, 예약 요청하고, 입금 확인까지 — 한 번에
               </span>
 
               <h1 className="mt-4 heading-1 text-ink sm:text-[40px] lg:text-[44px]">
@@ -91,12 +111,14 @@ export default function HomeView({ initialSpaces }: { initialSpaces: Space[] }) 
               <div className="mt-6 flex max-w-md divide-x divide-brand/15 sm:max-w-lg">
                 {[
                   { icon: "⚡", label: "실시간 공실", hint: "비어 있는 시간만 노출" },
-                  { icon: "⏱️", label: "예약 3초", hint: "날짜·시간만 고르면 끝" },
-                  { icon: "🩷", label: "투명한 이용 안내", hint: "결제 전 금액 그대로" },
+                  { icon: "🗓", label: "예약 요청", hint: "날짜·시간만 고르면 끝" },
+                  { icon: "🩷", label: "입금하면 확정", hint: "결제 전 금액 그대로" },
                 ].map((item) => (
                   <div key={item.label} className="px-4 first:pl-0 last:pr-0 sm:px-6">
                     <p className="text-[13px] font-extrabold text-ink sm:text-sm">
-                      <span aria-hidden className="mr-1">{item.icon}</span>
+                      <span aria-hidden className="mr-1">
+                        {item.icon}
+                      </span>
                       {item.label}
                     </p>
                     <p className="mt-1 text-[12px] text-ink-mute">{item.hint}</p>
@@ -138,49 +160,70 @@ export default function HomeView({ initialSpaces }: { initialSpaces: Space[] }) 
                 {filtered.length > 0 ? ` · ${filtered.length}곳` : ""}
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <select
-                value={region}
-                onChange={(event) => setRegion(event.target.value)}
-                className="rounded-lg border border-ink-line bg-white px-2.5 py-1.5 text-xs font-semibold text-ink-soft focus:border-brand focus:outline-none"
-                aria-label="지역 필터"
-              >
-                <option value="all">지역 전체</option>
-                {REGIONS.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={price}
-                onChange={(event) => setPrice(event.target.value)}
-                className="rounded-lg border border-ink-line bg-white px-2.5 py-1.5 text-xs font-semibold text-ink-soft focus:border-brand focus:outline-none"
-                aria-label="가격대 필터"
-              >
-                {PRICE_RANGES.map((range) => (
-                  <option key={range.key} value={range.key}>
-                    {range.label}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={sort}
-                onChange={(event) => setSort(event.target.value as SortKey)}
-                className="rounded-lg border border-ink-line bg-white px-2.5 py-1.5 text-xs font-semibold text-ink-soft focus:border-brand focus:outline-none"
-                aria-label="정렬"
-              >
-                {SORTS.map((item) => (
-                  <option key={item.key} value={item.key}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <button
+              type="button"
+              onClick={() => setSheetOpen(true)}
+              className="ui-chip"
+              aria-haspopup="dialog"
+            >
+              <SparkleIcon size={14} />
+              필터
+              {activeCount > 0 && (
+                <span className="grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-[12px] font-bold text-white">
+                  {activeCount}
+                </span>
+              )}
+            </button>
           </div>
+
+          {activeCount > 0 && (
+            <div className="mb-3 flex flex-wrap gap-1.5">
+              {region !== "all" && (
+                <button
+                  type="button"
+                  onClick={() => setRegion("all")}
+                  className="ui-chip ui-chip--summary"
+                  aria-label={`${region} 필터 해제`}
+                >
+                  {region}
+                  <CloseIcon size={13} />
+                </button>
+              )}
+              {price !== "all" && (
+                <button
+                  type="button"
+                  onClick={() => setPrice("all")}
+                  className="ui-chip ui-chip--summary"
+                  aria-label={`${priceLabel} 필터 해제`}
+                >
+                  {priceLabel}
+                  <CloseIcon size={13} />
+                </button>
+              )}
+              {sort !== "recommend" && (
+                <button
+                  type="button"
+                  onClick={() => setSort("recommend")}
+                  className="ui-chip ui-chip--summary"
+                  aria-label="정렬 필터 해제"
+                >
+                  가격 낮은순
+                  <CloseIcon size={13} />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="ui-chip ui-chip--summary border border-ink-line bg-white text-ink-mute"
+              >
+                초기화
+              </button>
+            </div>
+          )}
 
           <SpaceGrid
             spaces={filtered}
+            soldOutIds={soldOut}
             onReset={resetFilters}
             emptyTitle={
               region === "all" && price === "all"
@@ -235,6 +278,110 @@ export default function HomeView({ initialSpaces }: { initialSpaces: Space[] }) 
           </div>
         </section>
       </div>
+
+      {/* 필터 바텀시트 — 홈의 select 3개를 하나로 모았다 */}
+      {sheetOpen && (
+        <>
+          <div
+            className="ui-sheet-backdrop"
+            role="presentation"
+            onClick={() => setSheetOpen(false)}
+          />
+          <div className="ui-sheet" role="dialog" aria-modal="true" aria-label="공간 필터">
+            <div className="ui-sheet-handle" />
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-extrabold text-ink">어디서, 얼마로 찾을까요?</h2>
+              <button
+                type="button"
+                onClick={() => setSheetOpen(false)}
+                className="grid h-10 w-10 place-items-center rounded-xl text-ink-mute hover:bg-ink-line/60"
+                aria-label="필터 닫기"
+              >
+                <CloseIcon size={20} />
+              </button>
+            </div>
+
+            <div className="mt-4">
+              <p className="text-[13px] font-bold text-ink-soft">지역</p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setRegion("all")}
+                  aria-pressed={region === "all"}
+                  className="ui-chip"
+                >
+                  지역 전체
+                </button>
+                {REGIONS.map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => setRegion(item)}
+                    aria-pressed={region === item}
+                    className="ui-chip"
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-5">
+              <p className="text-[13px] font-bold text-ink-soft">가격대</p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {PRICE_RANGES.map((range) => (
+                  <button
+                    key={range.key}
+                    type="button"
+                    onClick={() => setPrice(range.key)}
+                    aria-pressed={price === range.key}
+                    className="ui-chip"
+                  >
+                    {range.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-5">
+              <p className="text-[13px] font-bold text-ink-soft">정렬</p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {SORTS.map((item) => (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => setSort(item.key)}
+                    aria-pressed={sort === item.key}
+                    className="ui-chip"
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-6 flex gap-2 pb-1">
+              <button
+                type="button"
+                onClick={() => {
+                  resetFilters();
+                  setSheetOpen(false);
+                }}
+                className="btn-ghost shrink-0 px-4"
+              >
+                초기화
+              </button>
+              <button
+                type="button"
+                onClick={() => setSheetOpen(false)}
+                className="btn-primary flex-1 py-3"
+              >
+                {filtered.length}곳 보기
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

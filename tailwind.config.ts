@@ -40,7 +40,6 @@ const config: Config = {
       },
       fontFamily: {
         sans: [
-          "Pretendard Variable",
           "Pretendard",
           "-apple-system",
           "BlinkMacSystemFont",
@@ -52,7 +51,7 @@ const config: Config = {
         ],
         display: [
           "Jua",
-          "Pretendard Variable",
+          "Pretendard",
           "Apple SD Gothic Neo",
           "Malgun Gothic",
           "system-ui",

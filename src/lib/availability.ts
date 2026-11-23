@@ -60,6 +60,28 @@ export function isSlotTaken(date: string, startTime: string, hours: number, occu
   return occupied.some((slot) => start < slotEndMs(slot) && slotStartMs(slot) < end);
 }
 
+/**
+ * 목록 카드용 '오늘 마감' 조회.
+ * 주어진 공간들 중 그 날짜(기본: 오늘)에 예약 가능한 시작 시간이 하나도 없는 공간 id를 돌려준다.
+ * RPC 이름·인자는 DB 마이그레이션 007(get_soldout_spaces)과 같아야 한다.
+ */
+export async function fetchSoldOutSpaces(ids: string[], date: string): Promise<Set<string>> {
+  if (!supabase || ids.length === 0 || !date) return new Set();
+  try {
+    const { data, error } = await supabase.rpc("get_soldout_spaces", { p_ids: ids, p_date: date });
+    if (error) {
+      // 마이그레이션 전이거나 RPC가 없는 환경에서는 '마감' 없이 그대로 보여 준다.
+      console.warn("[availability] 마감 공간 조회를 건너뜁니다.", error.message);
+      return new Set();
+    }
+    const rows = (data ?? []) as { space_id?: string }[];
+    return new Set(rows.map((row) => row.space_id).filter((id): id is string => Boolean(id)));
+  } catch (error) {
+    console.warn("[availability] 마감 공간 조회 실패", error);
+    return new Set();
+  }
+}
+
 /** 이미 지난 시간인지 */
 export function isSlotPast(date: string, startTime: string): boolean {
   if (!date || !startTime) return false;

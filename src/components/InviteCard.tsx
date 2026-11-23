@@ -517,7 +517,7 @@ export function InviteCardModal({
 
           <div className="relative flex flex-col items-center rounded-[20px] bg-white px-4 pb-4 pt-4 shadow-sm">
             <span className="pointer-events-none absolute inset-x-0 top-0 h-24 rounded-t-[20px] bg-gradient-to-b from-[#FFF4F9] to-white" aria-hidden />
-            <span className="relative inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-3 py-1 text-[11.5px] font-bold text-brand-dark">
+            <span className="relative inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-3 py-1 text-[12px] font-bold text-brand-dark">
               <span aria-hidden>💌</span> 모임 초대장
             </span>
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -527,7 +527,7 @@ export function InviteCardModal({
               className="relative mt-2.5 h-20 w-20 rounded-full bg-brand-light object-cover ring-4 ring-white"
             />
             <h3 className="relative mt-2.5 text-center text-[20px] leading-snug text-ink">{booking.spaceName}</h3>
-            <p className="relative mt-1 text-[10.5px] font-bold text-ink-mute">이곳저곳에서 예약한 모임</p>
+            <p className="relative mt-1 text-[12px] font-bold text-ink-mute">이곳저곳에서 예약한 모임</p>
 
             <dl className="relative mt-3 w-full space-y-1.5 rounded-2xl bg-[#FFF8FB] p-3 ring-1 ring-ink-line">
               {[
@@ -537,7 +537,7 @@ export function InviteCardModal({
                 { icon: <PinIcon size={13} />, label: "장소", value: place },
               ].map((row) => (
                 <div key={row.label} className="flex items-start justify-between gap-2.5">
-                  <dt className="inline-flex shrink-0 items-center gap-1 text-[10.5px] font-bold text-ink-mute">
+                  <dt className="inline-flex shrink-0 items-center gap-1 text-[12px] font-bold text-ink-mute">
                     {row.icon}
                     {row.label}
                   </dt>
@@ -547,18 +547,18 @@ export function InviteCardModal({
             </dl>
 
             <p className="relative mt-3 text-center text-[13px] text-brand-dark">{booking.guestName} 님이 초대합니다</p>
-            <p className="relative mt-0.5 text-center text-[10px] text-ink-mute">함께 모이는 날, 즐거운 시간 보내세요!</p>
+            <p className="relative mt-0.5 text-center text-[12px] text-ink-mute">함께 모이는 날, 즐거운 시간 보내세요!</p>
 
             <div className="relative mt-3 flex w-full items-center justify-center gap-1.5 border-t border-dashed border-ink-line pt-2.5">
               <LogoMark size={18} shadow={false} decorative />
               <span className="text-[12px] text-ink">이곳저곳</span>
-              <span className="text-[9px] text-ink-mute">{SITE_HOST}</span>
+              <span className="text-[12px] text-ink-mute">{SITE_HOST}</span>
             </div>
           </div>
         </div>
 
         {status && (
-          <p className="mt-2.5 animate-fade-up rounded-xl bg-brand-light px-3 py-2 text-[11px] font-semibold leading-relaxed text-brand-deep">
+          <p className="mt-2.5 animate-fade-up rounded-xl bg-brand-light px-3 py-2 text-[12px] font-semibold leading-relaxed text-brand-deep">
             {status}
           </p>
         )}
@@ -582,7 +582,7 @@ export function InviteCardModal({
             {busy === "share" ? "공유 준비 중…" : "카드로 공유하기"}
           </button>
         </div>
-        <p className="mt-2 text-center text-[10px] leading-relaxed text-ink-mute">
+        <p className="mt-2 text-center text-[12px] leading-relaxed text-ink-mute">
           이미지는 1080×1350(인스타 4:5) 크기로 저장돼요.
         </p>
       </div>

@@ -110,7 +110,7 @@ function AuthContent() {
               예약부터 결제까지 이어져요.
             </p>
           </div>
-          <p className="mt-5 text-[11.5px] text-white/60">© 2026 이곳저곳 · 공간대여 예약·결제·광고 통합 플랫폼</p>
+          <p className="mt-5 text-[12px] text-white/60">© 2026 이곳저곳 · 공간대여 예약·결제·광고 통합 플랫폼</p>
         </div>
 
         <div className="p-6 sm:p-8">
@@ -189,14 +189,14 @@ function AuthContent() {
                         <span className="block text-xs font-bold text-ink">
                           {item === "guest" ? "🙋 게스트" : "🧑‍💼 사장님"}
                         </span>
-                        <span className="mt-0.5 block text-[11.5px] text-ink-mute">
+                        <span className="mt-0.5 block text-[12px] text-ink-mute">
                           {item === "guest" ? "공간을 예약해요" : "공간을 등록·운영해요"}
                         </span>
                       </button>
                     ))}
                   </div>
                   {role === "host" && (
-                    <p className="mt-2 rounded-xl bg-brand-light/60 px-3 py-2 text-[11.5px] font-semibold leading-relaxed text-brand-deep">
+                    <p className="mt-2 rounded-xl bg-brand-light/60 px-3 py-2 text-[12px] font-semibold leading-relaxed text-brand-deep">
                       지금은 수수료 0%로 운영 중이에요. 플랫폼 예약과 사장님 전용 결제 링크 모두 수수료 없이
                       정산되고, 정식 오픈 시점과 요율은 사전에 안내드려요.
                     </p>
@@ -277,7 +277,7 @@ function AuthContent() {
                 </button>
 
                 {tab === "signup" && (
-                  <p className="text-center text-[11.5px] leading-relaxed text-ink-mute">
+                  <p className="text-center text-[12px] leading-relaxed text-ink-mute">
                     가입하면{" "}
                     <Link href="/terms" target="_blank" className="font-semibold text-brand-dark hover:underline">
                       이용약관
@@ -295,7 +295,7 @@ function AuthContent() {
                 <>
                   <div className="my-4 flex items-center gap-3">
                     <span className="h-px flex-1 bg-ink-line" />
-                    <span className="text-[11.5px] font-semibold text-ink-mute">미리보기 계정으로 바로 보기</span>
+                    <span className="text-[12px] font-semibold text-ink-mute">미리보기 계정으로 바로 보기</span>
                     <span className="h-px flex-1 bg-ink-line" />
                   </div>
 
@@ -303,7 +303,7 @@ function AuthContent() {
                 </>
               )}
 
-              <p className="mt-3 text-[11.5px] leading-relaxed text-ink-mute">
+              <p className="mt-3 text-[12px] leading-relaxed text-ink-mute">
                 {mode === "demo"
                   ? "미리보기 모드예요. 입력한 계정·공간·예약이 이 브라우저에만 저장돼요."
                   : "가입한 계정과 예약 정보는 이곳저곳 서버에 저장되고, 다른 기기에서도 그대로 이어져요."}

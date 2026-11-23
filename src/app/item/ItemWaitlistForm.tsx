@@ -147,7 +147,7 @@ export function ItemWaitlistForm({ defaultSource = "item" }: { defaultSource?: "
           {selectedLabels.length > 0 && (
             <div className="mt-4 flex flex-wrap justify-center gap-1.5">
               {selectedLabels.map((label) => (
-                <span key={label} className="rounded-full bg-white px-3 py-1 text-[12.5px] font-bold text-brand-dark shadow-sm">
+                <span key={label} className="rounded-full bg-white px-3 py-1 text-[13px] font-bold text-brand-dark shadow-sm">
                   {label}
                 </span>
               ))}
@@ -185,7 +185,7 @@ export function ItemWaitlistForm({ defaultSource = "item" }: { defaultSource?: "
           필요한 비품·가전을 골라 주세요
           <span className="text-brand">*</span>
         </legend>
-        <p className="mt-1 pl-8 text-[12.5px] text-ink-mute">여러 개 골라도 괜찮아요.</p>
+        <p className="mt-1 pl-8 text-[13px] text-ink-mute">여러 개 골라도 괜찮아요.</p>
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
           {ITEM_CATEGORIES.map((item) => {
             const active = form.categories.includes(item.key);
@@ -220,7 +220,7 @@ export function ItemWaitlistForm({ defaultSource = "item" }: { defaultSource?: "
             2
           </span>
           구체적으로 필요한 품목·모델
-          <span className="rounded-md bg-ink-line/70 px-1.5 py-0.5 text-[11px] font-bold text-ink-mute">선택</span>
+          <span className="rounded-md bg-ink-line/70 px-1.5 py-0.5 text-[12px] font-bold text-ink-mute">선택</span>
         </label>
         <input
           id="item-custom"
@@ -270,7 +270,7 @@ export function ItemWaitlistForm({ defaultSource = "item" }: { defaultSource?: "
             4
           </span>
           희망 예산대 · 수량
-          <span className="rounded-md bg-ink-line/70 px-1.5 py-0.5 text-[11px] font-bold text-ink-mute">선택</span>
+          <span className="rounded-md bg-ink-line/70 px-1.5 py-0.5 text-[12px] font-bold text-ink-mute">선택</span>
         </label>
         <input
           id="item-budget"
@@ -341,7 +341,7 @@ export function ItemWaitlistForm({ defaultSource = "item" }: { defaultSource?: "
             6
           </span>
           자유 요청사항
-          <span className="rounded-md bg-ink-line/70 px-1.5 py-0.5 text-[11px] font-bold text-ink-mute">선택</span>
+          <span className="rounded-md bg-ink-line/70 px-1.5 py-0.5 text-[12px] font-bold text-ink-mute">선택</span>
         </label>
         <textarea
           id="item-note"
@@ -391,11 +391,11 @@ export function ItemWaitlistForm({ defaultSource = "item" }: { defaultSource?: "
           </>
         )}
       </button>
-      <p className="mt-2.5 text-center text-[11.5px] leading-relaxed text-ink-mute">
+      <p className="mt-2.5 text-center text-[12px] leading-relaxed text-ink-mute">
         신청은 무료이고, 어떤 상품도 아직 판매하지 않아요. 결제·구매가 발생하지 않습니다.
       </p>
       {touched && (
-        <p className="mt-1 text-center text-[11px] text-ink-faint">
+        <p className="mt-1 text-center text-[12px] text-ink-faint">
           연락처는 <Link href="/privacy" className="underline">개인정보처리방침</Link>에 따라 보관·파기됩니다.
         </p>
       )}

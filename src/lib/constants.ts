@@ -120,6 +120,9 @@ export const TIME_SLOTS = Array.from({ length: 15 }, (_, i) => {
   return `${String(hour).padStart(2, "0")}:00`;
 });
 
+/** 실제 후기(리뷰) 기능이 붙기 전에는 시드 평점을 노출하지 않는다. */
+export const REVIEWS_ENABLED = false;
+
 export const HOUR_OPTIONS = [1, 2, 3, 4, 5, 6, 8];
 
 export const STATUS_LABEL: Record<BookingStatus, string> = {

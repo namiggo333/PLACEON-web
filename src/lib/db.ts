@@ -36,6 +36,8 @@ const DB_KEY = "placeon.db.v1";
 const SESSION_KEY = "placeon.session.v1";
 /** 입금 기한(분) — DB 의 create_booking RPC(now() + 15분)와 같은 값이어야 한다. */
 export const DEPOSIT_WINDOW_MINUTES = 15;
+/** 손님이 '입금했어요'를 누른 뒤 만료를 보류하는 상한 (DB expire_pending_bookings 와 같은 12시간) */
+export const PAID_CLAIM_PROTECT_MS = 12 * 60 * 60 * 1000;
 
 interface LocalDB {
   profiles: Profile[];
@@ -79,6 +81,9 @@ function sweepExpiredBookings(db: LocalDB): boolean {
   let changed = false;
   for (const booking of db.bookings) {
     if (booking.status !== "pending") continue;
+    // 손님이 '입금했어요'를 누른 예약은 12시간 동안 만료시키지 않는다(사장님 확인 대기).
+    const claimed = booking.paidClaimedAt ? new Date(booking.paidClaimedAt).getTime() : null;
+    if (claimed !== null && Number.isFinite(claimed) && now - claimed < PAID_CLAIM_PROTECT_MS) continue;
     const limit = booking.expiresAt ? new Date(booking.expiresAt).getTime() : null;
     const started = booking.date && booking.startTime ? new Date(`${booking.date}T${booking.startTime}:00`).getTime() : null;
     if ((limit !== null && limit < now) || (started !== null && started < now)) {
@@ -674,6 +679,8 @@ export async function insertBooking(input: BookingInput, user: Profile | null): 
     payAccountNumber: account?.accountNumber ?? "",
     payAccountHolder: account?.accountHolder ?? "",
     cancelReason: null,
+    paidClaimedAt: null,
+    depositorName: "",
   };
   db.bookings.unshift(booking);
   db.tokens[booking.id] = accessToken;
@@ -689,6 +696,62 @@ export async function insertBooking(input: BookingInput, user: Profile | null): 
   });
   writeDB(db);
   return booking;
+}
+
+/**
+ * 손님의 '입금했어요' — 만료를 12시간 보류하고 입금자명을 남긴다.
+ * 비로그인 손님은 예약 접수 때 받은 access token 으로 본인 확인을 한다.
+ */
+export async function claimDeposit(
+  bookingId: string,
+  depositorName: string,
+  token?: string | null
+): Promise<Booking | null> {
+  const name = depositorName.trim().slice(0, 40);
+  if (!bookingId) return null;
+
+  if (supabase) {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+    const response = await fetch("/api/bookings/deposit-claim", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      },
+      body: JSON.stringify({ bookingId, depositorName: name, token: token ?? getBookingToken(bookingId) }),
+    });
+    const payload = (await response.json().catch(() => null)) as
+      | { booking?: BookingRow; error?: string }
+      | null;
+    if (!response.ok || !payload?.booking) {
+      throw new Error(payload?.error ?? "입금 확인 요청을 보내지 못했어요. 잠시 후 다시 시도해 주세요.");
+    }
+    return mapBooking(payload.booking);
+  }
+
+  const db = readDB();
+  const index = db.bookings.findIndex((b) => b.id === bookingId);
+  if (index < 0) return null;
+  const current = db.bookings[index];
+  if (current.status !== "pending") return current;
+  db.bookings[index] = {
+    ...current,
+    paidClaimedAt: new Date().toISOString(),
+    depositorName: name || current.guestName,
+  };
+  db.events.unshift({
+    id: crypto.randomUUID(),
+    bookingId,
+    eventType: "deposit_claimed",
+    fromStatus: current.status,
+    toStatus: current.status,
+    actor: "guest",
+    memo: name,
+    createdAt: new Date().toISOString(),
+  });
+  writeDB(db);
+  return db.bookings[index];
 }
 
 /* ------------------------------------------------------------------ */

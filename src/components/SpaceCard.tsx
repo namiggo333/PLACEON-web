@@ -3,7 +3,7 @@ import Link from "next/link";
 import { CATEGORY_MAP } from "@/lib/constants";
 import { cn, won } from "@/lib/format";
 import type { Space } from "@/lib/types";
-import { StarIcon, UsersIcon } from "./Icons";
+import { UsersIcon } from "./Icons";
 import { MascotAvatar } from "./Logo";
 
 export function SpaceMedia({
@@ -58,7 +58,7 @@ export function SpaceMedia({
         {category.emoji}
       </span>
       {showLabel && (
-        <span className="absolute bottom-3 left-3 rounded-md bg-white/85 px-2 py-0.5 text-[11.5px] font-bold text-ink">
+        <span className="absolute bottom-3 left-3 rounded-md bg-white/85 px-2 py-0.5 text-[12px] font-bold text-ink">
           {category.label}
         </span>
       )}
@@ -66,9 +66,25 @@ export function SpaceMedia({
   );
 }
 
-export function SpaceCard({ space, className }: { space: Space; className?: string }) {
+/**
+ * 카드에 붙는 상태 배지는 최대 2개. 우선순위는 `마감 > 타임특가`.
+ * "AD"(상단 노출 광고)는 배지가 아니라 사진 위 작은 '광고' 라벨로 분리했다.
+ */
+export function SpaceCard({
+  space,
+  className,
+  soldOut = false,
+}: {
+  space: Space;
+  className?: string;
+  /** 오늘 예약 가능한 시간이 하나도 없으면 true (홈에서 일괄 조회해 넘긴다) */
+  soldOut?: boolean;
+}) {
   const discounted = space.discountRate > 0;
   const finalPrice = Math.round((space.pricePerHour * (100 - space.discountRate)) / 100);
+  const category = CATEGORY_MAP[space.category] ?? CATEGORY_MAP.party;
+  const showDeal = discounted && space.timeDeal && !soldOut;
+  const closed = soldOut;
 
   return (
     <Link
@@ -78,55 +94,45 @@ export function SpaceCard({ space, className }: { space: Space; className?: stri
         className
       )}
     >
-      <div className="relative h-[112px] w-[112px] shrink-0 overflow-hidden sm:h-auto sm:w-full sm:aspect-[16/10]">
+      <div className="relative h-[124px] w-[112px] shrink-0 overflow-hidden sm:h-auto sm:w-full sm:aspect-[3/2]">
         <SpaceMedia space={space} emojiSize="text-2xl sm:text-[42px]" />
-        <div className="absolute left-1.5 top-1.5 flex flex-col items-start gap-1 sm:left-2.5 sm:top-2.5 sm:flex-row sm:flex-wrap">
-          {space.featured && (
-            <span className="badge bg-ink/85 px-1.5 text-white backdrop-blur sm:px-2">AD</span>
-          )}
-          {space.timeDeal && discounted && (
-            <span className="badge bg-brand px-1.5 text-white shadow-sm sm:px-2 sm:text-[12px]">
-              <span className="sm:hidden">특가</span>
-              <span className="hidden sm:inline">타임특가 {space.discountRate}%</span>
-            </span>
-          )}
-        </div>
-        <span className="badge absolute right-2.5 top-2.5 hidden bg-white/90 text-emerald-600 backdrop-blur sm:inline-flex">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-          예약가능
-        </span>
+
+        {space.featured && (
+          <span className="absolute left-1.5 top-1.5 rounded-md bg-ink/80 px-1.5 py-0.5 text-[12px] font-bold leading-4 text-white backdrop-blur sm:left-2.5 sm:top-2.5">
+            광고
+          </span>
+        )}
+
+        {(closed || showDeal) && (
+          <div className="absolute left-1.5 bottom-1.5 flex flex-wrap gap-1 sm:left-2.5 sm:bottom-2.5">
+            {closed && <span className="ui-badge ui-badge--closed">마감</span>}
+            {showDeal && (
+              <span className="ui-badge ui-badge--deal">타임특가 {space.discountRate}%</span>
+            )}
+          </div>
+        )}
       </div>
-      <div className="flex min-w-0 flex-1 flex-col justify-center p-3 sm:p-3.5">
-        <p className="text-[11.5px] font-medium text-ink-mute sm:text-[12px]">
-          {space.region} {space.district}
+
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 p-3 sm:p-3.5">
+        <p className="truncate text-[12px] font-medium text-ink-mute">
+          {space.region} {space.district} · {category.label}
         </p>
-        <h3 className="mt-0.5 truncate text-[14px] font-bold text-ink transition group-hover:text-brand-dark sm:text-[15px]">
+        <h3 className="truncate text-[15px] font-bold text-ink transition group-hover:text-brand-dark sm:text-[16px]">
           {space.name}
         </h3>
-        <div className="mt-0.5 flex items-center gap-1.5 text-[11.5px] text-ink-soft sm:mt-1 sm:text-[12px]">
-          <StarIcon size={11} className="text-amber-400" />
-          {space.reviewCount > 0 ? (
-            <>
-              <span className="font-semibold text-ink">{space.rating.toFixed(1)}</span>
-              <span className="text-ink-mute">({space.reviewCount})</span>
-            </>
-          ) : (
-            <span className="text-ink-mute">신규 공간</span>
-          )}
-          <span className="text-ink-line">|</span>
-          <UsersIcon size={11} />
-          <span>{space.capacity}명</span>
-        </div>
-        <div className="mt-1.5 flex flex-wrap items-baseline gap-x-1.5 sm:mt-2">
+        <p className="inline-flex items-center gap-1 text-[12px] text-ink-soft">
+          <UsersIcon size={12} className="text-ink-mute" />
+          최대 {space.capacity}명
+          {closed ? <span className="text-ink-mute"> · 오늘 마감</span> : null}
+        </p>
+        <div className="mt-1 flex flex-wrap items-baseline gap-x-1.5">
           {discounted && (
-            <span className="text-[12px] font-extrabold text-brand-dark sm:text-[13px]">{space.discountRate}%</span>
+            <span className="text-[13px] font-extrabold text-brand-strong">{space.discountRate}%</span>
           )}
-          <span className="price-sm text-ink">{won(finalPrice)}</span>
-          <span className="text-[12.5px] font-medium text-ink-mute sm:text-[12px]">/시간</span>
+          <span className="ui-price-main text-ink">{won(finalPrice)}</span>
+          <span className="text-[12px] font-medium text-ink-mute">/시간</span>
           {discounted && (
-            <span className="ml-auto hidden text-[12px] font-medium text-ink-mute line-through sm:inline">
-              {won(space.pricePerHour)}
-            </span>
+            <span className="ui-price-orig ml-auto hidden sm:inline">{won(space.pricePerHour)}</span>
           )}
         </div>
       </div>
@@ -136,11 +142,13 @@ export function SpaceCard({ space, className }: { space: Space; className?: stri
 
 export function SpaceGrid({
   spaces,
+  soldOutIds,
   emptyTitle = "조건에 맞는 공간이 없어요",
   emptyHint = "지역이나 가격 조건을 조금 넓혀서 다시 찾아보세요.",
   onReset,
 }: {
   spaces: Space[];
+  soldOutIds?: Set<string>;
   emptyTitle?: string;
   emptyHint?: string;
   onReset?: () => void;
@@ -160,9 +168,9 @@ export function SpaceGrid({
     );
   }
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
       {spaces.map((space) => (
-        <SpaceCard key={space.id} space={space} />
+        <SpaceCard key={space.id} space={space} soldOut={soldOutIds?.has(space.id)} />
       ))}
     </div>
   );

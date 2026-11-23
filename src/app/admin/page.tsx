@@ -118,8 +118,8 @@ function Switch({
       )}
     >
       <span className="min-w-0">
-        <span className="block text-[11px] font-bold text-ink">{label}</span>
-        {hint && <span className="mt-0.5 block truncate text-[9px] text-ink-mute">{hint}</span>}
+        <span className="block text-[12px] font-bold text-ink">{label}</span>
+        {hint && <span className="mt-0.5 block truncate text-[12px] text-ink-mute">{hint}</span>}
       </span>
       <span
         className={cn(
@@ -156,11 +156,11 @@ function StatCard({
         tone === "brand" ? "border-brand/20 bg-brand-light" : "card"
       )}
     >
-      <p className={cn("text-[11px] font-semibold", tone === "brand" ? "text-brand-dark/80" : "text-ink-mute")}>
+      <p className={cn("text-[12px] font-semibold", tone === "brand" ? "text-brand-dark/80" : "text-ink-mute")}>
         {label}
       </p>
       <p className={cn("mt-1 text-2xl font-extrabold", tone === "brand" ? "text-brand-dark" : "text-ink")}>{value}</p>
-      <p className={cn("mt-0.5 text-[10px]", tone === "brand" ? "text-brand-dark/70" : "text-ink-mute")}>{hint}</p>
+      <p className={cn("mt-0.5 text-[12px]", tone === "brand" ? "text-brand-dark/70" : "text-ink-mute")}>{hint}</p>
     </div>
   );
 }
@@ -530,7 +530,7 @@ export default function AdminPage() {
       <section className="overflow-hidden rounded-xl2 bg-gradient-to-br from-[#1B1624] via-[#2A1B2C] to-[#5A1B3A] p-5 text-white sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-bold tracking-wide">
+            <p className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[12px] font-bold tracking-wide">
               <ShieldIcon size={12} /> 이곳저곳 ADMIN
             </p>
             <h1 className="mt-2.5 text-2xl font-extrabold tracking-tight sm:text-3xl">이곳저곳 총괄 관리자</h1>
@@ -539,7 +539,7 @@ export default function AdminPage() {
               {stats.itemWaitlist}건을 관리합니다.
             </p>
             {mode === "demo" && (
-              <p className="mt-2 rounded-lg bg-white/10 px-2.5 py-1.5 text-[10px] text-white/80">
+              <p className="mt-2 rounded-lg bg-white/10 px-2.5 py-1.5 text-[12px] text-white/80">
                 데모(체험) 모드예요. 변경 내용은 이 브라우저에만 저장돼요.
               </p>
             )}
@@ -608,7 +608,7 @@ export default function AdminPage() {
               {item.label}
               <span
                 className={cn(
-                  "rounded-full px-1.5 py-0.5 text-[10px] font-bold",
+                  "rounded-full px-1.5 py-0.5 text-[12px] font-bold",
                   active ? "bg-brand text-white" : "bg-white text-ink-mute"
                 )}
               >
@@ -667,7 +667,7 @@ export default function AdminPage() {
                   type="button"
                   onClick={() => setApprovalFilter(item.key)}
                   className={cn(
-                    "rounded-full border px-3 py-1 text-[11px] font-bold transition",
+                    "rounded-full border px-3 py-1 text-[12px] font-bold transition",
                     approvalFilter === item.key
                       ? "border-brand bg-brand text-white"
                       : "border-ink-line bg-white text-ink-soft hover:border-brand/40 hover:text-brand-dark"
@@ -706,16 +706,16 @@ export default function AdminPage() {
                         {space.timeDeal && space.discountRate > 0 && (
                           <span className="badge bg-brand-light text-brand-dark">타임특가 {space.discountRate}%</span>
                         )}
-                        <span className="text-[10px] font-semibold text-ink-mute">
+                        <span className="text-[12px] font-semibold text-ink-mute">
                           No. {shortId(space.id)}
                         </span>
                       </div>
                       <h3 className="mt-1 truncate text-sm font-extrabold text-ink">{space.name}</h3>
-                      <p className="mt-0.5 truncate text-[11px] text-ink-soft">
+                      <p className="mt-0.5 truncate text-[12px] text-ink-soft">
                         {CATEGORY_MAP[space.category]?.label ?? space.category} · {space.region} {space.district} ·{" "}
                         {won(space.pricePerHour)}/시간 · {space.capacity}명
                       </p>
-                      <p className="mt-0.5 truncate text-[10px] text-ink-mute">
+                      <p className="mt-0.5 truncate text-[12px] text-ink-mute">
                         사장님 {space.hostName} · 예약 {bookingCountBySpace.get(space.id) ?? 0}건 · 등록{" "}
                         {formatRelativeDate(space.createdAt)}
                       </p>
@@ -769,13 +769,13 @@ export default function AdminPage() {
                   </div>
 
                   {space.approvalStatus === "rejected" && space.rejectionReason && (
-                    <p className="mt-2 rounded-lg bg-red-50 px-2.5 py-1.5 text-[10.5px] font-semibold text-red-600">
+                    <p className="mt-2 rounded-lg bg-red-50 px-2.5 py-1.5 text-[12px] font-semibold text-red-600">
                       반려 사유 · {space.rejectionReason}
                     </p>
                   )}
 
                   <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-ink-line/20 px-2.5 py-2">
-                    <p className="text-[10.5px] font-bold text-ink-soft">
+                    <p className="text-[12px] font-bold text-ink-soft">
                       {space.approvalStatus === "approved"
                         ? "손님 화면에 공개 중이에요."
                         : space.approvalStatus === "rejected"
@@ -788,7 +788,7 @@ export default function AdminPage() {
                           type="button"
                           disabled={busyId === space.id}
                           onClick={() => void reviewSpace(space, "approved")}
-                          className="rounded-lg bg-brand px-3 py-1.5 text-[11px] font-bold text-white hover:bg-brand-dark disabled:opacity-60"
+                          className="rounded-lg bg-brand px-3 py-1.5 text-[12px] font-bold text-white hover:bg-brand-dark disabled:opacity-60"
                         >
                           승인
                         </button>
@@ -801,7 +801,7 @@ export default function AdminPage() {
                             setRejectTarget(space.id);
                             setRejectReason("");
                           }}
-                          className="rounded-lg border border-ink-line bg-white px-3 py-1.5 text-[11px] font-bold text-ink-soft hover:border-red-200 hover:text-red-500 disabled:opacity-60"
+                          className="rounded-lg border border-ink-line bg-white px-3 py-1.5 text-[12px] font-bold text-ink-soft hover:border-red-200 hover:text-red-500 disabled:opacity-60"
                         >
                           반려
                         </button>
@@ -811,26 +811,26 @@ export default function AdminPage() {
 
                   {rejectTarget === space.id && (
                     <div className="mt-2 rounded-lg bg-red-50 p-2.5">
-                      <p className="text-[10.5px] font-semibold text-red-700">반려 사유를 적어 주세요. 사장님 센터에 그대로 보여요.</p>
+                      <p className="text-[12px] font-semibold text-red-700">반려 사유를 적어 주세요. 사장님 센터에 그대로 보여요.</p>
                       <input
                         value={rejectReason}
                         onChange={(event) => setRejectReason(event.target.value)}
                         placeholder="예: 상세주소가 확인되지 않아요. 정확한 주소를 입력해 주세요."
-                        className="input mt-1.5 text-[11px]"
+                        className="input mt-1.5 text-[12px]"
                       />
                       <div className="mt-1.5 flex gap-1.5">
                         <button
                           type="button"
                           disabled={busyId === space.id || !rejectReason.trim()}
                           onClick={() => void reviewSpace(space, "rejected", rejectReason.trim())}
-                          className="rounded-md bg-red-500 px-2.5 py-1 text-[10px] font-bold text-white disabled:opacity-60"
+                          className="rounded-md bg-red-500 px-2.5 py-1 text-[12px] font-bold text-white disabled:opacity-60"
                         >
                           반려 확정
                         </button>
                         <button
                           type="button"
                           onClick={() => setRejectTarget(null)}
-                          className="rounded-md bg-white px-2.5 py-1 text-[10px] font-bold text-ink-soft"
+                          className="rounded-md bg-white px-2.5 py-1 text-[12px] font-bold text-ink-soft"
                         >
                           취소
                         </button>
@@ -854,7 +854,7 @@ export default function AdminPage() {
 
                   {confirmDelete === space.id && (
                     <div className="mt-2 rounded-lg bg-red-50 p-3">
-                      <p className="text-[11px] font-semibold text-red-700">
+                      <p className="text-[12px] font-semibold text-red-700">
                         <b>{space.name}</b> 을(를) 삭제할까요? 연결된 예약 {bookingCountBySpace.get(space.id) ?? 0}건도 함께
                         삭제되며 되돌릴 수 없어요.
                       </p>
@@ -863,14 +863,14 @@ export default function AdminPage() {
                           type="button"
                           disabled={busyId === space.id}
                           onClick={() => void deleteSpace(space)}
-                          className="rounded-lg bg-red-500 px-3 py-1.5 text-[11px] font-bold text-white disabled:opacity-60"
+                          className="rounded-lg bg-red-500 px-3 py-1.5 text-[12px] font-bold text-white disabled:opacity-60"
                         >
                           {busyId === space.id ? "삭제 중…" : "삭제"}
                         </button>
                         <button
                           type="button"
                           onClick={() => setConfirmDelete(null)}
-                          className="rounded-lg bg-white px-3 py-1.5 text-[11px] font-bold text-ink-soft"
+                          className="rounded-lg bg-white px-3 py-1.5 text-[12px] font-bold text-ink-soft"
                         >
                           취소
                         </button>
@@ -910,7 +910,7 @@ export default function AdminPage() {
                 type="button"
                 onClick={() => setStatusFilter(item.key)}
                 className={cn(
-                  "rounded-full border px-3 py-1.5 text-[11px] font-bold transition",
+                  "rounded-full border px-3 py-1.5 text-[12px] font-bold transition",
                   statusFilter === item.key
                     ? "border-brand bg-brand text-white"
                     : "border-ink-line bg-white text-ink-soft hover:border-brand/40 hover:text-brand-dark"
@@ -932,7 +932,7 @@ export default function AdminPage() {
               <div className="card mt-4 hidden overflow-x-auto md:block">
                 <table className="w-full min-w-[860px] border-collapse text-left text-xs">
                   <thead>
-                    <tr className="border-b border-ink-line bg-ink-line/25 text-[11px] text-ink-mute">
+                    <tr className="border-b border-ink-line bg-ink-line/25 text-[12px] text-ink-mute">
                       <th className="px-3 py-2.5 font-bold">예약번호</th>
                       <th className="px-3 py-2.5 font-bold">공간명</th>
                       <th className="px-3 py-2.5 font-bold">예약자</th>
@@ -946,21 +946,21 @@ export default function AdminPage() {
                   <tbody>
                     {filteredBookings.map((booking) => (
                       <tr key={booking.id} className="border-b border-ink-line/70 last:border-0">
-                        <td className="px-3 py-2.5 font-mono text-[10px] text-ink-mute">{shortId(booking.id)}</td>
+                        <td className="px-3 py-2.5 font-mono text-[12px] text-ink-mute">{shortId(booking.id)}</td>
                         <td className="max-w-[180px] px-3 py-2.5">
                           <span className="block truncate font-bold text-ink">{booking.spaceName}</span>
-                          <span className="text-[10px] text-ink-mute">
+                          <span className="text-[12px] text-ink-mute">
                             {booking.source === "block" ? "시간 차단" : booking.channel === "link" ? "결제 링크" : "웹"} ·{" "}
                             {formatRelativeDate(booking.createdAt)}
                           </span>
                         </td>
                         <td className="px-3 py-2.5">
                           <span className="block font-semibold text-ink">{booking.guestName}</span>
-                          <span className="text-[10px] text-ink-mute">{booking.guestPhone}</span>
+                          <span className="text-[12px] text-ink-mute">{booking.guestPhone}</span>
                         </td>
                         <td className="px-3 py-2.5 text-ink-soft">
                           {formatDate(booking.date)}
-                          <span className="block text-[10px] text-ink-mute">
+                          <span className="block text-[12px] text-ink-mute">
                             {formatTime(booking.startTime)} ~ {endTime(booking.startTime, booking.hours)} · {booking.hours}시간
                           </span>
                         </td>
@@ -989,7 +989,7 @@ export default function AdminPage() {
                                 type="button"
                                 disabled={busyId === booking.id}
                                 onClick={() => void changeBookingStatus(booking, "confirmed")}
-                                className="inline-flex items-center gap-0.5 rounded-md bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-600 hover:bg-emerald-100 disabled:opacity-50"
+                                className="inline-flex items-center gap-0.5 rounded-md bg-emerald-50 px-2 py-1 text-[12px] font-bold text-emerald-600 hover:bg-emerald-100 disabled:opacity-50"
                               >
                                 <CheckIcon size={11} />
                                 {booking.status === "pending" ? "입금 확인" : "확정"}
@@ -1000,7 +1000,7 @@ export default function AdminPage() {
                                 type="button"
                                 disabled={busyId === booking.id}
                                 onClick={() => void changeBookingStatus(booking, "cancelled")}
-                                className="inline-flex items-center gap-0.5 rounded-md bg-red-50 px-2 py-1 text-[10px] font-bold text-red-500 hover:bg-red-100 disabled:opacity-50"
+                                className="inline-flex items-center gap-0.5 rounded-md bg-red-50 px-2 py-1 text-[12px] font-bold text-red-500 hover:bg-red-100 disabled:opacity-50"
                               >
                                 <CloseIcon size={11} />
                                 {booking.status === "pending" ? "거절" : "취소"}
@@ -1010,7 +1010,7 @@ export default function AdminPage() {
                                 type="button"
                                 disabled={busyId === booking.id}
                                 onClick={() => void changeBookingStatus(booking, "pending")}
-                                className="inline-flex items-center gap-0.5 rounded-md bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-500 hover:bg-slate-200 disabled:opacity-50"
+                                className="inline-flex items-center gap-0.5 rounded-md bg-slate-100 px-2 py-1 text-[12px] font-bold text-slate-500 hover:bg-slate-200 disabled:opacity-50"
                               >
                                 <BoltIcon size={11} /> 대기
                               </button>
@@ -1020,7 +1020,7 @@ export default function AdminPage() {
                                 type="button"
                                 disabled={busyId === booking.id}
                                 onClick={() => void changeRefund(booking, "completed")}
-                                className="inline-flex items-center gap-0.5 rounded-md bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-600 hover:bg-amber-100 disabled:opacity-50"
+                                className="inline-flex items-center gap-0.5 rounded-md bg-amber-50 px-2 py-1 text-[12px] font-bold text-amber-600 hover:bg-amber-100 disabled:opacity-50"
                               >
                                 <CheckIcon size={11} /> 환불 완료
                               </button>
@@ -1043,17 +1043,17 @@ export default function AdminPage() {
                       <span className={cn("badge", bookingStatusMeta(booking).style)}>
                         {bookingStatusMeta(booking).label}
                       </span>
-                      <span className="font-mono text-[10px] text-ink-mute">No. {shortId(booking.id)}</span>
-                      <span className="text-[10px] text-ink-mute">
+                      <span className="font-mono text-[12px] text-ink-mute">No. {shortId(booking.id)}</span>
+                      <span className="text-[12px] text-ink-mute">
                         · {booking.source === "block" ? "시간 차단" : booking.channel === "link" ? "결제 링크" : "웹"} ·{" "}
                             {formatRelativeDate(booking.createdAt)}
                       </span>
                     </div>
                     <h3 className="mt-1.5 truncate text-sm font-extrabold text-ink">{booking.spaceName}</h3>
-                    <p className="mt-0.5 text-[11px] text-ink-soft">
+                    <p className="mt-0.5 text-[12px] text-ink-soft">
                       {booking.guestName} · {booking.guestPhone}
                     </p>
-                    <p className="mt-0.5 text-[11px] text-ink-mute">
+                    <p className="mt-0.5 text-[12px] text-ink-mute">
                       {formatDate(booking.date)} {formatTime(booking.startTime)} ~{" "}
                       {endTime(booking.startTime, booking.hours)} · {booking.hours}시간 · {booking.guests}명
                     </p>
@@ -1066,7 +1066,7 @@ export default function AdminPage() {
                             type="button"
                             disabled={busyId === booking.id}
                             onClick={() => void changeBookingStatus(booking, "confirmed")}
-                            className="rounded-lg bg-emerald-50 px-2.5 py-1.5 text-[11px] font-bold text-emerald-600 disabled:opacity-50"
+                            className="rounded-lg bg-emerald-50 px-2.5 py-1.5 text-[12px] font-bold text-emerald-600 disabled:opacity-50"
                           >
                             {booking.status === "pending" ? "입금 확인" : "확정"}
                           </button>
@@ -1076,7 +1076,7 @@ export default function AdminPage() {
                             type="button"
                             disabled={busyId === booking.id}
                             onClick={() => void changeRefund(booking, "completed")}
-                            className="rounded-lg bg-amber-50 px-2.5 py-1.5 text-[11px] font-bold text-amber-600 disabled:opacity-50"
+                            className="rounded-lg bg-amber-50 px-2.5 py-1.5 text-[12px] font-bold text-amber-600 disabled:opacity-50"
                           >
                             환불 완료
                           </button>
@@ -1086,7 +1086,7 @@ export default function AdminPage() {
                             type="button"
                             disabled={busyId === booking.id}
                             onClick={() => void changeBookingStatus(booking, "cancelled")}
-                            className="rounded-lg bg-red-50 px-2.5 py-1.5 text-[11px] font-bold text-red-500 disabled:opacity-50"
+                            className="rounded-lg bg-red-50 px-2.5 py-1.5 text-[12px] font-bold text-red-500 disabled:opacity-50"
                           >
                             {booking.status === "pending" ? "거절" : "취소"}
                           </button>
@@ -1095,7 +1095,7 @@ export default function AdminPage() {
                             type="button"
                             disabled={busyId === booking.id}
                             onClick={() => void changeBookingStatus(booking, "pending")}
-                            className="rounded-lg bg-slate-100 px-2.5 py-1.5 text-[11px] font-bold text-slate-500 disabled:opacity-50"
+                            className="rounded-lg bg-slate-100 px-2.5 py-1.5 text-[12px] font-bold text-slate-500 disabled:opacity-50"
                           >
                             대기로
                           </button>
@@ -1143,7 +1143,7 @@ export default function AdminPage() {
               <div className="card mt-4 hidden overflow-x-auto md:block">
                 <table className="w-full min-w-[720px] border-collapse text-left text-xs">
                   <thead>
-                    <tr className="border-b border-ink-line bg-ink-line/25 text-[11px] text-ink-mute">
+                    <tr className="border-b border-ink-line bg-ink-line/25 text-[12px] text-ink-mute">
                       <th className="px-3 py-2.5 font-bold">이름</th>
                       <th className="px-3 py-2.5 font-bold">이메일</th>
                       <th className="px-3 py-2.5 font-bold">역할</th>
@@ -1203,13 +1203,13 @@ export default function AdminPage() {
                             {profile.role === "host" ? "사장님" : "게스트"}
                           </span>
                         </p>
-                        <p className="mt-0.5 truncate text-[11px] text-ink-soft">{profile.email}</p>
+                        <p className="mt-0.5 truncate text-[12px] text-ink-soft">{profile.email}</p>
                       </div>
                       {isAdminEmail(profile.email) && (
                         <span className="badge shrink-0 bg-brand text-white">ADMIN</span>
                       )}
                     </div>
-                    <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-ink-mute">
+                    <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-ink-mute">
                       <span>가입 {joinedAt(profile.createdAt)}</span>
                       <span>등록 공간 {spaceCountByHost.get(profile.id) ?? 0}개</span>
                       <span>예약 {bookingCountByGuest.get(profile.id) ?? 0}건</span>
@@ -1250,13 +1250,13 @@ export default function AdminPage() {
             <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
               {itemDemand.map((item) => (
                 <div key={item.key} className="card px-3 py-2.5">
-                  <p className="flex items-center gap-1.5 text-[11px] font-bold text-ink-soft">
+                  <p className="flex items-center gap-1.5 text-[12px] font-bold text-ink-soft">
                     <span aria-hidden>{item.emoji}</span>
                     <span className="truncate">{item.label}</span>
                   </p>
                   <p className="mt-1 text-lg font-extrabold tabular-nums text-ink">
                     {item.count}
-                    <span className="ml-0.5 text-[11px] font-semibold text-ink-mute">건</span>
+                    <span className="ml-0.5 text-[12px] font-semibold text-ink-mute">건</span>
                   </p>
                   <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-ink-line/70">
                     <div
@@ -1290,7 +1290,7 @@ export default function AdminPage() {
               <div className="card mt-4 hidden overflow-x-auto md:block">
                 <table className="w-full min-w-[980px] border-collapse text-left text-xs">
                   <thead>
-                    <tr className="border-b border-ink-line bg-ink-line/25 text-[11px] text-ink-mute">
+                    <tr className="border-b border-ink-line bg-ink-line/25 text-[12px] text-ink-mute">
                       <th className="px-3 py-2.5 font-bold">접수</th>
                       <th className="px-3 py-2.5 font-bold">공간 유형</th>
                       <th className="px-3 py-2.5 font-bold">희망 카테고리</th>
@@ -1329,7 +1329,7 @@ export default function AdminPage() {
                         </td>
                         <td className="whitespace-nowrap px-3 py-2.5">
                           <span className="font-semibold text-ink">{prettyContact(entry)}</span>
-                          <span className="ml-1 text-[10px] text-ink-mute">{entry.contactType === "email" ? "메일" : "문자"}</span>
+                          <span className="ml-1 text-[12px] text-ink-mute">{entry.contactType === "email" ? "메일" : "문자"}</span>
                           {entry.wantsNotice && (
                             <span className="badge ml-1 bg-emerald-50 text-emerald-600">알림</span>
                           )}
@@ -1344,14 +1344,14 @@ export default function AdminPage() {
                                 type="button"
                                 disabled={busyId === entry.id}
                                 onClick={() => void deleteWaitlist(entry)}
-                                className="rounded-md bg-red-500 px-2 py-1 text-[10px] font-bold text-white disabled:opacity-60"
+                                className="rounded-md bg-red-500 px-2 py-1 text-[12px] font-bold text-white disabled:opacity-60"
                               >
                                 삭제
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setConfirmDelete(null)}
-                                className="rounded-md bg-ink-line/70 px-2 py-1 text-[10px] font-bold text-ink-soft"
+                                className="rounded-md bg-ink-line/70 px-2 py-1 text-[12px] font-bold text-ink-soft"
                               >
                                 취소
                               </button>
@@ -1382,7 +1382,7 @@ export default function AdminPage() {
                           {prettyContact(entry)}
                           <span className="badge bg-brand-light text-brand-dark">{itemSpaceTypeLabel(entry.spaceType)}</span>
                         </p>
-                        <p className="mt-0.5 text-[11px] text-ink-mute">
+                        <p className="mt-0.5 text-[12px] text-ink-mute">
                           접수 {receivedAt(entry.createdAt)} · {entry.contactType === "email" ? "메일" : "문자"}
                           {entry.wantsNotice ? " · 오픈 알림 신청" : ""}
                         </p>
@@ -1392,7 +1392,7 @@ export default function AdminPage() {
                         onClick={() => (confirmDelete === entry.id ? void deleteWaitlist(entry) : setConfirmDelete(entry.id))}
                         disabled={busyId === entry.id}
                         className={cn(
-                          "shrink-0 rounded-md px-2 py-1 text-[10px] font-bold transition disabled:opacity-60",
+                          "shrink-0 rounded-md px-2 py-1 text-[12px] font-bold transition disabled:opacity-60",
                           confirmDelete === entry.id ? "bg-red-500 text-white" : "bg-ink-line/70 text-ink-mute"
                         )}
                       >

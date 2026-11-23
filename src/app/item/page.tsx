@@ -67,7 +67,7 @@ export default function ItemPage() {
         <div className="pointer-events-none absolute -right-24 -top-28 h-80 w-80 rounded-full bg-brand/15 blur-3xl" aria-hidden />
         <div className="pointer-events-none absolute -left-24 top-44 h-72 w-72 rounded-full bg-[#FFD9E9]/70 blur-3xl" aria-hidden />
         <div className="container-page relative pb-10 pt-8 sm:pb-14 sm:pt-12">
-          <nav className="flex items-center gap-1 text-[12.5px] font-semibold text-ink-mute" aria-label="현재 위치">
+          <nav className="flex items-center gap-1 text-[13px] font-semibold text-ink-mute" aria-label="현재 위치">
             <Link href="/" className="hover:text-brand-dark">홈</Link>
             <ChevronRightIcon size={13} />
             <span className="text-ink-soft">이곳저곳 Item</span>
@@ -109,7 +109,7 @@ export default function ItemPage() {
                 </a>
               </div>
 
-              <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[12.5px] font-semibold text-ink-soft">
+              <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px] font-semibold text-ink-soft">
                 {["검수 후 입고", "사장님 전용 특가", "오픈 알림 우선 발송"].map((label) => (
                   <span key={label} className="inline-flex items-center gap-1.5">
                     <CheckIcon size={14} className="text-brand-dark" />
@@ -131,7 +131,7 @@ export default function ItemPage() {
                     loading="eager"
                     decoding="async"
                   />
-                  <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[11.5px] font-extrabold text-brand-dark shadow-sm backdrop-blur">
+                  <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[12px] font-extrabold text-brand-dark shadow-sm backdrop-blur">
                     오픈 준비 중
                   </span>
                 </div>
@@ -190,7 +190,7 @@ export default function ItemPage() {
             ))}
           </div>
 
-          <p className="mt-3.5 rounded-xl bg-ink-line/40 px-4 py-3 text-[12.5px] leading-relaxed text-ink-soft">
+          <p className="mt-3.5 rounded-xl bg-ink-line/40 px-4 py-3 text-[13px] leading-relaxed text-ink-soft">
             <b className="text-ink">아직 판매 전이에요.</b> 실제 재고나 가격이 정해지지 않아 금액·수량은 표시하지 않습니다.
             오픈 시 검수된 상품의 상태와 가격을 그대로 공개할게요.
           </p>
@@ -212,7 +212,7 @@ export default function ItemPage() {
 
         {/* ---------- 사전 수요조사 폼 ---------- */}
         <section id="apply" className="scroll-mt-24">
-          <div className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-start lg:gap-10">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-start lg:gap-10">
             <div className="lg:sticky lg:top-24">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-light px-3 py-1 text-[12px] font-extrabold text-brand-dark">
                 <SparkleIcon size={12} /> 사전 수요조사

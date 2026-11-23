@@ -127,7 +127,7 @@ export function PasteImporter({
           </span>
           <div>
             <h2 className="text-sm font-extrabold text-ink">외부 예약 일괄 붙여넣기</h2>
-            <p className="text-[10px] text-ink-mute">
+            <p className="text-[12px] text-ink-mute">
               카톡·문자·엑셀 예약을 그대로 붙여넣으면 날짜·시간을 읽어 한 번에 차단해요.
             </p>
           </div>
@@ -177,7 +177,7 @@ export function PasteImporter({
       </div>
 
       {showSamples && (
-        <pre className="mt-2 overflow-x-auto rounded-lg bg-ink-line/30 p-3 text-[10.5px] leading-relaxed text-ink-soft">
+        <pre className="mt-2 overflow-x-auto rounded-lg bg-ink-line/30 p-3 text-[12px] leading-relaxed text-ink-soft">
 {`11/25 14:00~17:00
 2026-11-26 오후 2시~5시
 12월 1일 18:00-21:00 홍길동
@@ -188,13 +188,13 @@ export function PasteImporter({
       )}
 
       {error && (
-        <p className="mt-2 rounded-lg bg-red-50 px-2.5 py-1.5 text-[10.5px] font-medium text-red-600">{error}</p>
+        <p className="mt-2 rounded-lg bg-red-50 px-2.5 py-1.5 text-[12px] font-medium text-red-600">{error}</p>
       )}
 
       {rows && (
         <div className="mt-3 overflow-x-auto rounded-xl border border-ink-line">
-          <table className="w-full min-w-[520px] text-left text-[11px]">
-            <thead className="bg-ink-line/30 text-[10px] font-bold text-ink-mute">
+          <table className="w-full min-w-[520px] text-left text-[12px]">
+            <thead className="bg-ink-line/30 text-[12px] font-bold text-ink-mute">
               <tr>
                 <th className="px-2.5 py-2">상태</th>
                 <th className="px-2.5 py-2">날짜</th>
@@ -225,7 +225,7 @@ export function PasteImporter({
                   </td>
                   <td className="px-2.5 py-2 text-ink-soft">{item.row.hours ? `${item.row.hours}시간` : "—"}</td>
                   <td className="max-w-[120px] truncate px-2.5 py-2 text-ink-mute">{item.row.memo || "—"}</td>
-                  <td className="px-2.5 py-2 text-[10px] text-ink-mute">{item.reason || "—"}</td>
+                  <td className="px-2.5 py-2 text-[12px] text-ink-mute">{item.reason || "—"}</td>
                 </tr>
               ))}
             </tbody>
@@ -234,7 +234,7 @@ export function PasteImporter({
       )}
 
       {failures.length > 0 && (
-        <div className="mt-2 space-y-1 rounded-lg bg-amber-50 px-2.5 py-2 text-[10.5px] text-amber-800">
+        <div className="mt-2 space-y-1 rounded-lg bg-amber-50 px-2.5 py-2 text-[12px] text-amber-800">
           {failures.map((item, index) => (
             <p key={`fail-${index}`}>
               · {item.row.raw} — {item.reason}
@@ -245,7 +245,7 @@ export function PasteImporter({
 
       {rows && (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-          <p className="text-[11px] text-ink-mute">
+          <p className="text-[12px] text-ink-mute">
             등록 가능 <b className="text-brand-dark">{readyCount}</b>건 / 전체 {rows.length}건 ·{" "}
             {space ? `${space.name} · 시간당 ${won(space.pricePerHour)}` : "공간을 선택해 주세요"}
           </p>

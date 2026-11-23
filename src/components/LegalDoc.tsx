@@ -28,7 +28,7 @@ export function LegalDoc({
 }) {
   return (
     <div className="container-page py-8 sm:py-12">
-      <div className="grid gap-8 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-12">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-12">
         <aside className="lg:sticky lg:top-24 lg:self-start">
           <p className="text-[12px] font-bold uppercase tracking-wider text-ink-mute">이곳저곳 정책</p>
           <nav className="mt-3 flex flex-wrap gap-1.5 lg:flex-col">
@@ -54,7 +54,7 @@ export function LegalDoc({
                 <li key={section.id}>
                   <a
                     href={`#${section.id}`}
-                    className="text-[12.5px] leading-snug text-ink-mute transition hover:text-brand-dark"
+                    className="text-[13px] leading-snug text-ink-mute transition hover:text-brand-dark"
                   >
                     {index + 1}. {section.title}
                   </a>

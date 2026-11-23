@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import {
+  claimDeposit,
   createSpaceBlock,
   fetchBookingEvents,
   fetchBookings,
@@ -73,6 +74,8 @@ interface AppContextValue {
   deleteSpace: (id: string) => Promise<void>;
   createBooking: (input: BookingInput) => Promise<Booking>;
   setBookingStatus: (id: string, status: BookingStatus, reason?: CancelReason | null) => Promise<void>;
+  /** 손님 '입금했어요' — 만료 보류 + 입금자명 저장 */
+  claimDeposit: (id: string, depositorName: string, token?: string | null) => Promise<void>;
   saveAccount: (spaceId: string, account: BankAccount) => Promise<void>;
   /** 확정 후 공개되는 상세주소·출입 안내 (사장님·관리자만 조회) */
   loadSpacePrivate: (spaceId: string) => Promise<SpacePrivate | null>;
@@ -239,6 +242,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
+  const claimDepositAction = useCallback(
+    async (id: string, depositorName: string, token?: string | null) => {
+      const updated = await claimDeposit(id, depositorName, token);
+      if (updated) {
+        setBookings((prev) => prev.map((booking) => (booking.id === id ? updated : booking)));
+      }
+    },
+    []
+  );
+
   const accountFor = useCallback((spaceId: string) => spaceAccounts[spaceId] ?? null, [spaceAccounts]);
 
   const loadSpacePrivate = useCallback(async (spaceId: string) => {
@@ -326,6 +339,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       deleteSpace,
       createBooking,
       setBookingStatus,
+      claimDeposit: claimDepositAction,
       saveAccount,
       loadSpacePrivate,
       savePrivate,
@@ -356,6 +370,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       deleteSpace,
       createBooking,
       setBookingStatus,
+      claimDepositAction,
       saveAccount,
       loadSpacePrivate,
       savePrivate,

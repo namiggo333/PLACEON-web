@@ -73,7 +73,7 @@ function SiteHeader() {
               )}
             >
               이곳저곳 Item
-              <span className="rounded-full bg-brand-light px-1.5 py-0.5 text-[10px] font-extrabold leading-none text-brand-dark">
+              <span className="rounded-full bg-brand-light px-1.5 py-0.5 text-[12px] font-extrabold leading-none text-brand-dark">
                 오픈예정
               </span>
             </Link>
@@ -98,7 +98,7 @@ function SiteHeader() {
           <Link
             href="/item"
             className={cn(
-              "inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[11.5px] font-extrabold transition md:hidden",
+              "inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[12px] font-extrabold transition md:hidden",
               pathname.startsWith("/item") ? "bg-brand-dark text-white" : "bg-brand-light text-brand-dark hover:bg-brand-soft"
             )}
             aria-label="이곳저곳 Item 오픈 예정"
@@ -113,7 +113,7 @@ function SiteHeader() {
                   {user.name.slice(0, 1)}
                 </span>
                 <span className="text-sm font-semibold text-ink">{user.name}</span>
-                <span className="rounded-md bg-ink-line/70 px-1.5 py-0.5 text-[11.5px] font-bold text-ink-soft">
+                <span className="rounded-md bg-ink-line/70 px-1.5 py-0.5 text-[12px] font-bold text-ink-soft">
                   {ROLE_LABEL[user.role]}
                 </span>
               </div>
@@ -176,7 +176,7 @@ function SiteFooter() {
             <LogoMark size={34} shadow={false} decorative />
             <div className="flex flex-col gap-2.5 pt-1.5">
               <Wordmark size="md" />
-              <Slogan className="text-[12.5px]" />
+              <Slogan className="text-[13px]" />
             </div>
           </div>
           <p className="mt-3.5 max-w-sm text-xs leading-relaxed text-ink-mute">
@@ -196,7 +196,7 @@ function SiteFooter() {
             <Link href="/host" className="hover:text-brand-dark">사장님 센터</Link>
             <Link href="/item" className="inline-flex items-center gap-1 hover:text-brand-dark">
               이곳저곳 Item
-              <span className="rounded bg-brand-light px-1 py-0.5 text-[10px] font-bold text-brand-dark">오픈예정</span>
+              <span className="rounded bg-brand-light px-1 py-0.5 text-[12px] font-bold text-brand-dark">오픈예정</span>
             </Link>
             <Link href="/host" className="hover:text-brand-dark">공간 등록</Link>
             <Link href="/host" className="hover:text-brand-dark">결제 링크 만들기</Link>
@@ -233,17 +233,19 @@ function SiteFooter() {
 export function Chrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const bare = pathname.startsWith("/pay");
+  // 사장님 센터는 자체 하단 탭(오늘·예약·공간·공유)을 쓰므로 게스트 하단 내비를 겹치지 않게 숨긴다.
+  const hostCenter = pathname === "/host" || pathname.startsWith("/host/");
 
   if (bare) return <>{children}</>;
 
   return (
     <div className="flex min-h-dvh flex-col">
       <SiteHeader />
-      <main className="flex-1 pb-20 md:pb-0">{children}</main>
+      <main className={cn("flex-1 md:pb-0", hostCenter ? "pb-0" : "pb-20")}>{children}</main>
       <div className="md:pb-0">
         <SiteFooter />
       </div>
-      <BottomNav />
+      {!hostCenter && <BottomNav />}
     </div>
   );
 }

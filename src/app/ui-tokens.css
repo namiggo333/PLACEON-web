@@ -1,0 +1,380 @@
+/* =========================================================================
+   이곳저곳 UI 토큰 · 상태 배지 · 가격 · 슬롯 · 하단 CTA
+   (2026-11-23 1~3순위 UX·시인성 업그레이드)
+
+   - 클래스는 모두 `ui-` 접두사를 붙여 기존 전역 클래스(.card, .chip, .badge …)와
+     충돌하지 않게 분리했다. Tailwind 유틸리티와 섞어 쓰는 것을 전제로 한다.
+   - 색·간격 값은 globals.css 의 :root 변수(--ink, --brand-ink …)를 그대로 쓴다.
+   - 로드 순서: globals.css 다음.
+   ========================================================================= */
+
+:root {
+  /* 간격 (4px 그리드) */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-12: 48px;
+  --page-x: 16px;
+
+  /* 모서리 */
+  --radius-photo: 12px;
+  --radius-card: 16px;
+  --radius-btn: 14px;
+  --radius-sheet: 24px;
+
+  /* 터치 타깃 */
+  --tap: 48px;
+  --tap-min: 44px;
+
+  /* 선·면 */
+  --line: #ece8f0;
+  --border-ui: #8e8798; /* 누를 수 있는 요소의 테두리 (흰 배경 대비 약 3.5:1) */
+  --surface-muted: #f1eff4;
+
+  /* 상태 색: 글자 / 배경 (괄호는 글자-배경 대비) */
+  --st-pay-fg: #8a4b00; --st-pay-bg: #fff1d6; /* 입금 대기  약 6.1 */
+  --st-check-fg: #1d4ed8; --st-check-bg: #e8f0ff; /* 확인 중    약 5.9 */
+  --st-ok-fg: #0f6b3d; --st-ok-bg: #e3f6eb; /* 확정       약 5.9 */
+  --st-closed-fg: #5b5563; --st-closed-bg: #eeecf1; /* 마감·취소  약 6.1 */
+  --st-deal-fg: #c4105a; --st-deal-bg: #ffe5ef; /* 타임특가   약 5.0 */
+  --st-bad-fg: #b3261e; --st-bad-bg: #fdebea; /* 거절·오류  약 5.7 */
+
+  /* 관리자 화면에서 함께 쓰는 하단 내비 높이 */
+  --bottom-nav-h: 56px;
+}
+
+/* ---------- 상태 배지: 높이 24px, 글자 12px/700, 아이콘 14px 병행 ---------- */
+.ui-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+.ui-badge svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+.ui-badge--pay { color: var(--st-pay-fg); background: var(--st-pay-bg); }
+.ui-badge--check { color: var(--st-check-fg); background: var(--st-check-bg); }
+.ui-badge--ok { color: var(--st-ok-fg); background: var(--st-ok-bg); }
+.ui-badge--closed { color: var(--st-closed-fg); background: var(--st-closed-bg); }
+.ui-badge--deal { color: var(--st-deal-fg); background: var(--st-deal-bg); }
+.ui-badge--bad { color: var(--st-bad-fg); background: var(--st-bad-bg); }
+/* 사장님 목록에서는 조금 크게 */
+.ui-badge--lg {
+  height: 28px;
+  font-size: 13px;
+  padding: 0 10px;
+}
+
+/* ---------- 가격 ---------- */
+.ui-price-row { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.ui-price-rate { font-size: 20px; font-weight: 800; color: var(--brand-strong); letter-spacing: -0.02em; }
+.ui-price-main {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.ui-price-unit { font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+.ui-price-orig {
+  font-size: 13px;
+  color: var(--ink-mute);
+  text-decoration: line-through;
+  font-variant-numeric: tabular-nums;
+}
+.ui-price-eq { font-size: 12px; color: var(--ink-mute); }
+
+/* ---------- 날짜 스트립 ---------- */
+.ui-date-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 2px 6px;
+  scroll-snap-type: x proximity;
+}
+.ui-date-chip {
+  flex: none;
+  width: 56px;
+  height: 72px;
+  border-radius: 14px;
+  border: 1.5px solid #d9d4e0;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  scroll-snap-align: start;
+}
+.ui-date-chip small {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-mute);
+  line-height: 1;
+}
+.ui-date-chip b {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.ui-date-chip[aria-pressed="true"] {
+  background: var(--brand-ink);
+  border-color: var(--brand-ink);
+}
+.ui-date-chip[aria-pressed="true"] small,
+.ui-date-chip[aria-pressed="true"] b { color: #fff; }
+.ui-date-chip[data-today="true"]:not([aria-pressed="true"]) { border-color: var(--brand); }
+.ui-date-chip.is-closed {
+  background: var(--surface-muted);
+  border-color: transparent;
+}
+.ui-date-chip.is-closed small,
+.ui-date-chip.is-closed b { color: var(--ink-mute); text-decoration: line-through; }
+
+/* ---------- 시간 슬롯: 높이 48px, 4열, 간격 8px ---------- */
+.ui-slot-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.ui-slot {
+  min-height: var(--tap);
+  border-radius: 12px;
+  border: 1.5px solid var(--border-ui);
+  background: #fff;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  line-height: 1.1;
+}
+.ui-slot[aria-pressed="true"] {
+  background: var(--brand-ink);
+  border-color: var(--brand-ink);
+  color: #fff;
+  font-weight: 800;
+}
+.ui-slot .ui-slot-tag { font-size: 12px; font-weight: 700; line-height: 1; }
+.ui-slot.is-range { background: var(--brand-light); border-color: var(--brand-ink); color: var(--brand-strong); }
+/* 예약됨(마감): 해칭 + 취소선 + '마감' 문자 — 색만으로 구분하지 않는다 */
+.ui-slot.is-booked {
+  background-color: var(--surface-muted);
+  border-color: transparent;
+  color: var(--ink-mute);
+  text-decoration: line-through;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent 0 6px,
+    rgba(111, 104, 121, 0.14) 6px 8px
+  );
+}
+.ui-slot.is-past {
+  border-color: transparent;
+  background: transparent;
+  color: var(--ink-faint);
+  pointer-events: none;
+}
+.ui-slot-note { font-size: 12px; color: var(--ink-mute); }
+
+/* ---------- 하단 고정 CTA ---------- */
+.ui-cta-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  /* 모바일 하단 내비(56px) + 안전영역 위에 올린다 */
+  bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom));
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px var(--page-x);
+  background: #fff;
+  border-top: 1px solid var(--line);
+  box-shadow: 0 -4px 16px rgba(27, 22, 36, 0.08);
+  padding-left: max(var(--page-x), env(safe-area-inset-left));
+  padding-right: max(var(--page-x), env(safe-area-inset-right));
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+}
+@media (min-width: 768px) {
+  .ui-cta-bar {
+    bottom: 0;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  }
+}
+.ui-cta-sum { flex: none; min-width: 0; }
+.ui-cta-sum small { display: block; font-size: 12px; color: var(--ink-mute); line-height: 1.2; }
+.ui-cta-sum strong {
+  font-size: 20px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+.ui-cta-btn {
+  flex: 1;
+  min-width: 150px;
+  height: 52px;
+  border-radius: var(--radius-btn);
+  background: var(--brand-ink);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1;
+}
+.ui-cta-btn:active { background: var(--brand-deep); }
+.ui-cta-btn:disabled { opacity: 0.6; }
+/* CTA 바에 가려지지 않게 페이지 하단 여백 확보 (모바일: 내비 + 바) */
+.has-ui-cta-bar { padding-bottom: calc(var(--bottom-nav-h) + 52px + 40px + env(safe-area-inset-bottom)); }
+@media (min-width: 768px) {
+  .has-ui-cta-bar { padding-bottom: calc(52px + 48px + env(safe-area-inset-bottom)); }
+}
+
+/* ---------- 칩(필터·카테고리) ---------- */
+.ui-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid #d9d4e0;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.ui-chip[aria-pressed="true"] { background: var(--brand-ink); border-color: var(--brand-ink); color: #fff; }
+.ui-chip--summary {
+  height: 36px;
+  background: var(--brand-light);
+  border-color: transparent;
+  color: var(--brand-strong);
+  font-size: 13px;
+  padding: 0 12px;
+}
+.ui-chip--action { border-style: dashed; color: var(--ink-soft); }
+
+/* ---------- 입금 안내 ---------- */
+.ui-countdown {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  color: var(--st-pay-fg);
+  letter-spacing: -0.01em;
+}
+.ui-countdown.is-urgent { color: var(--st-bad-fg); }
+.ui-account-no {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+.ui-copy-btn {
+  min-width: 72px;
+  height: var(--tap);
+  padding: 0 16px;
+  border-radius: 12px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* ---------- 단계 표시 (① 요청 → ② 입금 → ③ 확정) ---------- */
+.ui-steps { display: flex; align-items: flex-start; gap: 4px; }
+.ui-step { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+.ui-step-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 800;
+  background: var(--surface-muted);
+  color: var(--ink-mute);
+}
+.ui-step-label { font-size: 12px; font-weight: 600; color: var(--ink-mute); line-height: 1.2; }
+.ui-step[data-state="current"] .ui-step-dot { background: var(--ink); color: #fff; }
+.ui-step[data-state="current"] .ui-step-label { color: var(--ink); font-weight: 700; }
+.ui-step[data-state="done"] .ui-step-dot { background: var(--st-ok-bg); color: var(--st-ok-fg); }
+.ui-step[data-state="done"] .ui-step-label { color: var(--st-ok-fg); }
+
+/* ---------- 바텀시트 · 토스트 ---------- */
+.ui-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(27, 22, 36, 0.45);
+  backdrop-filter: blur(2px);
+}
+.ui-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 51;
+  max-height: 85dvh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+  padding: 8px var(--page-x) calc(16px + env(safe-area-inset-bottom));
+  animation: ui-sheet-in 0.18s ease-out;
+}
+@keyframes ui-sheet-in {
+  from { transform: translateY(12px); opacity: 0.6; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.ui-sheet-handle {
+  width: 36px;
+  height: 4px;
+  margin: 0 auto 12px;
+  border-radius: 2px;
+  background: #d9d4e0;
+}
+.ui-toast {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  bottom: calc(var(--bottom-nav-h) + 76px + env(safe-area-inset-bottom));
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  animation: ui-toast-in 0.18s ease-out;
+}
+@keyframes ui-toast-in {
+  from { transform: translate(-50%, 6px); opacity: 0; }
+  to { transform: translate(-50%, 0); opacity: 1; }
+}
+
+/* ---------- 공용 ---------- */
+.ui-tap { min-height: var(--tap-min); min-width: var(--tap-min); }
+.ui-quiet-card { border: 1px solid var(--line); border-radius: var(--radius-card); background: #fff; padding: var(--sp-4); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-sheet,
+  .ui-toast { animation: none; }
+}

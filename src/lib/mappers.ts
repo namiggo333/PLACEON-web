@@ -91,6 +91,8 @@ export interface BookingRow {
   pay_account_number?: string | null;
   pay_account_holder?: string | null;
   cancel_reason?: string | null;
+  paid_claimed_at?: string | null;
+  depositor_name?: string | null;
   created_at: string | null;
 }
 
@@ -197,6 +199,8 @@ export function mapBooking(row: BookingRow): Booking {
     payAccountNumber: row.pay_account_number ?? "",
     payAccountHolder: row.pay_account_holder ?? "",
     cancelReason,
+    paidClaimedAt: row.paid_claimed_at ?? null,
+    depositorName: row.depositor_name ?? "",
   };
 }
 

@@ -30,7 +30,7 @@ export function BookingConsent({
           확인했고 이에 동의합니다.
         </span>
       </label>
-      <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 pl-6 text-[11.5px]">
+      <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 pl-6 text-[12px]">
         <Link href="/terms" target="_blank" rel="noreferrer" className="font-semibold text-brand-dark hover:underline">
           이용약관
         </Link>

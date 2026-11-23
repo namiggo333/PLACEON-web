@@ -250,7 +250,7 @@ export function IcalPanel({
         </span>
         <div>
           <h2 className="text-sm font-extrabold text-ink">캘린더 연동 (.ics)</h2>
-          <p className="text-[10px] text-ink-mute">
+          <p className="text-[12px] text-ink-mute">
             내 캘린더에서 예약·차단 일정을 구독하고, 다른 캘린더 일정은 시간 차단으로 가져와요.
           </p>
         </div>
@@ -259,14 +259,14 @@ export function IcalPanel({
       {/* 내보내기 */}
       <div className="mt-3 rounded-xl bg-ink-line/25 p-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-[11px] font-bold text-ink">
+          <p className="text-[12px] font-bold text-ink">
             <ClockIcon size={12} className="mr-1 inline text-brand-dark" />
             내 공간 일정 구독 주소
           </p>
           <select
             value={selectedSpace?.id ?? ""}
             onChange={(event) => setSpaceId(event.target.value)}
-            className="input h-8 max-w-[170px] text-[11px]"
+            className="input h-8 max-w-[170px] text-[12px]"
             aria-label="구독할 공간"
             disabled={mySpaces.length === 0}
           >
@@ -283,11 +283,11 @@ export function IcalPanel({
             readOnly
             value={feed?.url ?? (feedBusy ? "구독 주소를 만드는 중…" : "")}
             placeholder={mode === "supabase" ? "구독 주소를 불러오는 중이에요" : "Supabase 연결 후 사용할 수 있어요"}
-            className="input h-9 min-w-0 flex-1 bg-white text-[10.5px]"
+            className="input h-9 min-w-0 flex-1 bg-white text-[12px]"
           />
           <button
             type="button"
-            className="btn-primary shrink-0 px-3 text-[11px]"
+            className="btn-primary shrink-0 px-3 text-[12px]"
             disabled={!feed?.url}
             onClick={() => void copy(feed?.url ?? "")}
           >
@@ -295,8 +295,8 @@ export function IcalPanel({
             복사
           </button>
         </div>
-        {feedError && <p className="mt-1.5 text-[10px] font-medium text-red-500">{feedError}</p>}
-        <p className="mt-1.5 text-[10px] leading-relaxed text-ink-mute">
+        {feedError && <p className="mt-1.5 text-[12px] font-medium text-red-500">{feedError}</p>}
+        <p className="mt-1.5 text-[12px] leading-relaxed text-ink-mute">
           구글 캘린더 → 다른 캘린더 + → URL로 추가에 붙여넣으면 예약·차단 시간이 자동으로 동기화돼요. 손님 이름·연락처는
           담기지 않고 시간만 표시됩니다.
         </p>
@@ -305,7 +305,7 @@ export function IcalPanel({
       {/* 가져오기 */}
       <div className="mt-3 rounded-xl border border-ink-line p-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-[11px] font-bold text-ink">다른 캘린더 일정 가져오기</p>
+          <p className="text-[12px] font-bold text-ink">다른 캘린더 일정 가져오기</p>
           <div className="flex gap-1 rounded-lg bg-ink-line/30 p-0.5">
             {(["url", "text"] as const).map((item) => (
               <button
@@ -313,7 +313,7 @@ export function IcalPanel({
                 type="button"
                 onClick={() => setImportMode(item)}
                 className={cn(
-                  "rounded-md px-2.5 py-1 text-[10.5px] font-bold transition",
+                  "rounded-md px-2.5 py-1 text-[12px] font-bold transition",
                   importMode === item ? "bg-white text-brand-dark shadow-sm" : "text-ink-mute"
                 )}
               >
@@ -327,7 +327,7 @@ export function IcalPanel({
           <select
             value={importSpaceId}
             onChange={(event) => setImportSpaceId(event.target.value)}
-            className="input h-9 text-[11px]"
+            className="input h-9 text-[12px]"
             aria-label="가져온 일정을 차단할 공간"
             disabled={mySpaces.length === 0}
           >
@@ -343,7 +343,7 @@ export function IcalPanel({
                 value={importUrl}
                 onChange={(event) => setImportUrl(event.target.value)}
                 placeholder="https://calendar.google.com/.../basic.ics"
-                className="input h-9 min-w-0 flex-1 text-[11px]"
+                className="input h-9 min-w-0 flex-1 text-[12px]"
               />
               <button type="button" onClick={() => void loadIcs()} className="btn-soft btn-sm shrink-0">
                 가져오기
@@ -362,15 +362,15 @@ export function IcalPanel({
             onChange={(event) => setIcsText(event.target.value)}
             rows={4}
             placeholder={"BEGIN:VCALENDAR … END:VCALENDAR 내용을 붙여넣으세요"}
-            className="input mt-2 w-full resize-y font-mono text-[10px] leading-relaxed"
+            className="input mt-2 w-full resize-y font-mono text-[12px] leading-relaxed"
           />
         )}
 
         {importError && (
-          <p className="mt-2 rounded-lg bg-red-50 px-2.5 py-1.5 text-[10.5px] font-medium text-red-600">{importError}</p>
+          <p className="mt-2 rounded-lg bg-red-50 px-2.5 py-1.5 text-[12px] font-medium text-red-600">{importError}</p>
         )}
         {failures.length > 0 && (
-          <div className="mt-2 space-y-1 rounded-lg bg-amber-50 px-2.5 py-2 text-[10.5px] text-amber-800">
+          <div className="mt-2 space-y-1 rounded-lg bg-amber-50 px-2.5 py-2 text-[12px] text-amber-800">
             {failures.map((line) => (
               <p key={line}>· {line}</p>
             ))}
@@ -379,8 +379,8 @@ export function IcalPanel({
 
         {importRows && (
           <div className="mt-2 overflow-x-auto rounded-xl border border-ink-line">
-            <table className="w-full min-w-[480px] text-left text-[11px]">
-              <thead className="bg-ink-line/30 text-[10px] font-bold text-ink-mute">
+            <table className="w-full min-w-[480px] text-left text-[12px]">
+              <thead className="bg-ink-line/30 text-[12px] font-bold text-ink-mute">
                 <tr>
                   <th className="px-2.5 py-2">상태</th>
                   <th className="px-2.5 py-2">날짜</th>
@@ -404,7 +404,7 @@ export function IcalPanel({
                     </td>
                     <td className="px-2.5 py-2 text-ink-soft">{row.hours}시간</td>
                     <td className="max-w-[130px] truncate px-2.5 py-2 text-ink-mute">{row.memo || "—"}</td>
-                    <td className="px-2.5 py-2 text-[10px] text-ink-mute">{row.reason || "—"}</td>
+                    <td className="px-2.5 py-2 text-[12px] text-ink-mute">{row.reason || "—"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -414,7 +414,7 @@ export function IcalPanel({
 
         {importRows && (
           <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-            <p className="text-[11px] text-ink-mute">
+            <p className="text-[12px] text-ink-mute">
               등록 가능 <b className="text-brand-dark">{readyCount}</b>건 / 전체 {importRows.length}건
               {hiddenCount > 0 ? ` · 표시는 50건까지` : ""}
             </p>

@@ -161,6 +161,16 @@ export function CopyIcon(props: IconProps) {
   );
 }
 
+export function HourglassIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M7 3h10M7 21h10" />
+      <path d="M8 3v3.2c0 1 .5 1.9 1.3 2.5L12 11l-2.7 2.3A3.1 3.1 0 0 0 8 15.8V21" />
+      <path d="M16 3v3.2c0 1-.5 1.9-1.3 2.5L12 11l2.7 2.3c.8.6 1.3 1.5 1.3 2.5V21" />
+    </svg>
+  );
+}
+
 export function LinkIcon(props: IconProps) {
   return (
     <svg {...base(props)}>

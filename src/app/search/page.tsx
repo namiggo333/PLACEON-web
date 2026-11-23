@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useApp } from "@/components/AppProvider";
 import { CategoryChips } from "@/components/Bits";
 import { SpaceGrid } from "@/components/SpaceCard";
-import { SearchIcon } from "@/components/Icons";
+import { CloseIcon, SearchIcon } from "@/components/Icons";
 import { PRICE_RANGES, REGIONS } from "@/lib/constants";
 import { filterSpaces, type SortKey } from "@/lib/filter";
 import type { Category } from "@/lib/types";
@@ -13,8 +13,6 @@ import type { Category } from "@/lib/types";
 const SORTS: { key: SortKey; label: string }[] = [
   { key: "recommend", label: "추천순" },
   { key: "price", label: "가격 낮은순" },
-  { key: "rating", label: "평점 높은순" },
-  { key: "reviews", label: "리뷰 많은순" },
 ];
 
 function SearchContent() {
@@ -27,7 +25,9 @@ function SearchContent() {
   const [region, setRegion] = useState(params.get("region") ?? "all");
   const [price, setPrice] = useState(params.get("price") ?? "all");
   const [guests, setGuests] = useState(Number(params.get("guests") ?? 0));
-  const [sort, setSort] = useState<SortKey>((params.get("sort") as SortKey) ?? "recommend");
+  const [sort, setSort] = useState<SortKey>(
+    (params.get("sort") as SortKey) === "price" ? "price" : "recommend"
+  );
 
   const results = useMemo(
     () => filterSpaces(visibleSpaces, { query, category, region, price, guests, sort }),
@@ -42,6 +42,10 @@ function SearchContent() {
     setGuests(0);
     setSort("recommend");
   }
+
+  const priceLabel = PRICE_RANGES.find((range) => range.key === price)?.label ?? "전체 가격";
+  const activeCount =
+    (region !== "all" ? 1 : 0) + (price !== "all" ? 1 : 0) + (guests > 0 ? 1 : 0) + (sort !== "recommend" ? 1 : 0);
 
   return (
     <div className="container-page py-6 sm:py-10">
@@ -77,63 +81,84 @@ function SearchContent() {
         <CategoryChips active={category} onSelect={setCategory} />
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        <select
-          value={region}
-          onChange={(event) => setRegion(event.target.value)}
-          className="rounded-lg border border-ink-line bg-white px-3 py-2 text-xs font-semibold text-ink-soft focus:border-brand focus:outline-none"
-          aria-label="지역"
-        >
-          <option value="all">지역 전체</option>
-          {REGIONS.map((item) => (
-            <option key={item} value={item}>
-              {item}
-            </option>
-          ))}
-        </select>
-        <select
-          value={price}
-          onChange={(event) => setPrice(event.target.value)}
-          className="rounded-lg border border-ink-line bg-white px-3 py-2 text-xs font-semibold text-ink-soft focus:border-brand focus:outline-none"
-          aria-label="가격대"
-        >
-          {PRICE_RANGES.map((range) => (
-            <option key={range.key} value={range.key}>
-              {range.label}
-            </option>
-          ))}
-        </select>
-        <select
-          value={guests}
-          onChange={(event) => setGuests(Number(event.target.value))}
-          className="rounded-lg border border-ink-line bg-white px-3 py-2 text-xs font-semibold text-ink-soft focus:border-brand focus:outline-none"
-          aria-label="인원"
-        >
-          <option value={0}>인원 전체</option>
-          {[2, 4, 6, 10, 15, 20, 25].map((count) => (
-            <option key={count} value={count}>
-              {count}명 이상
-            </option>
-          ))}
-        </select>
-        <select
-          value={sort}
-          onChange={(event) => setSort(event.target.value as SortKey)}
-          className="rounded-lg border border-ink-line bg-white px-3 py-2 text-xs font-semibold text-ink-soft focus:border-brand focus:outline-none"
-          aria-label="정렬"
-        >
+      {/* 스크롤해도 필터가 따라오도록 상단 고정 (모바일 360px에서도 한 줄 가로 스크롤) */}
+      <div className="sticky top-14 z-20 -mx-4 mt-3 border-y border-ink-line bg-white/95 px-4 py-2 backdrop-blur md:top-16">
+        <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto pb-0.5">
+          <select
+            value={region}
+            onChange={(event) => setRegion(event.target.value)}
+            className="h-10 shrink-0 rounded-full border border-ink-line bg-white px-3 text-[14px] font-semibold text-ink focus:border-brand focus:outline-none"
+            aria-label="지역"
+          >
+            <option value="all">지역 전체</option>
+            {REGIONS.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+          <select
+            value={price}
+            onChange={(event) => setPrice(event.target.value)}
+            className="h-10 shrink-0 rounded-full border border-ink-line bg-white px-3 text-[14px] font-semibold text-ink focus:border-brand focus:outline-none"
+            aria-label="가격대"
+          >
+            {PRICE_RANGES.map((range) => (
+              <option key={range.key} value={range.key}>
+                {range.label}
+              </option>
+            ))}
+          </select>
+          <select
+            value={guests}
+            onChange={(event) => setGuests(Number(event.target.value))}
+            className="h-10 shrink-0 rounded-full border border-ink-line bg-white px-3 text-[14px] font-semibold text-ink focus:border-brand focus:outline-none"
+            aria-label="인원"
+          >
+            <option value={0}>인원 전체</option>
+            {[2, 4, 6, 10, 15, 20, 25].map((count) => (
+              <option key={count} value={count}>
+                {count}명 이상
+              </option>
+            ))}
+          </select>
           {SORTS.map((item) => (
-            <option key={item.key} value={item.key}>
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => setSort(item.key)}
+              aria-pressed={sort === item.key}
+              className="ui-chip shrink-0"
+            >
               {item.label}
-            </option>
+            </button>
           ))}
-        </select>
-        <button type="button" onClick={reset} className="rounded-lg px-2 py-2 text-xs font-semibold text-ink-mute hover:text-brand-dark">
-          초기화
-        </button>
+          {activeCount > 0 && (
+            <button
+              type="button"
+              onClick={reset}
+              className="ui-chip ui-chip--action shrink-0"
+            >
+              <CloseIcon size={13} />
+              초기화
+            </button>
+          )}
+        </div>
+        {activeCount > 0 && (
+          <p className="mt-1 text-[12px] text-ink-mute">
+            {[
+              region !== "all" ? region : null,
+              price !== "all" ? priceLabel : null,
+              guests > 0 ? `${guests}명 이상` : null,
+              sort !== "recommend" ? "가격 낮은순" : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+        )}
       </div>
 
-      <div className="mt-6 flex items-center justify-between">
+      <div className="mt-4 flex items-center justify-between">
         <p className="text-sm font-semibold text-ink">
           {query ? `‘${query}’ ` : ""}검색 결과{" "}
           {ready ? <span className="text-brand-dark">{results.length}</span> : <span className="skeleton ml-1 inline-block h-4 w-6 align-middle" />}개
@@ -145,7 +170,7 @@ function SearchContent() {
         {ready ? (
           <SpaceGrid spaces={results} onReset={reset} />
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 4 }).map((_, index) => (
               <div key={index} className="card overflow-hidden">
                 <div className="skeleton aspect-[16/10] rounded-none" />

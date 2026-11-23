@@ -120,7 +120,7 @@ export default function BookingsPage() {
         {guestData && (
           <div className="mt-4 space-y-3">
             <GuestBookingSummary payload={guestData} />
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-[12.5px] leading-relaxed text-emerald-900">
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-[13px] leading-relaxed text-emerald-900">
               {guestData.access ? (
                 <>
                   <p className="font-extrabold">예약이 확정됐어요 · 상세 안내</p>
@@ -279,7 +279,7 @@ export default function BookingsPage() {
                               {REFUND_LABEL[booking.refundStatus]}
                             </span>
                           )}
-                          <span className="text-[11.5px] font-medium text-ink-mute">
+                          <span className="text-[12px] font-medium text-ink-mute">
                             No. {shortId(booking.id)}
                           </span>
                         </div>
@@ -287,7 +287,7 @@ export default function BookingsPage() {
                       </div>
                       <div className="shrink-0 text-right">
                         <p className="text-sm font-extrabold text-ink">{won(booking.totalAmount)}</p>
-                        <p className="text-[11.5px] text-ink-mute">{booking.hours}시간 기준</p>
+                        <p className="text-[12px] text-ink-mute">{booking.hours}시간 기준</p>
                       </div>
                     </div>
 
@@ -326,13 +326,13 @@ export default function BookingsPage() {
                           <CheckIcon size={13} className="mt-0.5 shrink-0" />
                           입금이 확인되어 예약이 확정됐어요. 이용 당일 20분 전까지 도착해 주세요.
                         </p>
-                        <p className="mt-1 pl-4 text-[11.5px] leading-relaxed text-emerald-600/90">
+                        <p className="mt-1 pl-4 text-[12px] leading-relaxed text-emerald-600/90">
                           💌 모임 초대 카드로 친구들에게 바로 공유해 보세요.
                         </p>
                       </div>
                     )}
                     {booking.status === "cancelled" && booking.refundStatus !== "none" && (
-                      <p className="mt-2 rounded-lg bg-amber-50 px-2.5 py-1.5 text-[11.5px] font-semibold text-amber-700">
+                      <p className="mt-2 rounded-lg bg-amber-50 px-2.5 py-1.5 text-[12px] font-semibold text-amber-700">
                         환불 상태 · {REFUND_LABEL[booking.refundStatus]}
                         {booking.refundStatus === "pending" ? " (사장님 확인 후 환불돼요)" : ""}
                       </p>
@@ -381,7 +381,7 @@ export default function BookingsPage() {
                     {cancelling === booking.id && (
                       <div className="mt-3 rounded-xl border border-red-100 bg-red-50/70 p-3">
                         <p className="text-[12px] font-semibold text-red-700">정말 이 예약을 취소할까요?</p>
-                        <p className="mt-0.5 text-[11.5px] text-red-500">
+                        <p className="mt-0.5 text-[12px] text-red-500">
                           이용 3일 전까지 무료 취소, 이후에는 사장님과 협의가 필요해요.
                         </p>
                         <div className="mt-2 flex gap-2">

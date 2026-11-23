@@ -3,9 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useApp } from "@/components/AppProvider";
 import { BookingConsent } from "@/components/ConsentCheckbox";
+import { DateStrip, GuestStepper, HoursStepper, SlotGrid } from "@/components/BookingPicker";
 import { DepositGuide } from "@/components/DepositGuide";
 import { LogoMark, MascotAvatar } from "@/components/Logo";
 import { SpaceMedia } from "@/components/SpaceCard";
@@ -21,20 +22,9 @@ import {
   StarIcon,
   UsersIcon,
 } from "@/components/Icons";
-import { APPROVAL_LABEL, CATEGORY_MAP, HOUR_OPTIONS, TIME_SLOTS } from "@/lib/constants";
+import { APPROVAL_LABEL, CATEGORY_MAP, HOUR_OPTIONS, REVIEWS_ENABLED, TIME_SLOTS } from "@/lib/constants";
 import { buildSlotStatuses, fetchOccupiedSlots, type SlotStatus } from "@/lib/availability";
-import {
-  addDays,
-  calcTotal,
-  cn,
-  formatDate,
-  formatTime,
-  shortId,
-  timeRange,
-  toISO,
-  todayISO,
-  won,
-} from "@/lib/format";
+import { calcTotal, cn, formatDate, shortId, timeRange, todayISO, won } from "@/lib/format";
 import { SITE_URL } from "@/lib/site-url";
 import type { Booking, Space } from "@/lib/types";
 
@@ -62,7 +52,7 @@ function PhotoGallery({ space }: { space: Space }) {
         )}
 
         {photos.length === 0 && (
-          <span className="absolute bottom-3 left-3 rounded-full bg-white/85 px-2.5 py-1 text-[11.5px] font-bold text-ink-soft backdrop-blur">
+          <span className="absolute bottom-3 left-3 rounded-full bg-white/85 px-2.5 py-1 text-[12px] font-bold text-ink-soft backdrop-blur">
             사장님이 공간 사진을 준비하고 있어요
           </span>
         )}
@@ -127,8 +117,8 @@ function PhotoGallery({ space }: { space: Space }) {
 
 const STEPS = [
   { emoji: "🗓", title: "날짜·시간 선택", desc: "비어 있는 시간대를 골라요" },
-  { emoji: "🩷", title: "예약 신청", desc: "로그인 없이 3초면 끝" },
-  { emoji: "✅", title: "입금 확인 후 확정", desc: "사장님이 확인하면 확정" },
+  { emoji: "🩷", title: "예약 요청", desc: "로그인 없이 이름·연락처만" },
+  { emoji: "✅", title: "입금 → 확정", desc: "입금 신고 후 사장님 확인" },
 ];
 
 export default function PayView() {
@@ -152,6 +142,7 @@ export default function PayView() {
   const [occupied, setOccupied] = useState<SlotStatus[]>([]);
   const [checkingSlots, setCheckingSlots] = useState(false);
   const [origin, setOrigin] = useState(SITE_URL);
+  const formRef = useRef<HTMLFormElement | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") setOrigin(window.location.origin);
@@ -187,11 +178,6 @@ export default function PayView() {
       setPhone((value) => value || user.phone);
     }
   }, [user]);
-
-  const quickDates = useMemo(
-    () => [0, 1, 2].map((offset) => ({ iso: toISO(addDays(offset)), label: offset === 0 ? "오늘" : offset === 1 ? "내일" : "모레" })),
-    []
-  );
 
   const subtotal = space ? space.pricePerHour * hours : 0;
   const total = space ? calcTotal(space.pricePerHour, hours, space.discountRate) : 0;
@@ -285,7 +271,7 @@ export default function PayView() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-5xl px-4 pb-14 pt-4 sm:pt-6">
+      <main className="mx-auto w-full max-w-5xl px-4 pb-28 pt-4 sm:pt-6 md:pb-14">
         {done ? (
           <div className="mx-auto max-w-lg animate-pop-in rounded-xl3 bg-white p-5 shadow-float sm:p-7">
             <div className="flex flex-col items-center text-center">
@@ -333,7 +319,7 @@ export default function PayView() {
             <DepositGuide booking={done} className="mt-3" />
 
             {done.accessToken && (
-              <div className="mt-3 rounded-2xl border border-ink-line bg-[#FFF8FB] p-3 text-[11.5px] leading-relaxed text-ink-soft">
+              <div className="mt-3 rounded-2xl border border-ink-line bg-[#FFF8FB] p-3 text-[12px] leading-relaxed text-ink-soft">
                 <p className="font-bold text-ink">비로그인 예약 확인 링크</p>
                 <p className="mt-1 break-all">
                   {origin}/bookings?booking={done.id}&amp;token={done.accessToken}
@@ -356,13 +342,13 @@ export default function PayView() {
               </Link>
             </div>
             {user && (
-              <p className="mt-2 text-center text-[11.5px] leading-relaxed text-ink-mute">
+              <p className="mt-2 text-center text-[12px] leading-relaxed text-ink-mute">
                 예약이 확정되면 예약 내역에서 💌 모임 초대 카드를 만들어 친구에게 보낼 수 있어요.
               </p>
             )}
           </div>
         ) : (
-          <div className="grid gap-5 lg:grid-cols-[1.06fr_0.94fr] lg:items-start lg:gap-7">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.06fr_0.94fr] lg:items-start lg:gap-7">
             <div className="min-w-0 space-y-4">
               <PhotoGallery space={space} />
 
@@ -380,16 +366,12 @@ export default function PayView() {
                   <span className="badge bg-ink-line/60 text-ink-soft">
                     <UsersIcon size={11} /> 최대 {space.capacity}명
                   </span>
-                  <span className="ml-auto inline-flex items-center gap-1 text-[12px] font-semibold text-ink-soft">
-                    <StarIcon size={12} className="text-amber-400" />
-                    {space.reviewCount > 0 ? (
-                      <>
-                        {space.rating.toFixed(1)} <span className="text-ink-mute">({space.reviewCount})</span>
-                      </>
-                    ) : (
-                      <span className="text-ink-mute">신규 공간</span>
-                    )}
-                  </span>
+                  {REVIEWS_ENABLED && space.reviewCount > 0 && (
+                    <span className="ml-auto inline-flex items-center gap-1 text-[12px] font-semibold text-ink-soft">
+                      <StarIcon size={12} className="text-amber-400" />
+                      {space.rating.toFixed(1)} <span className="text-ink-mute">({space.reviewCount})</span>
+                    </span>
+                  )}
                 </div>
 
                 <h1 className="mt-2.5 text-[24px] leading-snug text-ink sm:text-[28px]">{space.name}</h1>
@@ -451,7 +433,7 @@ export default function PayView() {
                   <MascotAvatar size={34} ring={false} />
                   <div className="min-w-0">
                     <p className="truncate text-[12px] font-bold text-ink">{space.hostName} 사장님의 공간</p>
-                    <p className="truncate text-[11.5px] text-ink-mute">이곳저곳 전용 예약 페이지로 받는 예약은 수수료 0원</p>
+                    <p className="truncate text-[12px] text-ink-mute">이곳저곳 전용 예약 페이지로 받는 예약은 수수료 0원</p>
                   </div>
                 </div>
               </section>
@@ -465,10 +447,10 @@ export default function PayView() {
                       <span className="text-[15px]" aria-hidden>
                         {step.emoji}
                       </span>
-                      <p className="mt-0.5 text-[12.5px] font-bold text-ink">
+                      <p className="mt-0.5 text-[13px] font-bold text-ink">
                         {index + 1}. {step.title}
                       </p>
-                      <p className="text-[11.5px] text-ink-mute">{step.desc}</p>
+                      <p className="text-[12px] text-ink-mute">{step.desc}</p>
                     </li>
                   ))}
                 </ol>
@@ -483,6 +465,7 @@ export default function PayView() {
             {/* 예약 폼 */}
             <form
               id="booking"
+              ref={formRef}
               onSubmit={submit}
               className="scroll-mt-20 rounded-xl2 border border-brand/10 bg-white p-4 shadow-float sm:p-5 lg:sticky lg:top-[76px]"
             >
@@ -490,112 +473,52 @@ export default function PayView() {
                 <h2 className="text-[19px] text-ink">예약하기</h2>
                 <span className="badge bg-brand-light text-brand-dark">로그인 없이</span>
               </div>
-              <p className="mt-0.5 text-[12px] text-ink-mute">날짜와 시간만 고르면 끝나요. 3초면 예약 완료!</p>
+              <p className="mt-0.5 text-[12px] text-ink-mute">날짜와 시간만 고르면 예약 요청 끝, 입금하면 확정돼요.</p>
 
               <div className="mt-3.5 space-y-3">
                 <div>
-                  <span className="label">이용 날짜</span>
-                  <div className="mb-1.5 flex gap-1.5">
-                    {quickDates.map((item) => (
-                      <button
-                        key={item.iso}
-                        type="button"
-                        onClick={() => setDate(item.iso)}
-                        className={cn(
-                          "flex-1 rounded-full border px-2 py-1.5 text-[12.5px] font-bold transition",
-                          date === item.iso
-                            ? "border-brand bg-brand text-white"
-                            : "border-ink-line bg-white text-ink-soft hover:border-brand/40 hover:text-brand-dark"
-                        )}
-                      >
-                        {item.label}
-                      </button>
-                    ))}
+                  <div className="mb-1.5 flex items-baseline justify-between">
+                    <span className="label mb-0">이용 날짜</span>
+                    <span className="text-[12px] text-ink-mute">{formatDate(date)}</span>
                   </div>
-                  <input
-                    id="pay-date"
-                    type="date"
-                    min={todayISO()}
-                    value={date}
-                    onChange={(event) => setDate(event.target.value)}
-                    className="input"
-                    aria-label="이용 날짜"
-                    required
-                  />
+                  <DateStrip value={date} onChange={setDate} />
+                  <label className="mt-1 flex items-center gap-2 text-[12px] text-ink-mute">
+                    <CalendarIcon size={13} />
+                    다른 날짜
+                    <input
+                      id="pay-date"
+                      type="date"
+                      min={todayISO()}
+                      value={date}
+                      onChange={(event) => setDate(event.target.value)}
+                      className="rounded-lg border border-ink-line px-2 py-1 text-[13px] text-ink"
+                      aria-label="이용 날짜"
+                      required
+                    />
+                  </label>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div id="pay-slots">
+                  <div className="mb-1.5 flex items-baseline justify-between">
+                    <span className="label mb-0">시작 시간</span>
+                    <span className="text-[12px] font-semibold text-brand-strong">
+                      {checkingSlots ? "확인 중…" : timeRange(startTime, hours)}
+                    </span>
+                  </div>
+                  <SlotGrid statuses={occupied} value={startTime} hours={hours} onChange={setStartTime} />
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div>
-                    <label className="label" htmlFor="pay-start">
-                      시작 시간
-                    </label>
-                    <select
-                      id="pay-start"
-                      value={startTime}
-                      onChange={(event) => setStartTime(event.target.value)}
-                      className="input"
-                    >
-                      {TIME_SLOTS.map((slot) => {
-                        const status = occupied.find((entry) => entry.start === slot);
-                        const label = status?.taken
-                          ? status.blockedBy === "block"
-                            ? " · 사장님 차단"
-                            : " · 예약됨"
-                          : status?.past
-                            ? " · 지난 시간"
-                            : "";
-                        return (
-                          <option key={slot} value={slot} disabled={Boolean(status?.taken || status?.past)}>
-                            {formatTime(slot)}
-                            {label}
-                          </option>
-                        );
-                      })}
-                    </select>
+                    <span className="label">이용 시간</span>
+                    <HoursStepper value={hours} options={HOUR_OPTIONS} onChange={setHours} />
                   </div>
                   <div>
-                    <label className="label" htmlFor="pay-hours">
-                      이용 시간
-                    </label>
-                    <select
-                      id="pay-hours"
-                      value={hours}
-                      onChange={(event) => setHours(Number(event.target.value))}
-                      className="input"
-                    >
-                      {HOUR_OPTIONS.map((hour) => (
-                        <option key={hour} value={hour}>
-                          {hour}시간
-                        </option>
-                      ))}
-                    </select>
+                    <span className="label">인원 (최대 {space.capacity}명)</span>
+                    <GuestStepper value={guests} max={space.capacity} onChange={setGuests} />
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between rounded-xl border border-ink-line px-3 py-2">
-                  <span className="inline-flex items-center gap-1 text-xs font-bold text-ink-soft">
-                    <UsersIcon size={13} className="text-ink-mute" /> 인원
-                  </span>
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setGuests((value) => Math.max(1, value - 1))}
-                      className="grid h-7 w-7 place-items-center rounded-lg bg-ink-line/60 text-sm font-bold text-ink-soft"
-                      aria-label="인원 줄이기"
-                    >
-                      −
-                    </button>
-                    <span className="w-10 text-center text-sm font-bold text-ink">{guests}명</span>
-                    <button
-                      type="button"
-                      onClick={() => setGuests((value) => Math.min(space.capacity, value + 1))}
-                      className="grid h-7 w-7 place-items-center rounded-lg bg-ink-line/60 text-sm font-bold text-ink-soft"
-                      aria-label="인원 늘리기"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
 
                 <div className="grid grid-cols-2 gap-2">
                   <div>
@@ -641,7 +564,7 @@ export default function PayView() {
                   />
                 </div>
 
-                <div className="rounded-2xl bg-[#FFF8FB] p-3 text-[12.5px] ring-1 ring-ink-line">
+                <div className="rounded-2xl bg-[#FFF8FB] p-3 text-[13px] ring-1 ring-ink-line">
                   <div className="flex justify-between text-ink-soft">
                     <span>
                       {won(space.pricePerHour)} × {hours}시간
@@ -658,7 +581,7 @@ export default function PayView() {
                     <span className="text-[12px] font-bold text-ink">총 금액</span>
                     <span className="num text-[22px] font-extrabold leading-none tracking-[-0.02em] text-brand-dark">{won(total)}</span>
                   </div>
-                  <p className="mt-1 flex items-center gap-1 text-[11.5px] text-ink-mute">
+                  <p className="mt-1 flex items-center gap-1 text-[12px] text-ink-mute">
                     <CalendarIcon size={11} />
                     {formatDate(date)} {timeRange(startTime, hours)}
                   </p>
@@ -673,7 +596,7 @@ export default function PayView() {
                 <button type="submit" disabled={submitting} className="btn-primary w-full py-3 text-[15px]">
                   {submitting ? "접수 중…" : `${won(total)} · 예약 신청하기`}
                 </button>
-                <p className="text-center text-[11.5px] leading-relaxed text-ink-mute">
+                <p className="text-center text-[12px] leading-relaxed text-ink-mute">
                   신청 후 15분 안에 안내된 계좌로 입금하면 사장님 확인을 거쳐 확정돼요.
                 </p>
               </div>
@@ -681,6 +604,25 @@ export default function PayView() {
           </div>
         )}
       </main>
+
+      {!done && (
+        <div className="ui-cta-bar md:hidden">
+          <div className="ui-cta-sum">
+            <small>
+              {formatDate(date)} {timeRange(startTime, hours)} · {hours}시간
+            </small>
+            <strong>{won(total)}</strong>
+          </div>
+          <button
+            type="button"
+            onClick={() => formRef.current?.requestSubmit()}
+            disabled={submitting}
+            className="ui-cta-btn"
+          >
+            {submitting ? "접수 중…" : "예약 신청하기"}
+          </button>
+        </div>
+      )}
 
       <footer className="border-t border-brand/10 bg-white/70">
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-2 px-4 py-5 text-[12px] text-ink-mute sm:flex-row sm:items-center sm:justify-between">

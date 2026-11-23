@@ -127,6 +127,10 @@ export interface Booking {
   createdAt: string;
   /* 입금 기한 (pending 이면 now + 15분) */
   expiresAt: string | null;
+  /* 손님이 '입금했어요'를 누른 시각 — 있으면 만료가 12시간 보류된다 */
+  paidClaimedAt?: string | null;
+  /* 손님이 입력한 입금자명 (사장님이 통장과 대조) */
+  depositorName?: string;
   /* 예약 접수 시점의 입금 계좌 스냅샷 — 손님에게 안내되는 값 */
   payBankName: string;
   payAccountNumber: string;
